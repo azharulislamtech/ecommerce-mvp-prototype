@@ -1,0 +1,48 @@
+import Link from "next/link";
+import { UserIcon } from "@/components/ui/icons";
+
+const adminLinks = [
+  { href: "/admin", label: "Dashboard" },
+  { href: "/admin/products", label: "Products" },
+  { href: "/admin/products/new", label: "Add Product" },
+  { href: "/admin/orders", label: "Orders" },
+  { href: "/", label: "Storefront" }
+];
+
+export function AdminShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-slate-100 lg:grid lg:grid-cols-[260px_1fr]">
+      <aside className="border-b border-slate-200 bg-white lg:border-b-0 lg:border-r">
+        <div className="container-page flex items-center justify-between gap-4 py-4 lg:block lg:w-auto lg:px-6">
+          <Link className="flex items-center gap-2" href="/admin">
+            <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-950 text-sm font-bold text-white">
+              SP
+            </span>
+            <span className="text-lg font-bold text-slate-950">Admin</span>
+          </Link>
+          <div className="hidden items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 lg:mt-8 lg:flex">
+            <UserIcon className="h-4 w-4" />
+            Store Manager
+          </div>
+        </div>
+        <nav className="container-page flex gap-2 overflow-x-auto pb-4 lg:block lg:w-auto lg:px-4">
+          {adminLinks.map((link) => (
+            <Link
+              className="shrink-0 rounded-md px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-950 lg:block"
+              href={link.href}
+              key={link.href}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </aside>
+      <div className="min-w-0">
+        <header className="hidden border-b border-slate-200 bg-white px-8 py-4 lg:block">
+          <p className="text-sm text-slate-500">Protected admin prototype</p>
+        </header>
+        <main className="container-page py-6 lg:px-8">{children}</main>
+      </div>
+    </div>
+  );
+}

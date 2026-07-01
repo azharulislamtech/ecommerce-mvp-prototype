@@ -1,0 +1,177 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { CheckIcon, ShieldIcon, SupportIcon, TruckIcon } from "@/components/ui/icons";
+import { ProductCard } from "@/components/modules/product-card";
+import { ProductVisual } from "@/components/modules/product-visual";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { formatMoney, getProductBySlug, products } from "@/lib/data";
+
+type ProductDetailsPageProps = {
+  params: {
+    slug: string;
+  };
+};
+
+export function generateStaticParams() {
+  return products.map((product) => ({ slug: product.slug }));
+}
+
+export default function ProductDetailsPage({ params }: ProductDetailsPageProps) {
+  const product = getProductBySlug(params.slug);
+
+  if (!product) {
+    notFound();
+  }
+
+  const related = products.filter((item) => item.id !== product.id).slice(0, 3);
+
+  return (
+    <>
+      <section className="py-8 md:py-10">
+        <div className="container-page grid gap-8 lg:grid-cols-[1fr_0.9fr]">
+          <div className="min-w-0">
+            <ProductVisual label={product.name} large visual={product.visual} />
+            <div className="mt-3 grid grid-cols-4 gap-3">
+              {[product, ...related].slice(0, 4).map((item) => (
+                <ProductVisual key={item.id} label={item.name} visual={item.visual} />
+              ))}
+            </div>
+          </div>
+
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge tone={product.stock > 0 ? "green" : "red"}>
+                  {product.stock > 0 ? `${product.stock} in stock` : "Sold out"}
+                </StatusBadge>
+                <StatusBadge tone="blue">{product.category}</StatusBadge>
+                <span className="text-sm font-semibold text-amber-600">{product.rating} rating</span>
+              </div>
+              <h1 className="mt-4 text-3xl font-bold text-slate-950">{product.name}</h1>
+              <p className="mt-3 text-base leading-7 text-slate-600">{product.shortDescription}</p>
+
+              <div className="mt-5 flex flex-wrap items-end gap-3">
+                <span className="text-3xl font-bold text-slate-950">{formatMoney(product.price)}</span>
+                {product.oldPrice ? (
+                  <span className="text-base text-slate-400 line-through">{formatMoney(product.oldPrice)}</span>
+                ) : null}
+              </div>
+
+              <div className="mt-5">
+                <label className="text-sm font-semibold text-slate-950" htmlFor="quantity">
+                  Quantity
+                </label>
+                <div className="mt-2 flex h-12 w-36 items-center justify-between rounded-md border border-slate-200 bg-white px-2">
+                  <button className="grid h-9 w-9 place-items-center rounded-md text-lg font-bold text-slate-700 hover:bg-slate-100">
+                    -
+                  </button>
+                  <input
+                    className="w-10 border-0 bg-transparent text-center text-sm font-bold outline-none"
+                    defaultValue="1"
+                    id="quantity"
+                    min="1"
+                    type="number"
+                  />
+                  <button className="grid h-9 w-9 place-items-center rounded-md text-lg font-bold text-slate-700 hover:bg-slate-100">
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <Link
+                  className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                  href="/checkout"
+                >
+                  Buy Now
+                </Link>
+                <Link
+                  className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-950 transition hover:border-blue-300 hover:bg-blue-50"
+                  href="/cart"
+                >
+                  Add to Cart
+                </Link>
+              </div>
+
+              <div className="mt-6 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                <span className="inline-flex items-center gap-2">
+                  <ShieldIcon className="h-4 w-4 text-emerald-600" />
+                  Secure payment
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <TruckIcon className="h-4 w-4 text-blue-600" />
+                  Fast delivery
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <SupportIcon className="h-4 w-4 text-amber-600" />
+                  Easy support
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <CheckIcon className="h-4 w-4 text-emerald-600" />
+                  Cash on delivery
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-10">
+        <div className="container-page grid gap-6 lg:grid-cols-[1fr_0.8fr]">
+          <article>
+            <h2 className="text-2xl font-bold text-slate-950">Description</h2>
+            <p className="mt-3 leading-7 text-slate-600">{product.description}</p>
+            <h3 className="mt-8 text-lg font-bold text-slate-950">Specification</h3>
+            <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+              {product.specs.map((spec) => (
+                <li className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" key={spec}>
+                  {spec}
+                </li>
+              ))}
+            </ul>
+          </article>
+          <aside className="rounded-lg border border-slate-200 bg-slate-50 p-5">
+            <h2 className="text-lg font-bold text-slate-950">Delivery Info</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Standard delivery is calculated at checkout. Dhaka delivery is usually faster, while outside
+              Dhaka may take additional time depending on courier coverage.
+            </p>
+            <h3 className="mt-5 text-base font-bold text-slate-950">Payment Info</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Payment gateway flow is integration-ready. Only server-side gateway callbacks should update
+              payment status in production.
+            </p>
+          </aside>
+        </div>
+      </section>
+
+      <section className="py-10">
+        <div className="container-page">
+          <h2 className="mb-5 text-2xl font-bold text-slate-950">Related Products</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {related.map((item) => (
+              <ProductCard key={item.id} product={item} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white p-3 shadow-soft md:hidden">
+        <div className="grid grid-cols-2 gap-2">
+          <Link
+            className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-slate-950 text-sm font-semibold text-white"
+            href="/checkout"
+          >
+            Buy Now
+          </Link>
+          <Link
+            className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-slate-300 text-sm font-semibold text-slate-950"
+            href="/cart"
+          >
+            Add to Cart
+          </Link>
+        </div>
+      </div>
+    </>
+  );
+}
