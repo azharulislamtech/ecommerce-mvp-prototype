@@ -1,19 +1,25 @@
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 import { ProductForm } from "@/app/admin/(panel)/products/product-form";
-import { products } from "@/lib/data";
+import { getAdminCategories, getAdminProductById } from "@/lib/supabase/admin-catalog";
+
+export const dynamic = "force-dynamic";
 
 type EditProductPageProps = {
   params: {
     id: string;
   };
+  searchParams?: {
+    error?: string | string[];
+    notice?: string | string[];
+  };
 };
 
-export function generateStaticParams() {
-  return products.map((product) => ({ id: product.id }));
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
-export default function EditProductPage({ params }: EditProductPageProps) {
-  const product = products.find((item) => item.id === params.id);
+export default async function EditProductPage({ params, searchParams }: EditProductPageProps) {
+  const [product, categories] = await Promise.all([getAdminProductById(params.id), getAdminCategories()]);
 
   if (!product) {
     notFound();
@@ -26,7 +32,13 @@ export default function EditProductPage({ params }: EditProductPageProps) {
         <h1 className="mt-2 text-3xl font-bold text-slate-950">Edit Product</h1>
         <p className="mt-2 text-sm text-slate-600">{product.name}</p>
       </div>
-      <ProductForm mode="edit" product={product} />
+      <ProductForm
+        categories={categories}
+        error={firstParam(searchParams?.error)}
+        mode="edit"
+        notice={firstParam(searchParams?.notice)}
+        product={product}
+      />
     </div>
   );
 }

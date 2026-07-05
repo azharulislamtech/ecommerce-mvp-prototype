@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useCart } from "@/components/cart/cart-provider";
 import { CartIcon, MenuIcon, SearchIcon } from "@/components/ui/icons";
 
 const navLinks = [
@@ -12,6 +13,7 @@ const navLinks = [
 
 export function SiteHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { hydrated, itemCount } = useCart();
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -72,15 +74,16 @@ export function SiteHeader() {
               <SearchIcon />
             </Link>
             <Link
-              aria-label="Cart with 3 items"
+              aria-label={`Cart with ${itemCount} ${itemCount === 1 ? "item" : "items"}`}
+              data-testid="cart-link"
               className="focus-ring relative grid h-10 w-10 place-items-center rounded-md text-slate-700 transition hover:bg-slate-100"
               href="/cart"
               onClick={closeMenu}
               title="Cart"
             >
               <CartIcon />
-              <span className="absolute right-1 top-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white">
-                3
+              <span className="absolute right-1 top-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-amber-500 px-1 text-[11px] font-bold text-white" data-testid="cart-count">
+                {hydrated ? itemCount : 0}
               </span>
             </Link>
             <div className="relative md:hidden">

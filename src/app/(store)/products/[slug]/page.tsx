@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckIcon, ShieldIcon, SupportIcon, TruckIcon } from "@/components/ui/icons";
+import { ProductPurchaseActions } from "@/components/cart/product-purchase-actions";
 import { ProductCard } from "@/components/modules/product-card";
 import { ProductVisual } from "@/components/modules/product-visual";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { formatMoney, getProductBySlug, products } from "@/lib/data";
+import { formatMoney } from "@/lib/data";
+import { getStoreProductBySlug, getStoreProducts, getStoreRelatedProducts } from "@/lib/catalog";
+
+export const revalidate = 60;
 
 type ProductDetailsPageProps = {
   params: {
@@ -12,29 +16,47 @@ type ProductDetailsPageProps = {
   };
 };
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const products = await getStoreProducts();
   return products.map((product) => ({ slug: product.slug }));
 }
 
-export default function ProductDetailsPage({ params }: ProductDetailsPageProps) {
-  const product = getProductBySlug(params.slug);
+export default async function ProductDetailsPage({ params }: ProductDetailsPageProps) {
+  const product = await getStoreProductBySlug(params.slug);
 
   if (!product) {
     notFound();
   }
 
-  const related = products.filter((item) => item.id !== product.id).slice(0, 3);
+  const related = await getStoreRelatedProducts(product, 3);
+  const galleryImages = product.images?.slice(0, 4) ?? [];
 
   return (
     <>
       <section className="py-8 md:py-10">
         <div className="container-page grid gap-8 lg:grid-cols-[1fr_0.9fr]">
           <div className="min-w-0">
-            <ProductVisual label={product.name} large visual={product.visual} />
+            <ProductVisual imageAlt={product.imageAlt} imageUrl={product.imageUrl} label={product.name} large visual={product.visual} />
             <div className="mt-3 grid grid-cols-4 gap-3">
-              {[product, ...related].slice(0, 4).map((item) => (
-                <ProductVisual key={item.id} label={item.name} visual={item.visual} />
-              ))}
+              {galleryImages.length
+                ? galleryImages.map((image) => (
+                    <ProductVisual
+                      imageAlt={image.alt}
+                      imageUrl={image.url}
+                      key={image.id}
+                      label={product.name}
+                      visual={product.visual}
+                    />
+                  ))
+                : [product, ...related].slice(0, 4).map((item) => (
+                    <ProductVisual
+                      imageAlt={item.imageAlt}
+                      imageUrl={item.imageUrl}
+                      key={item.id}
+                      label={item.name}
+                      visual={item.visual}
+                    />
+                  ))}
             </div>
           </div>
 
@@ -57,41 +79,7 @@ export default function ProductDetailsPage({ params }: ProductDetailsPageProps) 
                 ) : null}
               </div>
 
-              <div className="mt-5">
-                <label className="text-sm font-semibold text-slate-950" htmlFor="quantity">
-                  Quantity
-                </label>
-                <div className="mt-2 flex h-12 w-36 items-center justify-between rounded-md border border-slate-200 bg-white px-2">
-                  <button className="grid h-9 w-9 place-items-center rounded-md text-lg font-bold text-slate-700 hover:bg-slate-100">
-                    -
-                  </button>
-                  <input
-                    className="w-10 border-0 bg-transparent text-center text-sm font-bold outline-none"
-                    defaultValue="1"
-                    id="quantity"
-                    min="1"
-                    type="number"
-                  />
-                  <button className="grid h-9 w-9 place-items-center rounded-md text-lg font-bold text-slate-700 hover:bg-slate-100">
-                    +
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <Link
-                  className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
-                  href="/checkout"
-                >
-                  Buy Now
-                </Link>
-                <Link
-                  className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-950 transition hover:border-blue-300 hover:bg-blue-50"
-                  href="/cart"
-                >
-                  Add to Cart
-                </Link>
-              </div>
+              <ProductPurchaseActions productId={product.id} stock={product.stock} />
 
               <div className="mt-6 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
                 <span className="inline-flex items-center gap-2">
@@ -145,33 +133,19 @@ export default function ProductDetailsPage({ params }: ProductDetailsPageProps) 
         </div>
       </section>
 
-      <section className="py-10">
-        <div className="container-page">
-          <h2 className="mb-5 text-2xl font-bold text-slate-950">Related Products</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {related.map((item) => (
-              <ProductCard key={item.id} product={item} />
-            ))}
+      {related.length ? (
+        <section className="py-10">
+          <div className="container-page">
+            <h2 className="mb-5 text-2xl font-bold text-slate-950">Related Products</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {related.map((item) => (
+                <ProductCard key={item.id} product={item} />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white p-3 shadow-soft md:hidden">
-        <div className="grid grid-cols-2 gap-2">
-          <Link
-            className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-slate-950 text-sm font-semibold text-white"
-            href="/checkout"
-          >
-            Buy Now
-          </Link>
-          <Link
-            className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-slate-300 text-sm font-semibold text-slate-950"
-            href="/cart"
-          >
-            Add to Cart
-          </Link>
-        </div>
-      </div>
     </>
   );
 }

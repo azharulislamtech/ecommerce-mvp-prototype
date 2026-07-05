@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { adminLogoutAction } from "@/app/actions";
 import { UserIcon } from "@/components/ui/icons";
 
 const adminLinks = [
@@ -9,7 +10,12 @@ const adminLinks = [
   { href: "/", label: "Storefront" }
 ];
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
+type AdminShellProps = {
+  children: React.ReactNode;
+  adminEmail: string;
+};
+
+export function AdminShell({ children, adminEmail }: AdminShellProps) {
   return (
     <div className="min-h-screen bg-slate-100 lg:grid lg:grid-cols-[260px_1fr]">
       <aside className="border-b border-slate-200 bg-white lg:border-b-0 lg:border-r">
@@ -20,9 +26,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </span>
             <span className="text-lg font-bold text-slate-950">Admin</span>
           </Link>
-          <div className="hidden items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 lg:mt-8 lg:flex">
-            <UserIcon className="h-4 w-4" />
-            Store Manager
+          <div className="hidden min-w-0 items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 lg:mt-8 lg:flex">
+            <UserIcon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{adminEmail}</span>
           </div>
         </div>
         <nav className="container-page flex gap-2 overflow-x-auto pb-4 lg:block lg:w-auto lg:px-4">
@@ -35,11 +41,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               {link.label}
             </Link>
           ))}
+          <form action={adminLogoutAction} className="shrink-0 lg:mt-2">
+            <button className="rounded-md px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 lg:w-full lg:text-left">
+              Sign Out
+            </button>
+          </form>
         </nav>
       </aside>
       <div className="min-w-0">
         <header className="hidden border-b border-slate-200 bg-white px-8 py-4 lg:block">
-          <p className="text-sm text-slate-500">Protected admin prototype</p>
+          <p className="text-sm text-slate-500">Protected admin area</p>
         </header>
         <main className="container-page py-6 lg:px-8">{children}</main>
       </div>

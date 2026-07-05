@@ -11,4 +11,10 @@ tsconfig.tsbuildinfo
 
 .vercel
 .env*
+!.env.example
 .idea/
+flyway.conf
+dev-server.*.log
+test-results/
+playwright-report/
+.playwright-auth/

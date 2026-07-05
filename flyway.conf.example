@@ -1,0 +1,19 @@
+# Option A: Direct database connection. Best for migrations when your network supports it.
+flyway.url=jdbc:postgresql://db.your-project-ref.supabase.co:5432/postgres?sslmode=require
+flyway.user=postgres
+flyway.password=your-database-password
+flyway.defaultSchema=public
+flyway.locations=filesystem:db/migration
+flyway.validateMigrationNaming=true
+flyway.cleanDisabled=true
+
+# Option B: Supabase Session Pooler fallback for networks that cannot resolve or reach
+# the direct db.<project-ref>.supabase.co host. Copy the exact host/port from
+# Supabase Dashboard > Project Settings > Database > Connection string > Session pooler.
+# flyway.url=jdbc:postgresql://aws-0-your-region.pooler.supabase.com:5432/postgres?sslmode=require
+# flyway.user=postgres.your-project-ref
+# flyway.password=your-database-password
+
+# If your Supabase public schema already has objects, run a deliberate Flyway
+# baseline first instead of enabling baselineOnMigrate by default.
+# flyway baseline -baselineVersion=0

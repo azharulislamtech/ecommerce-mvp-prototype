@@ -1,5 +1,12 @@
 export type ProductVisual = "electronics" | "fashion" | "home" | "beauty" | "accessories";
 
+export type ProductImage = {
+  id: string;
+  url: string;
+  alt: string;
+  sortOrder: number;
+};
+
 export type Product = {
   id: string;
   slug: string;
@@ -12,6 +19,9 @@ export type Product = {
   stock: number;
   rating: number;
   featured: boolean;
+  imageAlt?: string;
+  imageUrl?: string;
+  images?: ProductImage[];
   visual: ProductVisual;
   specs: string[];
 };
@@ -211,13 +221,6 @@ export const orders: Order[] = [
   }
 ];
 
-export const dashboardStats = [
-  { label: "Total Orders", value: "1,248" },
-  { label: "Pending Orders", value: "36" },
-  { label: "Paid Orders", value: "1,086" },
-  { label: "Total Sales", value: "BDT 18.4L" },
-  { label: "Total Products", value: String(products.length) }
-];
 
 export const districts = [
   "Dhaka",

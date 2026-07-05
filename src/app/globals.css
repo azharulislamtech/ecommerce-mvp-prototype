@@ -87,6 +87,27 @@ a {
   height: 24%;
 }
 
+.product-visual.has-image {
+  background: #ffffff;
+}
+
+.product-visual.has-image::before,
+.product-visual.has-image::after {
+  display: none;
+}
+
+.product-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-visual.large.has-image .product-image {
+  padding: 16px;
+  object-fit: contain;
+}
 .product-visual::before,
 .product-visual::after {
   position: absolute;

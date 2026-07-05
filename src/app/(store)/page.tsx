@@ -4,7 +4,9 @@ import { CheckIcon, ShieldIcon, SupportIcon, TruckIcon } from "@/components/ui/i
 import { ProductCard } from "@/components/modules/product-card";
 import { ProductVisual } from "@/components/modules/product-visual";
 import { SectionHeading } from "@/components/modules/section-heading";
-import { categories, products } from "@/lib/data";
+import { getStoreCategories, getStoreFeaturedProducts } from "@/lib/catalog";
+
+export const revalidate = 60;
 
 const trustItems = [
   {
@@ -29,8 +31,11 @@ const trustItems = [
   }
 ];
 
-export default function HomePage() {
-  const featuredProducts = products.filter((product) => product.featured);
+export default async function HomePage() {
+  const [categories, featuredProducts] = await Promise.all([
+    getStoreCategories(),
+    getStoreFeaturedProducts(8)
+  ]);
 
   return (
     <>
@@ -92,19 +97,25 @@ export default function HomePage() {
             description="Start from a familiar category and reach buy actions within a few taps."
             title="Featured Categories"
           />
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {categories.map((category) => (
-              <Link
-                className="group rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft"
-                href={`/products?category=${category.slug}`}
-                key={category.slug}
-              >
-                <ProductVisual label={category.name} visual={category.visual} />
-                <h3 className="mt-3 text-sm font-bold text-slate-950">{category.name}</h3>
-                <p className="mt-1 text-sm text-slate-600">{category.description}</p>
-              </Link>
-            ))}
-          </div>
+          {categories.length ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {categories.map((category) => (
+                <Link
+                  className="group rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft"
+                  href={`/products?category=${category.slug}`}
+                  key={category.slug}
+                >
+                  <ProductVisual label={category.name} visual={category.visual} />
+                  <h3 className="mt-3 text-sm font-bold text-slate-950">{category.name}</h3>
+                  <p className="mt-1 text-sm text-slate-600">{category.description}</p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+              Categories will appear here after the catalog is published.
+            </div>
+          )}
         </div>
       </section>
 
@@ -119,11 +130,17 @@ export default function HomePage() {
               View all products
             </Link>
           </div>
-          <div className="grid grid-cols-1 gap-4 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {featuredProducts.length ? (
+            <div className="grid grid-cols-1 gap-4 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
+              Featured products will appear here after products are marked as featured.
+            </div>
+          )}
         </div>
       </section>
 
@@ -157,8 +174,7 @@ export default function HomePage() {
             <p className="text-sm font-semibold uppercase text-amber-300">Customer trust</p>
             <h2 className="mt-2 text-2xl font-bold">Order today with a clear payment-ready flow.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-              The prototype keeps customers out of account creation and moves them from product to checkout
-              with visible order totals.
+              Customers can browse the live catalog without account creation and move quickly toward checkout.
             </p>
           </div>
           <Link
