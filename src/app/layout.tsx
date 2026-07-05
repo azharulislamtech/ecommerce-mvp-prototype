@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ShopPilot E-commerce MVP",
-  description: "A mobile-first e-commerce prototype with checkout and admin flows."
+  title: "Kena Sathi | Trusted Online Shopping in Bangladesh",
+  description: "Kena Sathi is a Bangladesh-focused online store with easy checkout, order tracking, and secure payment options."
 };
 
 export default function RootLayout({

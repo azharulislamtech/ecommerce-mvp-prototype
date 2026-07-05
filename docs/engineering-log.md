@@ -2,6 +2,42 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-07-05: Kena Sathi Site Branding And Copy
+
+Changed:
+
+- Added a reusable Kena Sathi `KS` logo mark and wordmark for storefront, footer, admin shell, and admin login.
+- Updated homepage, metadata, footer, support, payment, and gateway-facing copy from ShopPilot/prototype language to Kena Sathi customer-facing language.
+- Updated README, compact handoff, and the SSLCommerz decision note to use Kena Sathi naming.
+
+Verification:
+
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- Full networked `npm run build` and Vercel deploy were not completed because the required external-network approval hit the current usage limit.
+
+Notes:
+
+- Existing `SP-` order numbers and mock historical order IDs were left unchanged because they are part of the current order/tracking data shape.
+
+## 2026-07-05: Product Detail Image Gallery Navigation
+
+Changed:
+
+- Replaced the static product detail image strip with a client-side product gallery.
+- Added thumbnail click support and previous/next image controls for products with multiple uploaded images.
+- Kept single-image and no-image products on the existing primary visual/placeholder path.
+
+Verification:
+
+- `npm run typecheck` passed.
+- `npm run build` passed.
+- Local Playwright smoke check on `/products/pure-glow-serum` confirmed 2 thumbnails, next/previous controls, main image changes on next click, and thumbnail click restores the first image.
+
+Notes:
+
+- Gallery thumbnails now only represent images from the current product, not related product visuals.
+
 ## 2026-07-04: Service Role Key Rotation Tooling And Runbook
 
 Changed:

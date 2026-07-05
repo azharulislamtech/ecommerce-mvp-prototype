@@ -1,10 +1,10 @@
-# ShopPilot E-commerce MVP
+# Kena Sathi E-commerce
 
-A responsive Next.js e-commerce prototype being hardened into a production-grade single-brand store.
+A responsive Next.js e-commerce storefront for Kena Sathi, focused on product discovery, checkout, order tracking, and admin management.
 
 ## Current Status
 
-- Storefront and admin UI prototype exists.
+- Kena Sathi storefront and admin UI are deployed on the production domain.
 - Supabase PostgreSQL schema is versioned with Flyway.
 - Flyway migrations are applied through schema version `5`.
 - Public catalog pages read active categories/products and uploaded product images from Supabase; admin panel routes are protected by Supabase Auth; admin product CRUD is implemented with Supabase RLS; cart and checkout create real pending Supabase orders through a trusted PostgreSQL RPC; admin order list/details/dashboard overview are Supabase-backed; SSLCommerz hosted checkout is implemented with server-side validation and payment event logging.

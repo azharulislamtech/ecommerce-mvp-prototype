@@ -1,4 +1,4 @@
-﻿import { CART_DISCOUNT, DELIVERY_CHARGE, calculateCartTotal } from "@/lib/cart";
+import { CART_DISCOUNT, DELIVERY_CHARGE, calculateCartTotal } from "@/lib/cart";
 import { cartDiscount, cartSubtotal, deliveryCharge as mockDeliveryCharge, formatMoney } from "@/lib/data";
 
 type OrderSummaryProps = {
@@ -48,7 +48,7 @@ export function OrderSummary({
       </dl>
       {cta ? <div className="mt-5">{cta}</div> : null}
       <p className="mt-4 text-sm leading-6 text-slate-500">
-        Support is available before payment. Call 01700-000000 for delivery questions.
+        Kena Sathi support is available before payment. Call 01700-000000 for delivery questions.
       </p>
     </section>
   );

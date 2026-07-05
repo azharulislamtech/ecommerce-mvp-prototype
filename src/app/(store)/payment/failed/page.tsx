@@ -25,7 +25,7 @@ function readableStatus(value: string | undefined) {
 export default function PaymentFailedPage({ searchParams }: PaymentFailedPageProps) {
   const orderNumber = firstParam(searchParams?.order);
   const status = firstParam(searchParams?.status);
-  const reason = firstParam(searchParams?.reason) ?? "Gateway timeout or cancelled payment. Please try again or contact support.";
+  const reason = firstParam(searchParams?.reason) ?? "Gateway timeout or cancelled payment. Please try again or contact Kena Sathi support.";
   const title = status === "cancelled" ? "Payment Cancelled" : "Payment Failed";
 
   return (
@@ -65,7 +65,7 @@ export default function PaymentFailedPage({ searchParams }: PaymentFailedPagePro
               className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-950 hover:bg-slate-50"
               href="tel:01700000000"
             >
-              Contact Support
+              Kena Sathi Support
             </a>
             <Link
               className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-950 hover:bg-slate-50"

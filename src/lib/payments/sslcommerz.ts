@@ -194,7 +194,7 @@ function buildCartPayload(items: OrderItemRow[]) {
 
 function buildSessionParams(context: PaymentContext, appBaseUrl: string, storeId: string, storePassword: string) {
   const { order, items } = context;
-  const productNames = truncate(items.map((item) => item.product_name).join(", "), 255) || "ShopPilot order";
+  const productNames = truncate(items.map((item) => item.product_name).join(", "), 255) || "Kena Sathi order";
   const customerEmail = process.env.SSLCOMMERZ_DEFAULT_CUSTOMER_EMAIL ?? "customer@example.com";
 
   return new URLSearchParams({
@@ -238,7 +238,7 @@ function buildSessionParams(context: PaymentContext, appBaseUrl: string, storeId
     value_a: order.id,
     value_b: context.payment.id,
     value_c: order.order_number,
-    value_d: "shoppilot"
+    value_d: "kenasathi"
   });
 }
 

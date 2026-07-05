@@ -11,22 +11,22 @@ export const revalidate = 60;
 const trustItems = [
   {
     title: "Secure Payment",
-    text: "Payment gateway ready flow with server-side callback assumptions.",
+    text: "SSLCommerz-ready checkout with cash-on-delivery support for local buyers.",
     icon: ShieldIcon
   },
   {
     title: "Fast Delivery",
-    text: "Clear delivery charge and district-based checkout fields.",
+    text: "District-based checkout helps prepare delivery across Bangladesh.",
     icon: TruckIcon
   },
   {
     title: "Quality Product",
-    text: "Focused product cards with stock, price, and primary action.",
+    text: "Curated products with clear photos, visible stock, and honest pricing.",
     icon: CheckIcon
   },
   {
     title: "Customer Support",
-    text: "Support contact stays visible through checkout and footer.",
+    text: "Helpful support stays close before and after every order.",
     icon: SupportIcon
   }
 ];
@@ -42,12 +42,12 @@ export default async function HomePage() {
       <section className="bg-white">
         <div className="container-page grid items-center gap-8 py-8 md:grid-cols-[0.9fr_1.1fr] md:py-12">
           <div className="max-w-xl">
-            <p className="mb-3 text-sm font-semibold uppercase text-blue-700">Premium single-brand store</p>
+            <p className="mb-3 text-sm font-semibold uppercase text-blue-700">Kena Sathi Online Store</p>
             <h1 className="text-4xl font-bold text-slate-950 sm:text-5xl">
-              Shop Quality Products Online
+              Your Trusted Shopping Partner
             </h1>
             <p className="mt-4 max-w-lg text-base leading-7 text-slate-600">
-              Fast delivery, secure payment, and trusted service for first-time online shoppers.
+              Discover everyday products, clear offers, secure payment options, and simple order tracking from Kena Sathi.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -80,7 +80,7 @@ export default async function HomePage() {
           </div>
           <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50 shadow-soft">
             <Image
-              alt="Curated product collage for ShopPilot"
+              alt="Kena Sathi featured product collage"
               className="h-full w-full object-cover"
               height={720}
               priority
@@ -94,7 +94,7 @@ export default async function HomePage() {
       <section className="py-10">
         <div className="container-page">
           <SectionHeading
-            description="Start from a familiar category and reach buy actions within a few taps."
+            description="Browse the categories Kena Sathi customers use most and move quickly to the right product."
             title="Featured Categories"
           />
           {categories.length ? (
@@ -123,7 +123,7 @@ export default async function HomePage() {
         <div className="container-page">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <SectionHeading
-              description="Clear pricing, visible stock, and simple actions keep the first purchase easy."
+              description="Fresh picks from the Kena Sathi catalog with clear pricing, visible stock, and quick cart actions."
               title="Featured Products"
             />
             <Link className="text-sm font-semibold text-blue-700 hover:text-blue-900" href="/products">
@@ -147,7 +147,7 @@ export default async function HomePage() {
       <section className="py-10">
         <div className="container-page">
           <SectionHeading
-            description="Trust elements are short and practical, so the page stays calm on mobile."
+            description="Kena Sathi keeps shopping practical with payment clarity, delivery updates, and friendly support."
             title="Why Buy From Us"
           />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -171,17 +171,17 @@ export default async function HomePage() {
       <section className="bg-slate-950 py-10 text-white">
         <div className="container-page grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
           <div>
-            <p className="text-sm font-semibold uppercase text-amber-300">Customer trust</p>
-            <h2 className="mt-2 text-2xl font-bold">Order today with a clear payment-ready flow.</h2>
+            <p className="text-sm font-semibold uppercase text-amber-300">Shop with confidence</p>
+            <h2 className="mt-2 text-2xl font-bold">Order from Kena Sathi with a simple, secure flow.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-              Customers can browse the live catalog without account creation and move quickly toward checkout.
+              Browse the live catalog, add your favorite products, and track each order with your phone number.
             </p>
           </div>
           <Link
             className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-white px-6 text-sm font-semibold text-slate-950 transition hover:bg-amber-100"
-            href="/checkout"
+            href="/products"
           >
-            Checkout Preview
+            Browse Products
           </Link>
         </div>
       </section>

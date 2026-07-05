@@ -1,27 +1,23 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/ui/brand-logo";
 
 export function SiteFooter() {
   return (
     <footer className="border-t border-slate-200 bg-white">
       <div className="container-page grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <Link className="flex items-center gap-2" href="/">
-            <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-950 text-sm font-bold text-white">
-              SP
-            </span>
-            <span className="text-lg font-bold text-slate-950">ShopPilot</span>
-          </Link>
+          <BrandLogo href="/" />
           <p className="mt-4 max-w-md text-sm leading-6 text-slate-600">
-            A clean single-brand store prototype focused on fast product discovery, simple checkout,
-            and trustworthy payment flow.
+            Kena Sathi is a trusted online shopping partner for everyday products, clear pricing,
+            easy checkout, and dependable delivery updates.
           </p>
         </div>
         <div>
           <h3 className="text-sm font-bold text-slate-950">Contact</h3>
           <ul className="mt-4 space-y-2 text-sm text-slate-600">
             <li>Phone: 01700-000000</li>
-            <li>Email: hello@shoppilot.local</li>
-            <li>Facebook: /shoppilot</li>
+            <li>Email: support@kenasathi.com</li>
+            <li>Facebook: /kenasathi</li>
           </ul>
         </div>
         <div>
@@ -46,7 +42,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-slate-200 py-4">
-        <p className="container-page text-sm text-slate-500">Copyright 2026 ShopPilot. All rights reserved.</p>
+        <p className="container-page text-sm text-slate-500">Copyright 2026 Kena Sathi. All rights reserved.</p>
       </div>
     </footer>
   );

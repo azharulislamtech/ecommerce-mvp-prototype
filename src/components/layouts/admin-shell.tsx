@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { adminLogoutAction } from "@/app/actions";
+import { BrandLogo } from "@/components/ui/brand-logo";
 import { UserIcon } from "@/components/ui/icons";
 
 const adminLinks = [
@@ -20,12 +21,7 @@ export function AdminShell({ children, adminEmail }: AdminShellProps) {
     <div className="min-h-screen bg-slate-100 lg:grid lg:grid-cols-[260px_1fr]">
       <aside className="border-b border-slate-200 bg-white lg:border-b-0 lg:border-r">
         <div className="container-page flex items-center justify-between gap-4 py-4 lg:block lg:w-auto lg:px-6">
-          <Link className="flex items-center gap-2" href="/admin">
-            <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-950 text-sm font-bold text-white">
-              SP
-            </span>
-            <span className="text-lg font-bold text-slate-950">Admin</span>
-          </Link>
+          <BrandLogo href="/admin" label="Kena Sathi Admin" />
           <div className="hidden min-w-0 items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 lg:mt-8 lg:flex">
             <UserIcon className="h-4 w-4 shrink-0" />
             <span className="truncate">{adminEmail}</span>
@@ -50,7 +46,7 @@ export function AdminShell({ children, adminEmail }: AdminShellProps) {
       </aside>
       <div className="min-w-0">
         <header className="hidden border-b border-slate-200 bg-white px-8 py-4 lg:block">
-          <p className="text-sm text-slate-500">Protected admin area</p>
+          <p className="text-sm text-slate-500">Kena Sathi protected admin area</p>
         </header>
         <main className="container-page py-6 lg:px-8">{children}</main>
       </div>

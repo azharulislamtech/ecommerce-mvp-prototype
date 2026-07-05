@@ -32,7 +32,7 @@ export default async function PaymentSuccessPage({ searchParams }: PaymentSucces
           </span>
           <h1 className="mt-5 text-3xl font-bold text-slate-950">Thank you! Your order has been received.</h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            We will contact you soon for delivery confirmation.
+            Kena Sathi will contact you soon for delivery confirmation.
           </p>
           {gatewayReason ? (
             <div className="mt-5 rounded-lg bg-blue-50 p-4 text-left text-sm font-semibold text-blue-800">
@@ -60,7 +60,7 @@ export default async function PaymentSuccessPage({ searchParams }: PaymentSucces
             </dl>
           ) : (
             <div className="mt-6 rounded-lg bg-amber-50 p-4 text-left text-sm font-semibold text-amber-800">
-              Order summary is unavailable. Please keep your order confirmation from checkout or contact support.
+              Order summary is unavailable. Please keep your Kena Sathi order confirmation or contact support.
             </div>
           )}
           <div className="mt-6 grid gap-3 sm:grid-cols-2">

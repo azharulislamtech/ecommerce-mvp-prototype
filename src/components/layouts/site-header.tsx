@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
+import { BrandLogo } from "@/components/ui/brand-logo";
 import { CartIcon, MenuIcon, SearchIcon } from "@/components/ui/icons";
 
 const navLinks = [
@@ -31,12 +32,7 @@ export function SiteHeader() {
 
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="container-page flex h-16 items-center gap-3">
-          <Link className="flex shrink-0 items-center gap-2" href="/" onClick={closeMenu}>
-            <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-950 text-sm font-bold text-white">
-              SP
-            </span>
-            <span className="text-lg font-bold text-slate-950">ShopPilot</span>
-          </Link>
+          <BrandLogo href="/" onClick={closeMenu} />
 
           <form action="/products" className="ml-5 hidden flex-1 md:block">
             <label className="relative block">

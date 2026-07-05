@@ -6,7 +6,7 @@ Use this file for architectural, security, database, and product decisions. Keep
 
 Decision: Use SSLCommerz as the first payment provider through `src/lib/payments/payment-service.ts`, with provider-specific logic isolated in `src/lib/payments/sslcommerz.ts`.
 
-Reason: ShopPilot targets Bangladesh commerce first, SSLCommerz offers a hosted checkout flow, and a facade keeps the code ready for bKash/Nagad or a future Spring Boot backend adapter.
+Reason: Kena Sathi targets Bangladesh commerce first, SSLCommerz offers a hosted checkout flow, and a facade keeps the code ready for bKash/Nagad or a future Spring Boot backend adapter.
 
 Consequence: Checkout submits `sslcommerz` as a payment method, server-side code creates the hosted session, and future providers should implement the same initiation/callback boundary instead of touching checkout UI directly.
 

@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { adminLoginAction } from "@/app/actions";
+import { BrandLogo } from "@/components/ui/brand-logo";
 import { getCurrentAdmin } from "@/lib/supabase/auth";
 
 export const dynamic = "force-dynamic";
@@ -36,15 +36,10 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
   return (
     <main className="grid min-h-screen place-items-center bg-slate-100 px-4 py-10">
       <section className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <Link className="inline-flex items-center gap-2" href="/">
-          <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-950 text-sm font-bold text-white">
-            SP
-          </span>
-          <span className="text-lg font-bold text-slate-950">ShopPilot Admin</span>
-        </Link>
+        <BrandLogo href="/" label="Kena Sathi Admin" />
         <h1 className="mt-8 text-3xl font-bold text-slate-950">Admin Login</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Sign in with a Supabase Auth user that is listed in the admin users table.
+          Sign in to manage the Kena Sathi catalog, orders, payments, and delivery updates.
         </p>
         {message ? (
           <div className="mt-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">

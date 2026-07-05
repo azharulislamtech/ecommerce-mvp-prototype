@@ -10,7 +10,7 @@ Use this file to continue the project in a new AI/chat session without rereading
 
 ## Project
 
-- Name: ShopPilot e-commerce MVP.
+- Name: Kena Sathi e-commerce site.
 - Path: `D:\WebApplication\Ecommerce application`
 - Stack: Next.js App Router, TypeScript, Tailwind CSS, Supabase PostgreSQL, Supabase Storage, Supabase Auth, Flyway.
 - Future backend target: Spring Boot + Kotlin.

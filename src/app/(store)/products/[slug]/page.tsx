@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { CheckIcon, ShieldIcon, SupportIcon, TruckIcon } from "@/components/ui/icons";
 import { ProductPurchaseActions } from "@/components/cart/product-purchase-actions";
 import { ProductCard } from "@/components/modules/product-card";
-import { ProductVisual } from "@/components/modules/product-visual";
+import { ProductGallery } from "@/components/modules/product-gallery";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/lib/data";
 import { getStoreProductBySlug, getStoreProducts, getStoreRelatedProducts } from "@/lib/catalog";
@@ -29,35 +29,19 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
   }
 
   const related = await getStoreRelatedProducts(product, 3);
-  const galleryImages = product.images?.slice(0, 4) ?? [];
 
   return (
     <>
       <section className="py-8 md:py-10">
         <div className="container-page grid gap-8 lg:grid-cols-[1fr_0.9fr]">
           <div className="min-w-0">
-            <ProductVisual imageAlt={product.imageAlt} imageUrl={product.imageUrl} label={product.name} large visual={product.visual} />
-            <div className="mt-3 grid grid-cols-4 gap-3">
-              {galleryImages.length
-                ? galleryImages.map((image) => (
-                    <ProductVisual
-                      imageAlt={image.alt}
-                      imageUrl={image.url}
-                      key={image.id}
-                      label={product.name}
-                      visual={product.visual}
-                    />
-                  ))
-                : [product, ...related].slice(0, 4).map((item) => (
-                    <ProductVisual
-                      imageAlt={item.imageAlt}
-                      imageUrl={item.imageUrl}
-                      key={item.id}
-                      label={item.name}
-                      visual={item.visual}
-                    />
-                  ))}
-            </div>
+            <ProductGallery
+              imageAlt={product.imageAlt}
+              imageUrl={product.imageUrl}
+              images={product.images}
+              label={product.name}
+              visual={product.visual}
+            />
           </div>
 
           <div className="lg:sticky lg:top-24 lg:self-start">
