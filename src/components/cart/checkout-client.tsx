@@ -1,11 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { createOrderAction, type CheckoutFormState } from "@/app/actions";
 import { useCart } from "@/components/cart/cart-provider";
 import { OrderSummary } from "@/components/modules/order-summary";
-import { CART_DISCOUNT, DELIVERY_CHARGE } from "@/lib/cart";
+import { CART_DISCOUNT } from "@/lib/cart";
+import {
+  DHAKA_DELIVERY_CHARGE,
+  OUTSIDE_DHAKA_DELIVERY_CHARGE,
+  getDeliveryChargeForDistrict
+} from "@/lib/delivery";
 import { formatMoney, type Product } from "@/lib/data";
 
 const initialState: CheckoutFormState = {
@@ -15,7 +20,8 @@ const initialState: CheckoutFormState = {
 };
 
 type CheckoutClientProps = {
-  districts: string[];
+  districts: readonly string[];
+  onlinePaymentsEnabled: boolean;
   products: Product[];
 };
 
@@ -37,9 +43,10 @@ function FieldError({ message }: { message?: string }) {
   return message ? <p className="mt-2 text-sm font-semibold text-rose-700">{message}</p> : null;
 }
 
-export function CheckoutClient({ districts, products }: CheckoutClientProps) {
+export function CheckoutClient({ districts, onlinePaymentsEnabled, products }: CheckoutClientProps) {
   const { hydrated, items } = useCart();
   const [state, formAction] = useFormState(createOrderAction, initialState);
+  const [selectedDistrict, setSelectedDistrict] = useState("");
   const productsById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
   const availableItems = items
     .map((item) => ({ ...item, product: productsById.get(item.productId) }))
@@ -49,6 +56,7 @@ export function CheckoutClient({ districts, products }: CheckoutClientProps) {
   const subtotal = availableItems.reduce((total, item) => total + item.product.price * item.quantity, 0);
   const checkoutItems = availableItems.map((item) => ({ product_id: item.product.id, quantity: item.quantity }));
   const cannotSubmit = !hydrated || availableItems.length === 0 || unavailableItems.length > 0;
+  const deliveryCharge = getDeliveryChargeForDistrict(selectedDistrict);
 
   return (
     <section className="py-8 md:py-10">
@@ -116,27 +124,46 @@ export function CheckoutClient({ districts, products }: CheckoutClientProps) {
                   <select
                     className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
                     name="customer_district"
+                    onChange={(event) => setSelectedDistrict(event.target.value)}
                     required
+                    value={selectedDistrict}
                   >
                     <option value="">Select district</option>
                     {districts.map((district) => (
-                      <option key={district}>{district}</option>
+                      <option key={district} value={district}>{district}</option>
                     ))}
                   </select>
+                  <p className="mt-2 text-xs font-semibold text-slate-500">
+                    Dhaka delivery {formatMoney(DHAKA_DELIVERY_CHARGE)}. Other Bangladesh districts {formatMoney(OUTSIDE_DHAKA_DELIVERY_CHARGE)}.
+                  </p>
                   <FieldError message={state.fieldErrors.customer_district} />
                 </label>
-                <label className="block">
-                  <span className="text-sm font-semibold text-slate-950">Payment Method</span>
-                  <select
-                    className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
-                    name="payment_method"
-                    required
-                  >
-                    <option value="cash-on-delivery">Cash on Delivery</option>
-                    <option value="sslcommerz">SSLCommerz Online Payment</option>
-                  </select>
-                  <FieldError message={state.fieldErrors.payment_method} />
-                </label>
+                {onlinePaymentsEnabled ? (
+                  <label className="block">
+                    <span className="text-sm font-semibold text-slate-950">Payment Method</span>
+                    <select
+                      className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                      name="payment_method"
+                      required
+                    >
+                      <option value="cash-on-delivery">Cash on Delivery</option>
+                      <option value="sslcommerz">SSLCommerz Online Payment</option>
+                    </select>
+                    <FieldError message={state.fieldErrors.payment_method} />
+                  </label>
+                ) : (
+                  <div className="block">
+                    <input name="payment_method" type="hidden" value="cash-on-delivery" />
+                    <span className="text-sm font-semibold text-slate-950">Payment Method</span>
+                    <div className="mt-2 flex h-12 items-center rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-800">
+                      Cash on Delivery
+                    </div>
+                    <p className="mt-2 text-xs font-semibold text-slate-500">
+                      Online payment will be enabled after gateway verification.
+                    </p>
+                    <FieldError message={state.fieldErrors.payment_method} />
+                  </div>
+                )}
                 <label className="block sm:col-span-2">
                   <span className="text-sm font-semibold text-slate-950">Full Address</span>
                   <textarea
@@ -158,14 +185,14 @@ export function CheckoutClient({ districts, products }: CheckoutClientProps) {
               </div>
               <SubmitButton disabled={cannotSubmit} />
               <p className="mt-4 text-sm leading-6 text-slate-500">
-                Cash on Delivery creates a pending order. SSLCommerz redirects to hosted checkout and verifies payment server-side.
+                Cash on Delivery creates a pending order. Kena Sathi will confirm delivery details by phone.
               </p>
             </form>
           </div>
 
           <div className="order-1 lg:order-2 lg:sticky lg:top-24 lg:self-start">
             <OrderSummary
-              deliveryCharge={DELIVERY_CHARGE}
+              deliveryCharge={deliveryCharge}
               discount={CART_DISCOUNT}
               itemCount={itemCount}
               subtotal={subtotal}

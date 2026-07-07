@@ -2,6 +2,55 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-07-07: Service Role Key Rotated (Exposure Closed)
+
+Changed:
+
+- Rotated the exposed Supabase service role key by migrating to the new Supabase
+  API keys system: created a new revocable **secret key** and disabled the legacy
+  `service_role` JWT.
+- Updated `SUPABASE_SERVICE_ROLE_KEY` in local `.env.local` and in the Vercel
+  Production environment, then redeployed production so the new key is live.
+- Confirmed the anon key was already migrated to a new **publishable** key, so
+  disabling legacy JWT keys did not break the app.
+
+Verification:
+
+- `npm run verify:service-key` returned `OK` for the new key (pre- and post-rotation).
+- Live site `https://kenasathi.com` returned HTTP 200 on the homepage and
+  `/products` after the redeploy and after the legacy keys were disabled.
+- The old legacy `service_role` JWT is dead because the legacy API keys were
+  disabled in the Supabase Dashboard (platform-level revocation, immediate).
+
+Notes:
+
+- Service role key rotation is no longer a production blocker.
+- The database password used by Flyway (`flyway.conf`) is a separate secret and
+  was not part of this rotation.
+
+## 2026-07-07: COD-Only Checkout And District Delivery Charges
+
+Changed:
+
+- Added a shared Bangladesh delivery helper with all 64 districts and canonical district validation.
+- Updated checkout to calculate delivery charge live from the selected district: Dhaka is BDT 60; every other Bangladesh district is BDT 120.
+- Kept active checkout Cash on Delivery only by default; SSLCommerz remains implemented but is hidden/rejected unless `ENABLE_ONLINE_PAYMENTS=true` is explicitly configured.
+- Added Flyway migration `V6__district_delivery_charge.sql` so the trusted `create_checkout_order` RPC validates the district and calculates delivery charge server-side.
+- Updated storefront product/home copy and E2E smoke coverage for district delivery pricing.
+
+Verification:
+
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed.
+- `flyway -configFiles=".\flyway.conf" migrate` applied schema version `6` successfully.
+- `npx playwright test` passed with 3 passed and 1 skipped because authenticated admin E2E credentials were not set.
+
+Notes:
+
+- Online payment can be re-enabled later only after SSLCommerz sandbox/live verification and by setting `ENABLE_ONLINE_PAYMENTS=true` in deployment secrets.
+- Service role key rotation was completed later the same day (see the newer rotation entry above).
+
 ## 2026-07-05: Kena Sathi Site Branding And Copy
 
 Changed:

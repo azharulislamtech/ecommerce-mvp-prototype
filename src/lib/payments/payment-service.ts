@@ -28,11 +28,19 @@ export function normalizeCheckoutPaymentMethod(value: string): CheckoutPaymentMe
   return null;
 }
 
+export function isOnlineCheckoutEnabled() {
+  return process.env.ENABLE_ONLINE_PAYMENTS === "true";
+}
+
 export function isOnlinePaymentMethod(method: CheckoutPaymentMethod) {
   return method === "sslcommerz";
 }
 
 export function getPaymentConfigError(method: CheckoutPaymentMethod) {
+  if (method === "sslcommerz" && !isOnlineCheckoutEnabled()) {
+    return "Online payment is temporarily unavailable. Choose Cash on Delivery.";
+  }
+
   if (method === "sslcommerz" && !isSslcommerzConfigured()) {
     return "SSLCommerz is not configured yet. Choose Cash on Delivery or add gateway credentials.";
   }

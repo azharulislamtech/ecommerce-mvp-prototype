@@ -2,6 +2,22 @@
 
 Use this file for architectural, security, database, and product decisions. Keep entries short but explicit.
 
+## 2026-07-07: Migrate To New Supabase API Keys During Rotation
+
+Decision: When rotating the exposed service role key, migrate from the legacy JWT key model to the new Supabase API keys system — a revocable **secret key** for `SUPABASE_SERVICE_ROLE_KEY` and the **publishable key** for the client — then disable the legacy `service_role`/`anon` JWTs.
+
+Reason: New secret keys are individually revocable without breaking the publishable key, which is a stronger long-term security posture than legacy all-or-nothing JWT keys. The exposed legacy key had to be revoked to actually close the exposure.
+
+Consequence: `SUPABASE_SERVICE_ROLE_KEY` is now an `sb_secret_...` key (updated in `.env.local` and Vercel Production); the client uses an `sb_publishable_...` anon key; legacy JWT keys are disabled and the old exposed key is dead. Future rotations should reuse the new-secret-key path in `docs/secret-rotation.md`.
+
+## 2026-07-07: Keep Production Checkout COD-Only By Default
+
+Decision: Customer checkout uses Cash on Delivery by default. Online payment remains behind the server-side `ENABLE_ONLINE_PAYMENTS=true` flag, while delivery charge is calculated from a canonical Bangladesh district list: Dhaka is BDT 60 and all other districts are BDT 120.
+
+Reason: SSLCommerz sandbox callback verification is intentionally deferred until customer demand. Keeping online payment disabled avoids unverified gateway release risk and avoids the failed/cancelled-online-payment stock-release question for the current production path.
+
+Consequence: Checkout UI hides SSLCommerz unless the flag is enabled, server actions reject SSLCommerz while disabled, and the database RPC still validates district and calculates delivery charge server-side so totals cannot be changed from the browser.
+
 ## 2026-07-04: Use SSLCommerz Through A Provider-Neutral Payment Layer
 
 Decision: Use SSLCommerz as the first payment provider through `src/lib/payments/payment-service.ts`, with provider-specific logic isolated in `src/lib/payments/sslcommerz.ts`.
@@ -137,6 +153,3 @@ Decision: Import `createServerClient` from the server-client module path in midd
 Reason: Importing the package index pulled browser-client code into the Edge middleware bundle and caused a Next.js Edge Runtime warning during production build.
 
 Consequence: The middleware bundle avoids that warning. Re-check this import path when upgrading `@supabase/ssr`.
-
-
-

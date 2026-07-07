@@ -5,10 +5,10 @@ This project uses a provider-neutral payment layer with an SSLCommerz adapter fo
 ## Current Status
 
 - Provider selected: SSLCommerz.
-- Flyway migration `V5__sslcommerz_payment_method.sql` has been applied; schema version is `5`.
-- Checkout supports `cash-on-delivery` and `sslcommerz` payment methods.
+- Flyway migrations are applied through schema version `6`; SSLCommerz support exists, and `V6__district_delivery_charge.sql` keeps COD delivery totals district-based in the checkout RPC.
+- Checkout currently exposes `cash-on-delivery` only. `sslcommerz` remains implemented but is disabled unless `ENABLE_ONLINE_PAYMENTS=true`.
 - Cash on Delivery keeps the existing pending-order success flow.
-- SSLCommerz creates a hosted checkout session server-side and redirects the customer to `GatewayPageURL`.
+- When online checkout is explicitly enabled, SSLCommerz creates a hosted checkout session server-side and redirects the customer to `GatewayPageURL`.
 - SSLCommerz success/fail/cancel browser callbacks and IPN callbacks are implemented.
 - Payment status is updated only after server-side validation matches the local order number, amount, and BDT currency.
 - Every received gateway callback, validation response, and status update is recorded in `payment_events`.
@@ -28,7 +28,7 @@ This project uses a provider-neutral payment layer with an SSLCommerz adapter fo
 - UX pages:
   - `src/app/(store)/payment/success/page.tsx`
   - `src/app/(store)/payment/failed/page.tsx`
-- Database migration: `db/migration/V5__sslcommerz_payment_method.sql`
+- Database migrations: `db/migration/V5__sslcommerz_payment_method.sql`, `db/migration/V6__district_delivery_charge.sql`
 
 ## Environment Variables
 
@@ -36,6 +36,7 @@ Do not commit real values. Keep them in `.env.local` or deployment secrets only.
 
 ```txt
 NEXT_PUBLIC_SITE_URL=https://your-public-domain.example
+ENABLE_ONLINE_PAYMENTS=false
 SSLCOMMERZ_MODE=sandbox
 SSLCOMMERZ_STORE_ID=YOUR_SSL_COMMERZ_STORE_ID
 SSLCOMMERZ_STORE_PASSWORD=YOUR_SSL_COMMERZ_STORE_PASSWORD
@@ -45,6 +46,7 @@ SSLCOMMERZ_DEFAULT_CUSTOMER_EMAIL=payments@example.com
 Notes:
 
 - `NEXT_PUBLIC_SITE_URL` must be a public HTTPS URL for real gateway callbacks in sandbox/live testing.
+- Keep `ENABLE_ONLINE_PAYMENTS=false` until sandbox/live verification is complete. Set it to `true` only when intentionally enabling online checkout.
 - `SSLCOMMERZ_MODE=sandbox` uses `https://sandbox.sslcommerz.com`.
 - `SSLCOMMERZ_MODE=live` uses `https://securepay.sslcommerz.com`.
 - The current checkout does not collect customer email, so `SSLCOMMERZ_DEFAULT_CUSTOMER_EMAIL` is sent to meet SSLCommerz required fields.
@@ -76,15 +78,15 @@ IPN:     https://your-public-domain.example/api/payments/sslcommerz/ipn
 ## Verification Done
 
 - Official SSLCommerz docs were checked for hosted session creation, validation API, transaction query API, and IPN/callback behavior.
-- `flyway -configFiles=".\flyway.conf" migrate` applied version `5` successfully.
+- `flyway -configFiles=".\flyway.conf" migrate` applied version `6` successfully.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
 - `npm run test:e2e` passed for the non-destructive smoke suite after rerunning outside the sandbox because the sandbox could not unlink `test-results/.last-run.json`.
 
 ## Still Required
 
-- Add real SSLCommerz sandbox credentials locally/deployment-side.
+- Add real SSLCommerz sandbox credentials locally/deployment-side before enabling online checkout.
 - Use a public HTTPS URL or tunnel for sandbox callback testing.
 - Run one real SSLCommerz sandbox payment and confirm `orders.payment_status`, `payments.payment_status`, and `payment_events` update correctly.
-- Keep service role key rotation as a production blocker.
-- Decide whether failed/cancelled online payments should automatically release reserved stock; currently checkout decrements stock at order creation and does not auto-restore it.
+- Service role key rotation is complete (2026-07-07); it is no longer a production blocker.
+- Before enabling online checkout, decide whether failed/cancelled online payments should automatically release reserved stock; current checkout decrements stock at order creation and does not auto-restore it.

@@ -4,18 +4,18 @@ Read this file before making changes. It is the fast-start context for future AI
 
 ## Product Goal
 
-Build a clean, mobile-first single-brand e-commerce MVP where customers can browse products, add items to cart, checkout without account creation, pay through a gateway-ready flow, and where admins can manage products and orders.
+Build a clean, mobile-first single-brand e-commerce MVP where customers can browse products, add items to cart, checkout without account creation, pay through a COD-first flow with gateway-ready code, and where admins can manage products and orders.
 
 ## Current App Status
 
 - Framework: Next.js App Router, TypeScript, Tailwind CSS.
 - Current UI: storefront and admin prototype pages exist.
-- Current data behavior: public catalog pages read active categories/products and uploaded product images from Supabase through `src/lib/catalog.ts`; cart state persists in localStorage; checkout creates real pending Supabase orders through the `create_checkout_order` RPC; Cash on Delivery redirects to local success; SSLCommerz online payment creates a hosted checkout session server-side; SSLCommerz callbacks/IPN validate server-side before updating payment status; customer track-order reads real Supabase order status after order number plus phone verification; admin product and order management read/write through authenticated RLS; admin dashboard overview reads Supabase-backed counts, paid revenue, recent orders, and low-stock products; Playwright E2E smoke tests cover non-destructive storefront/cart/checkout, tracking, and admin guard flows.
+- Current data behavior: public catalog pages read active categories/products and uploaded product images from Supabase through `src/lib/catalog.ts`; cart state persists in localStorage; checkout creates real pending Cash on Delivery Supabase orders through the `create_checkout_order` RPC; delivery charge is calculated server-side from the selected Bangladesh district; SSLCommerz online payment code exists but checkout hides/rejects it unless `ENABLE_ONLINE_PAYMENTS=true`; SSLCommerz callbacks/IPN validate server-side before updating payment status; customer track-order reads real Supabase order status after order number plus phone verification; admin product and order management read/write through authenticated RLS; admin dashboard overview reads Supabase-backed counts, paid revenue, recent orders, and low-stock products; Playwright E2E smoke tests cover non-destructive storefront/cart/checkout, tracking, and admin guard flows.
 - Supabase foundation: migrations applied successfully to Supabase through Flyway.
-- Flyway schema version: `5`.
+- Flyway schema version: `6`.
 - Supabase server data layer exists in `src/lib/supabase/`; storefront home/listing/details pages now use it through an adapter.
 - Admin auth is implemented with Supabase Auth, SSR cookies, login/logout actions, and server-side `/admin` route protection. The first admin user is set up and authorized login is verified through the authenticated E2E smoke test. Admin product CRUD is implemented and the user manually confirmed create/edit/save draft/deactivate/restore/upload/remove image/delete plus public active/inactive behavior.
-- Checkout creates real pending orders, order items, pending payment rows, and decrements stock through a versioned PostgreSQL RPC. Customer order tracking is live and reflects admin order status updates. Phase 6 SSLCommerz hosted checkout is implemented with server-side validation and `payment_events` audit logging; real SSLCommerz sandbox transaction verification is still pending credentials and a public callback URL.
+- Checkout creates real pending orders, order items, pending payment rows, and decrements stock through a versioned PostgreSQL RPC. Customer order tracking is live and reflects admin order status updates. Phase 6 SSLCommerz hosted checkout is implemented with server-side validation and `payment_events` audit logging, but online checkout is disabled by default pending customer demand, sandbox credentials, and a public callback URL.
 
 ## Important Local Files
 
@@ -49,7 +49,7 @@ Ignored local secret files:
 - `.env.local`
 - `flyway.conf`
 
-Known issue: the service role key was exposed during setup. Rotate it in Supabase before production use. Follow `docs/secret-rotation.md` and verify with `npm run verify:service-key`. Rotation is complete only after the old key is confirmed dead (returns HTTP 401).
+Resolved: the service role key was exposed during setup and was **rotated on 2026-07-07**. The project migrated to the new Supabase API keys system (new revocable secret key), the legacy `service_role` JWT was disabled in the dashboard, and the new key was updated in `.env.local` and Vercel Production. Verified live with `npm run verify:service-key` and HTTP 200 responses from `https://kenasathi.com`. See `docs/secret-rotation.md` for the runbook if future rotation is needed.
 
 ## Database Status
 
@@ -60,6 +60,7 @@ Applied migrations:
 - `V3__seed_mvp_catalog.sql`: baseline MVP catalog data for reproducible storefront setup.
 - `V4__create_checkout_order_rpc.sql`: atomic checkout RPC for orders, order items, payments, and stock decrement.
 - `V5__sslcommerz_payment_method.sql`: updates checkout RPC payment method handling for SSLCommerz and stores local transaction ids.
+- `V6__district_delivery_charge.sql`: validates the 64 Bangladesh districts and calculates delivery charge in the checkout RPC: Dhaka BDT 60, all other districts BDT 120.
 
 Connection note:
 
@@ -112,5 +113,4 @@ CRUD behavior: writes use the signed-in admin Supabase Auth session and database
 
 ## Recommended Next Step
 
-Next safe phase: configure SSLCommerz sandbox credentials and a public HTTPS callback URL, run one end-to-end sandbox payment, verify `payment_events`, then proceed to Phase 7 production readiness. Service role key rotation remains a production blocker.
-
+Next safe phase: keep COD as the active checkout path, finish Phase 7 production readiness, and enable SSLCommerz later only after sandbox credentials, a public HTTPS callback URL, and one verified end-to-end payment. Service role key rotation is done (2026-07-07), so it is no longer a production blocker.

@@ -9,6 +9,7 @@ import {
   isOnlinePaymentMethod,
   normalizeCheckoutPaymentMethod
 } from "@/lib/payments/payment-service";
+import { getCanonicalDistrict } from "@/lib/delivery";
 import { createSupabaseAuthServerClient, requireAdmin } from "@/lib/supabase/auth";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
@@ -386,6 +387,7 @@ export async function createOrderAction(
   const customerName = getText(formData, "customer_name");
   const customerPhone = getText(formData, "customer_phone");
   const customerDistrict = getText(formData, "customer_district");
+  const canonicalDistrict = getCanonicalDistrict(customerDistrict);
   const customerAddress = getText(formData, "customer_address");
   const customerNote = getText(formData, "customer_note");
   const paymentMethod = normalizeCheckoutPaymentMethod(getText(formData, "payment_method"));
@@ -409,8 +411,8 @@ export async function createOrderAction(
     fieldErrors.customer_phone = "Enter a valid Bangladesh mobile number.";
   }
 
-  if (customerDistrict.length < 2 || customerDistrict.length > 80) {
-    fieldErrors.customer_district = "Choose a valid district.";
+  if (!canonicalDistrict) {
+    fieldErrors.customer_district = "Choose a valid Bangladesh district.";
   }
 
   if (customerAddress.length < 8 || customerAddress.length > 500) {
@@ -442,7 +444,7 @@ export async function createOrderAction(
   const { data, error } = await supabase.rpc("create_checkout_order", {
     p_customer_name: customerName,
     p_customer_phone: customerPhone,
-    p_customer_district: customerDistrict,
+    p_customer_district: canonicalDistrict ?? "",
     p_customer_address: customerAddress,
     p_customer_note: customerNote || null,
     p_payment_method: paymentMethod,

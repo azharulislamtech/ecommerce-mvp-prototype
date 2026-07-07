@@ -1,5 +1,7 @@
-﻿export const CART_STORAGE_KEY = "shoppilot-cart-v1";
-export const DELIVERY_CHARGE = 80;
+import { DEFAULT_DELIVERY_CHARGE } from "./delivery";
+
+export const CART_STORAGE_KEY = "shoppilot-cart-v1";
+export const DELIVERY_CHARGE = DEFAULT_DELIVERY_CHARGE;
 export const CART_DISCOUNT = 0;
 export const MAX_CART_LINES = 30;
 export const MAX_CART_QUANTITY = 99;

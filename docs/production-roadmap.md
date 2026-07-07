@@ -12,7 +12,7 @@ Tasks:
 - Keep `docs/engineering-log.md` updated after every meaningful change.
 - Keep `docs/decision-log.md` updated for architecture/security decisions.
 - Remove secrets from docs and source files.
-- Rotate any exposed Supabase service role key before production use.
+- Rotate any exposed Supabase service role key before production use. Done: rotated on 2026-07-07 (migrated to a new Supabase secret key; legacy `service_role` JWT disabled).
 
 Exit gate:
 
@@ -20,7 +20,7 @@ Exit gate:
 - `.env.local` and `flyway.conf` are ignored by Git.
 - Future AI can understand current status from docs alone.
 
-Status: in progress. Secret key rotation is still required before production.
+Status: in progress. Secret key rotation completed on 2026-07-07 (old exposed key confirmed dead via legacy-key disable); remaining Phase 0 doc hygiene continues.
 
 ## Phase 1: Database Foundation
 
@@ -32,7 +32,7 @@ Completed:
 - Supabase RLS/policy migration created.
 - Flyway applied migrations through Session Pooler.
 - Baseline MVP catalog seed is versioned as `V3__seed_mvp_catalog.sql`.
-- Schema version is `5`.
+- Schema version is `6`.
 
 Deferred:
 
@@ -130,7 +130,7 @@ Completed:
 
 - Implemented localStorage-backed cart state with quantity update/remove/clear behavior.
 - Wired product cards and product details into real add-to-cart and buy-now behavior.
-- Added trusted checkout server action that does not trust client price or totals.
+- Added trusted checkout server action that does not trust client price, totals, delivery charge, or district spelling.
 - Added `V4__create_checkout_order_rpc.sql` to create orders, order_items, pending payments, and decrement stock in one database transaction.
 - Replaced placeholder payment success data with real order summary by order number.
 - Replaced admin order list/details mock data with Supabase-backed reads and basic status update action.
@@ -145,11 +145,12 @@ Remaining:
 Exit gate:
 
 - Checkout creates real pending orders.
+- Dhaka delivery is BDT 60 and all other Bangladesh districts are BDT 120, calculated in the trusted checkout RPC.
 - Customer cannot tamper with amount/order status from client.
 - Admin can see real orders and update order/payment status.
 - Customer track-order reflects the latest order status after order number plus phone verification.
 
-Status: implemented for real order creation, customer order tracking, Supabase-backed admin dashboard overview, non-destructive E2E smoke coverage, and SSLCommerz payment handoff through Phase 6. Real gateway sandbox transaction verification is still pending credentials/public callback URL.
+Status: implemented for real COD order creation, customer order tracking, Supabase-backed admin dashboard overview, non-destructive E2E smoke coverage, and district-based delivery charge calculation. SSLCommerz payment handoff remains implemented but disabled by default until gateway verification/customer demand.
 
 ## Phase 6: Payment Integration
 
@@ -163,17 +164,17 @@ Completed:
 - Added customer success/fail/cancel callback routes and IPN route under `src/app/api/payments/sslcommerz/`.
 - Added server-side validation/transaction lookup before payment status changes.
 - Logged gateway initiation, callbacks, validation responses, pending/risky states, and status changes in `payment_events`.
-- Updated checkout UI to offer Cash on Delivery and SSLCommerz Online Payment.
+- Updated checkout UI to expose Cash on Delivery by default; SSLCommerz is feature-gated behind `ENABLE_ONLINE_PAYMENTS=true`.
 - Added failed/cancelled payment UX with gateway reason/status display.
-- Added `V5__sslcommerz_payment_method.sql`; Flyway applied schema version `5`.
+- Added `V5__sslcommerz_payment_method.sql` and `V6__district_delivery_charge.sql`; Flyway applied schema version `6`.
 - Added `docs/payment-integration.md` as the runbook for future gateway work.
 
 Remaining:
 
-- Add real SSLCommerz sandbox credentials to local/deployment secrets.
+- Add real SSLCommerz sandbox credentials to local/deployment secrets before enabling online checkout.
 - Test one end-to-end SSLCommerz sandbox payment with a public HTTPS callback URL.
 - Confirm sandbox payment events update `orders`, `payments`, and `payment_events` as expected.
-- Decide whether failed/cancelled online payments should auto-release reserved stock.
+- Before enabling online checkout, decide whether failed/cancelled online payments should auto-release reserved stock.
 - Add opt-in gateway integration tests with sandbox credentials only.
 
 Exit gate:
@@ -182,7 +183,7 @@ Exit gate:
 - Failed/cancelled payments are handled clearly.
 - One sandbox payment is verified end-to-end with callback/IPN evidence.
 
-Status: implemented in code and migrated to schema version `5`; awaiting real SSLCommerz sandbox credential and callback verification before production use.
+Status: SSLCommerz is implemented in code but intentionally disabled by default. COD checkout is the active production path; online checkout still requires sandbox credentials, public callback verification, and `ENABLE_ONLINE_PAYMENTS=true` before use.
 
 ## Phase 7: Production Readiness
 
@@ -200,6 +201,3 @@ Exit gate:
 
 - Build, lint, typecheck, and smoke tests pass.
 - Security risks are documented and accepted or fixed.
-
-
-

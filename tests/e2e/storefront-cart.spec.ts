@@ -39,6 +39,14 @@ test.describe("storefront cart smoke", () => {
     await page.getByTestId("cart-checkout-link").click();
     await expect(page).toHaveURL(/\/checkout$/);
     await expect(page.getByRole("heading", { name: "Complete Your Order" })).toBeVisible();
+    await expect(page.locator('select[name="customer_district"] option')).toHaveCount(65);
+
+    const districtSelect = page.locator('select[name="customer_district"]');
+    await districtSelect.selectOption("Dhaka");
+    await expect(page.getByTestId("order-delivery-charge")).toContainText("60");
+
+    await districtSelect.selectOption("Chattogram");
+    await expect(page.getByTestId("order-delivery-charge")).toContainText("120");
     await expect(page.getByRole("button", { name: "Place Order" })).toBeEnabled();
   });
 });

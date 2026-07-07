@@ -11,7 +11,7 @@ export const revalidate = 60;
 const trustItems = [
   {
     title: "Secure Payment",
-    text: "SSLCommerz-ready checkout with cash-on-delivery support for local buyers.",
+    text: "Cash on Delivery checkout with clear delivery charges for Dhaka and all other Bangladesh districts.",
     icon: ShieldIcon
   },
   {
@@ -47,7 +47,7 @@ export default async function HomePage() {
               Your Trusted Shopping Partner
             </h1>
             <p className="mt-4 max-w-lg text-base leading-7 text-slate-600">
-              Discover everyday products, clear offers, secure payment options, and simple order tracking from Kena Sathi.
+              Discover everyday products, clear offers, cash-on-delivery checkout, and simple order tracking from Kena Sathi.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link

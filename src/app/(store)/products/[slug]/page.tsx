@@ -105,13 +105,11 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
           <aside className="rounded-lg border border-slate-200 bg-slate-50 p-5">
             <h2 className="text-lg font-bold text-slate-950">Delivery Info</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Standard delivery is calculated at checkout. Dhaka delivery is usually faster, while outside
-              Dhaka may take additional time depending on courier coverage.
+              Delivery charge is calculated at checkout: Dhaka is BDT 60, and all other Bangladesh districts are BDT 120. Delivery time depends on courier coverage.
             </p>
             <h3 className="mt-5 text-base font-bold text-slate-950">Payment Info</h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Payment gateway flow is integration-ready. Only server-side gateway callbacks should update
-              payment status in production.
+              Cash on Delivery is active now. Online payment will be enabled later after gateway verification and customer demand.
             </p>
           </aside>
         </div>

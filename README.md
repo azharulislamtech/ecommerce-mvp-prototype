@@ -6,8 +6,8 @@ A responsive Next.js e-commerce storefront for Kena Sathi, focused on product di
 
 - Kena Sathi storefront and admin UI are deployed on the production domain.
 - Supabase PostgreSQL schema is versioned with Flyway.
-- Flyway migrations are applied through schema version `5`.
-- Public catalog pages read active categories/products and uploaded product images from Supabase; admin panel routes are protected by Supabase Auth; admin product CRUD is implemented with Supabase RLS; cart and checkout create real pending Supabase orders through a trusted PostgreSQL RPC; admin order list/details/dashboard overview are Supabase-backed; SSLCommerz hosted checkout is implemented with server-side validation and payment event logging.
+- Flyway migrations are applied through schema version `6`.
+- Public catalog pages read active categories/products and uploaded product images from Supabase; admin panel routes are protected by Supabase Auth; admin product CRUD is implemented with Supabase RLS; cart and checkout create real pending Cash on Delivery Supabase orders through a trusted PostgreSQL RPC with district-based delivery charges; admin order list/details/dashboard overview are Supabase-backed; SSLCommerz hosted checkout code is implemented but disabled by default until gateway verification/customer demand.
 
 ## Tech Stack
 
@@ -81,6 +81,6 @@ Run pending migrations:
 
 ## Security Note
 
-Do not commit or paste `.env.local`, `flyway.conf`, database passwords, service role keys, SSLCommerz credentials, or other payment gateway secrets. Rotate the Supabase service role key before production because it was exposed during setup.
+Do not commit or paste `.env.local`, `flyway.conf`, database passwords, service role keys, SSLCommerz credentials, or other payment gateway secrets. The Supabase service role key that was exposed during setup was **rotated on 2026-07-07** (migrated to a new Supabase secret key; the legacy `service_role` JWT was disabled).
 
-Follow `docs/secret-rotation.md` to rotate the service role key safely. Verify any configured key with `npm run verify:service-key` (it never prints the key). Rotation is only complete once the old key is confirmed dead.
+Follow `docs/secret-rotation.md` for the runbook if a future rotation is needed. Verify any configured key with `npm run verify:service-key` (it never prints the key).

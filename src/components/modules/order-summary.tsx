@@ -31,7 +31,9 @@ export function OrderSummary({
         </div>
         <div className="flex justify-between gap-4 text-slate-600">
           <dt>Delivery Charge</dt>
-          <dd className="font-semibold text-slate-900">{formatMoney(deliveryCharge)}</dd>
+          <dd className="font-semibold text-slate-900" data-testid="order-delivery-charge">
+            {formatMoney(deliveryCharge)}
+          </dd>
         </div>
         {discount > 0 ? (
           <div className="flex justify-between gap-4 text-slate-600">

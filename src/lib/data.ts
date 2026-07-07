@@ -1,3 +1,5 @@
+import { DEFAULT_DELIVERY_CHARGE, districts } from "./delivery";
+
 export type ProductVisual = "electronics" | "fashion" | "home" | "beauty" | "accessories";
 
 export type ProductImage = {
@@ -171,7 +173,7 @@ export const cartItems = [
   { product: products[3], quantity: 2 }
 ];
 
-export const deliveryCharge = 80;
+export const deliveryCharge = DEFAULT_DELIVERY_CHARGE;
 
 export const cartSubtotal = cartItems.reduce(
   (total, item) => total + item.product.price * item.quantity,
@@ -222,16 +224,8 @@ export const orders: Order[] = [
 ];
 
 
-export const districts = [
-  "Dhaka",
-  "Chattogram",
-  "Rajshahi",
-  "Khulna",
-  "Sylhet",
-  "Barishal",
-  "Rangpur",
-  "Mymensingh"
-];
+export { districts };
+
 
 export function formatMoney(amount: number) {
   return new Intl.NumberFormat("en-BD", {

@@ -6,13 +6,14 @@ This project keeps database changes in Flyway-compatible SQL migrations.
 
 - Supabase project ref: `qguqohukemijphzwqxgs`
 - Public API URL: `https://qguqohukemijphzwqxgs.supabase.co`
-- Flyway migration status: schema version `5`
+- Flyway migration status: schema version `6`
 - Applied migrations:
   - `V1__init_ecommerce_core_schema.sql`
   - `V2__supabase_rls_policies.sql`
   - `V3__seed_mvp_catalog.sql`
   - `V4__create_checkout_order_rpc.sql`
   - `V5__sslcommerz_payment_method.sql`
+  - `V6__district_delivery_charge.sql`
 - Working database connection path for Flyway: Supabase Session Pooler
 - Working pooler host found locally: `aws-1-ap-southeast-1.pooler.supabase.com`
 
@@ -35,7 +36,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
 ```
 
-The service role key was exposed during setup. Rotate it in Supabase before production use.
+The service role key was exposed during setup and was rotated on 2026-07-07 (migrated to a new Supabase secret key; legacy `service_role` JWT disabled).
 
 ## Required Local Environment
 
@@ -96,7 +97,7 @@ insert into admin_users (user_id, email, role)
 values ('your-auth-user-uuid', 'admin@example.com', 'owner');
 ```
 
-Public visitors can read only active categories, products, and product images. Order/payment writes go through trusted server-side code using the service role key and the `create_checkout_order` RPC. SSLCommerz payment callbacks/IPN are handled by server route handlers and update payment status only after gateway validation.
+Public visitors can read only active categories, products, and product images. Order/payment writes go through trusted server-side code using the service role key and the `create_checkout_order` RPC. The RPC validates Bangladesh districts and calculates delivery charge server-side. SSLCommerz payment callbacks/IPN are implemented but online checkout stays disabled unless `ENABLE_ONLINE_PAYMENTS=true` is explicitly configured.
 ## Admin Auth Flow
 
 Admin access requires two things:
@@ -122,7 +123,7 @@ Then sign in at `/admin/login`. The protected admin layout calls `is_admin()` th
 
 Phase 6 uses SSLCommerz hosted checkout. Keep real gateway credentials in `.env.local` or deployment secrets only.
 
-Required for local/sandbox gateway testing:
+Required for local/sandbox gateway testing after enabling online checkout with `ENABLE_ONLINE_PAYMENTS=true`:
 
 ```txt
 NEXT_PUBLIC_SITE_URL=https://your-public-domain.example

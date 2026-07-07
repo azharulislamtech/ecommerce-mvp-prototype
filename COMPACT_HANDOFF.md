@@ -17,15 +17,15 @@ Use this file to continue the project in a new AI/chat session without rereading
 
 ## Current Status
 
-- Database foundation is complete through Flyway schema version `5`.
+- Database foundation is complete through Flyway schema version `6`.
 - Public catalog reads active categories/products from Supabase.
 - Uploaded Supabase Storage product images render on storefront product cards and product detail pages.
 - Admin auth is implemented with Supabase Auth, SSR cookies, route protection, and `admin_users` authorization.
 - Admin product CRUD is implemented and user manually confirmed: add, edit, save draft, deactivate/restore, upload/remove image, delete/safe deactivate, and public active/inactive behavior.
 - Cart is localStorage-backed with quantity update/remove/clear and header count.
-- Checkout creates real pending Supabase orders through the `create_checkout_order` PostgreSQL RPC; client price/totals are not trusted.
-- Cash on Delivery redirects to local order success.
-- SSLCommerz hosted checkout is implemented with server-side session initiation, success/fail/cancel/IPN routes, validation before payment status updates, and `payment_events` audit logging.
+- Checkout creates real pending Cash on Delivery Supabase orders through the `create_checkout_order` PostgreSQL RPC; client price/totals/delivery charge are not trusted.
+- Cash on Delivery redirects to local order success; delivery charge is Dhaka BDT 60 and all other Bangladesh districts BDT 120.
+- SSLCommerz hosted checkout is implemented but disabled by default; checkout hides/rejects it unless `ENABLE_ONLINE_PAYMENTS=true`.
 - Admin orders list/details use Supabase data and admin can update order/payment status.
 - Public track-order uses order number plus phone verification and user manually confirmed admin status updates reflect on storefront.
 - Admin dashboard uses Supabase-backed counts, paid revenue, recent orders, and low-stock products.
@@ -55,7 +55,7 @@ Use this file to continue the project in a new AI/chat session without rereading
 ## Local Secrets And Safety
 
 - Never print or commit `.env.local` or `flyway.conf`.
-- Supabase service role key was exposed earlier; rotate it before production.
+- Supabase service role key was exposed earlier; rotated on 2026-07-07 (new secret key; legacy `service_role` JWT disabled).
 - Do not put admin email/password, SSLCommerz credentials, or service keys in Markdown.
 - Product/order writes should use authenticated admin Supabase session and RLS.
 - Online payment status must only be changed by trusted server-side gateway validation, admin action, or future webhook logic.
@@ -84,7 +84,7 @@ Flyway:
 
 ## Latest Verified State
 
-- `flyway -configFiles=".\flyway.conf" migrate`: applied schema version `5` successfully.
+- `flyway -configFiles=".\flyway.conf" migrate`: applied schema version `6` successfully.
 - `npm run typecheck`: passed.
 - `npm run lint`: passed.
 - `npm run test:e2e`: passed for default non-destructive smoke tests; latest local run was 3 passed and 1 skipped because admin E2E env vars were not set in that process.
@@ -92,10 +92,10 @@ Flyway:
 
 ## Known Risks
 
-- SSLCommerz code is implemented, but a real sandbox payment still needs SSLCommerz sandbox credentials and a public HTTPS callback URL.
-- Supabase service role key must be rotated before production.
-- Dependency audit reported 5 findings after Playwright install; do not run force fixes without testing.
-- Failed/cancelled online payments do not currently auto-restore stock; checkout decrements stock when the order is created.
+- SSLCommerz code is implemented, but online checkout is disabled by default and still needs SSLCommerz sandbox credentials, a public HTTPS callback URL, and `ENABLE_ONLINE_PAYMENTS=true` before use.
+- Supabase service role key was rotated on 2026-07-07 (new secret key live; legacy `service_role` JWT disabled); no longer a production blocker.
+- Latest full dependency audit reported 0 high-level vulnerabilities; do not run force fixes without testing.
+- Failed/cancelled online payment stock restoration remains a decision before enabling online checkout; current active COD checkout decrements stock when the order is created.
 - Destructive E2E tests for real checkout/product/payment writes should only run against a disposable test database.
 - Avoid running `next build` while a dev server is actively using `.next`; restart/clear generated cache if CSS/chunks render broken.
 
@@ -105,9 +105,9 @@ Phase 6 follow-up, then Phase 7 production readiness.
 
 Best-practice sequence:
 
-1. Add SSLCommerz sandbox credentials only in `.env.local` or deployment secrets.
-2. Use a public HTTPS app URL or tunnel for SSLCommerz callbacks.
-3. Run one sandbox payment and verify `orders`, `payments`, and `payment_events`.
-4. Decide whether failed/cancelled online payments should release reserved stock automatically.
-5. Rotate the exposed Supabase service role key before production.
-6. Start Phase 7: vulnerability upgrades, monitoring, backup/restore, deployment checklist, and gateway regression tests.
+1. Keep COD as the active checkout path. (Service role key rotation is done as of 2026-07-07.)
+2. Finish Phase 7 production readiness: monitoring, backup/restore, and deployment checklist.
+3. Add SSLCommerz sandbox credentials only in `.env.local` or deployment secrets when customer demand justifies online payment.
+4. Use a public HTTPS app URL or tunnel for SSLCommerz callbacks.
+5. Run one sandbox payment and verify `orders`, `payments`, and `payment_events`.
+6. Decide whether failed/cancelled online payments should release reserved stock automatically before setting `ENABLE_ONLINE_PAYMENTS=true`.
