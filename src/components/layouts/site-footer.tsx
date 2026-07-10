@@ -15,9 +15,23 @@ export function SiteFooter() {
         <div>
           <h3 className="text-sm font-bold text-slate-950">Contact</h3>
           <ul className="mt-4 space-y-2 text-sm text-slate-600">
-            <li>Phone: 01700-000000</li>
-            <li>Email: support@kenasathi.com</li>
-            <li>Facebook: /kenasathi</li>
+            <li>
+              Phone:{" "}
+              <a className="hover:text-blue-700" href="tel:+8801717121839">
+                01717121839
+              </a>
+            </li>
+            <li>
+              Email:{" "}
+              <a className="hover:text-blue-700" href="mailto:support@kenasathi.com">
+                support@kenasathi.com
+              </a>
+            </li>
+            <li>
+              <a className="hover:text-blue-700" href="https://www.facebook.com/kenasathibd" rel="noopener noreferrer" target="_blank">
+                Facebook
+              </a>
+            </li>
           </ul>
         </div>
         <div>
@@ -31,6 +45,21 @@ export function SiteFooter() {
             <li>
               <Link className="hover:text-blue-700" href="/track-order">
                 Track Order
+              </Link>
+            </li>
+            <li>
+              <Link className="hover:text-blue-700" href="/return-policy">
+                Return &amp; Refund Policy
+              </Link>
+            </li>
+            <li>
+              <Link className="hover:text-blue-700" href="/terms">
+                Terms &amp; Conditions
+              </Link>
+            </li>
+            <li>
+              <Link className="hover:text-blue-700" href="/privacy-policy">
+                Privacy Policy
               </Link>
             </li>
             <li>

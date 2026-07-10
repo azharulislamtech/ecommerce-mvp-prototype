@@ -2,6 +2,25 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-07-10: Policy Pages, SEO Metadata, Real Footer Contact
+
+Changed:
+
+- Added public legal pages: `/privacy-policy`, `/terms`, and `/return-policy`, written for the COD-first Bangladesh flow (48-hour return window, refunds within 7 business days via bKash/Nagad/bank).
+- Added SEO foundation: `metadataBase` + title template in the root layout, `generateMetadata` on product detail pages (OG title/description/image from real product data), static metadata on the product listing, `src/app/sitemap.ts`, and `src/app/robots.ts` (admin/api/cart/checkout/payment disallowed).
+- Added `src/lib/site.ts` `getSiteUrl()` (env-driven with `https://kenasathi.com` fallback, BOM-safe via `cleanEnv`).
+- Updated the footer: real phone `01717121839` (tel: link), Facebook page link, and links to all three policy pages. Facebook URL is a stand-in until the real page is provided.
+
+Verification:
+
+- `npm run typecheck` and `npm run build` passed (33 routes including new static pages).
+- Live checks on `kenasathi.com`: policy pages return 200, `robots.txt` and `sitemap.xml` serve correct kenasathi.com URLs, product pages emit og:title/og:description/og:image with the uploaded product image, and the footer shows the new contact and policy links.
+
+Notes:
+
+- Remaining market-readiness items that need user accounts: analytics (GA4/Meta Pixel) and error monitoring (Sentry).
+- Product names/short descriptions now feed SEO tags directly; catalog copy should be improved from the admin panel.
+
 ## 2026-07-10: Verified Reviews, Env BOM Hardening, Telegram Order Notifications
 
 Changed:

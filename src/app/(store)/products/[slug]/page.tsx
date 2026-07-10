@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CheckIcon, ShieldIcon, SupportIcon, TruckIcon } from "@/components/ui/icons";
 import { ProductPurchaseActions } from "@/components/cart/product-purchase-actions";
@@ -21,6 +22,29 @@ type ProductDetailsPageProps = {
 export async function generateStaticParams() {
   const products = await getStoreProducts();
   return products.map((product) => ({ slug: product.slug }));
+}
+
+export async function generateMetadata({ params }: ProductDetailsPageProps): Promise<Metadata> {
+  const product = await getStoreProductBySlug(params.slug);
+
+  if (!product) {
+    return { title: "Product Not Found" };
+  }
+
+  const path = "/products/" + product.slug;
+
+  return {
+    title: product.name,
+    description: product.shortDescription,
+    alternates: { canonical: path },
+    openGraph: {
+      title: product.name,
+      description: product.shortDescription,
+      url: path,
+      type: "website",
+      images: product.imageUrl ? [{ url: product.imageUrl, alt: product.imageAlt ?? product.name }] : undefined
+    }
+  };
 }
 
 export default async function ProductDetailsPage({ params }: ProductDetailsPageProps) {

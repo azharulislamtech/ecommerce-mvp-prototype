@@ -6,6 +6,13 @@ import { getStoreCategories, getStoreProducts, type CatalogFilters, type StoreCa
 
 export const revalidate = 60;
 
+export const metadata = {
+  title: "Shop All Products",
+  description:
+    "Browse the full Kena Sathi catalog: electronics, fashion, home, beauty, and accessories with cash on delivery across Bangladesh.",
+  alternates: { canonical: "/products" }
+};
+
 type ProductListingPageProps = {
   searchParams?: Record<string, string | string[] | undefined>;
 };
