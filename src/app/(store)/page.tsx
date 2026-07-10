@@ -69,8 +69,8 @@ export default async function HomePage() {
                 Dispatch
               </div>
               <div>
-                <strong className="block text-lg text-slate-950">4.8</strong>
-                Rating
+                <strong className="block text-lg text-slate-950">Live</strong>
+                Catalog
               </div>
               <div>
                 <strong className="block text-lg text-slate-950">COD</strong>

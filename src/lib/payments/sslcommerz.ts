@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cleanEnv } from "@/lib/env";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import type { Database, Json, PaymentStatus } from "@/lib/supabase/database.types";
 import type { PaymentInitiationResult } from "./payment-service";
@@ -31,7 +32,7 @@ const PROVIDER_NAME = "sslcommerz";
 const BDT = "BDT";
 
 function getMode() {
-  return process.env.SSLCOMMERZ_MODE?.toLowerCase() === "live" ? "live" : "sandbox";
+  return cleanEnv(process.env.SSLCOMMERZ_MODE)?.toLowerCase() === "live" ? "live" : "sandbox";
 }
 
 function getProviderBaseUrl() {
@@ -39,11 +40,11 @@ function getProviderBaseUrl() {
 }
 
 function getStorePassword() {
-  return process.env.SSLCOMMERZ_STORE_PASSWORD ?? process.env.SSLCOMMERZ_STORE_PASSWD;
+  return cleanEnv(process.env.SSLCOMMERZ_STORE_PASSWORD) ?? cleanEnv(process.env.SSLCOMMERZ_STORE_PASSWD);
 }
 
 function getConfig() {
-  const storeId = process.env.SSLCOMMERZ_STORE_ID;
+  const storeId = cleanEnv(process.env.SSLCOMMERZ_STORE_ID);
   const storePassword = getStorePassword();
 
   if (!storeId || !storePassword) {
@@ -195,7 +196,7 @@ function buildCartPayload(items: OrderItemRow[]) {
 function buildSessionParams(context: PaymentContext, appBaseUrl: string, storeId: string, storePassword: string) {
   const { order, items } = context;
   const productNames = truncate(items.map((item) => item.product_name).join(", "), 255) || "Kena Sathi order";
-  const customerEmail = process.env.SSLCOMMERZ_DEFAULT_CUSTOMER_EMAIL ?? "customer@example.com";
+  const customerEmail = cleanEnv(process.env.SSLCOMMERZ_DEFAULT_CUSTOMER_EMAIL) ?? "customer@example.com";
 
   return new URLSearchParams({
     store_id: storeId,

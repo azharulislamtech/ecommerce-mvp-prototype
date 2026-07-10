@@ -10,6 +10,8 @@ import {
   normalizeCheckoutPaymentMethod
 } from "@/lib/payments/payment-service";
 import { getCanonicalDistrict } from "@/lib/delivery";
+import { cleanEnv } from "@/lib/env";
+import { sendTelegramNotification } from "@/lib/notifications/telegram";
 import { createSupabaseAuthServerClient, requireAdmin } from "@/lib/supabase/auth";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
@@ -50,6 +52,14 @@ export type CheckoutFormState = {
   fieldErrors: Partial<Record<CheckoutField, string>>;
 };
 
+type ProductReviewField = "order_number" | "customer_phone" | "rating" | "title" | "body";
+
+export type ProductReviewFormState = {
+  status: "idle" | "error" | "success";
+  message: string;
+  fieldErrors: Partial<Record<ProductReviewField, string>>;
+};
+
 type CheckoutItemPayload = {
   product_id: string;
   quantity: number;
@@ -80,6 +90,19 @@ function checkoutFormError(message: string, fieldErrors: CheckoutFormState["fiel
     fieldErrors
   };
 }
+
+function productReviewFormError(
+  message: string,
+  fieldErrors: ProductReviewFormState["fieldErrors"] = {}
+): ProductReviewFormState {
+  return {
+    status: "error",
+    message,
+    fieldErrors
+  };
+}
+
+
 
 function parseCheckoutItems(value: string): CheckoutItemPayload[] | null {
   try {
@@ -361,7 +384,7 @@ function redirectToProducts(message: string, type: "notice" | "error" = "notice"
 }
 
 function getAppBaseUrl() {
-  const configuredBaseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.APP_BASE_URL;
+  const configuredBaseUrl = cleanEnv(process.env.NEXT_PUBLIC_SITE_URL) ?? cleanEnv(process.env.APP_BASE_URL);
 
   if (configuredBaseUrl) {
     return configuredBaseUrl.replace(/\/+$/, "");
@@ -467,6 +490,22 @@ export async function createOrderAction(
   revalidatePath("/admin/orders");
   revalidatePath("/products");
 
+  const itemCount = checkoutItems.reduce((total, item) => total + item.quantity, 0);
+  await sendTelegramNotification(
+    [
+      "New order " + order.order_number,
+      "Total: BDT " + order.total_amount + " (" + paymentMethod + ")",
+      "Items: " + itemCount,
+      "Customer: " + customerName,
+      "Phone: " + customerPhone,
+      "District: " + canonicalDistrict,
+      "Address: " + customerAddress,
+      customerNote ? "Note: " + customerNote : ""
+    ]
+      .filter(Boolean)
+      .join("\n")
+  );
+
   if (isOnlinePaymentMethod(paymentMethod)) {
     const payment = await initiateOnlinePaymentForOrder(order.order_id, paymentMethod, onlinePaymentBaseUrl!);
 
@@ -485,6 +524,129 @@ export async function createOrderAction(
 export async function retryPaymentAction() {
   redirect("/checkout");
 }
+
+export async function submitProductReviewAction(
+  productId: string,
+  productSlug: string,
+  _previousState: ProductReviewFormState,
+  formData: FormData
+): Promise<ProductReviewFormState> {
+  if (getText(formData, "website")) {
+    return productReviewFormError("We could not submit this review. Please try again.");
+  }
+
+  const orderNumber = getText(formData, "order_number").toUpperCase();
+  const customerPhone = getText(formData, "customer_phone");
+  const rating = Number(getText(formData, "rating"));
+  const title = getText(formData, "title");
+  const body = getText(formData, "body");
+  const fieldErrors: ProductReviewFormState["fieldErrors"] = {};
+
+  if (!/^[A-Z0-9-]{6,64}$/.test(orderNumber)) {
+    fieldErrors.order_number = "Enter the order ID from your confirmation.";
+  }
+
+  if (!isValidBangladeshPhone(customerPhone)) {
+    fieldErrors.customer_phone = "Enter the phone number used at checkout.";
+  }
+
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    fieldErrors.rating = "Choose a rating from 1 to 5.";
+  }
+
+  if (title && (title.length < 3 || title.length > 120)) {
+    fieldErrors.title = "Use 3 to 120 characters for the review title.";
+  }
+
+  if (body.length < 20 || body.length > 1500) {
+    fieldErrors.body = "Your review must be between 20 and 1500 characters.";
+  }
+
+  if (Object.keys(fieldErrors).length) {
+    return productReviewFormError("Please fix the highlighted review fields.", fieldErrors);
+  }
+
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase.rpc("submit_verified_product_review", {
+    p_product_id: productId,
+    p_order_number: orderNumber,
+    p_customer_phone: customerPhone,
+    p_rating: rating,
+    p_title: title || null,
+    p_body: body
+  });
+
+  if (error) {
+    return productReviewFormError(
+      "We could not verify a delivered order for this product. Check the order ID and checkout phone number, then try again.",
+      { order_number: "Only a delivered order containing this product can be reviewed." }
+    );
+  }
+
+  revalidatePath("/products");
+  revalidatePath("/products/" + productSlug);
+
+  await sendTelegramNotification(
+    [
+      "New review pending approval",
+      "Product: /products/" + productSlug,
+      "Rating: " + rating + "/5",
+      "Order: " + orderNumber,
+      "Approve at /admin/reviews"
+    ].join("\n")
+  );
+
+  return {
+    status: "success",
+    message: "Thank you. Your verified review has been submitted for approval.",
+    fieldErrors: {}
+  };
+}
+
+export async function moderateProductReviewAction(formData: FormData) {
+  await requireAdmin();
+
+  const reviewId = getText(formData, "review_id");
+  const nextStatus = getText(formData, "status");
+
+  if (!reviewId || !["approved", "rejected"].includes(nextStatus)) {
+    redirect("/admin/reviews?error=" + encodeURIComponent("Invalid review update."));
+  }
+
+  const supabase = createSupabaseAuthServerClient();
+  const { data: review, error: reviewError } = await supabase
+    .from("product_reviews")
+    .select("product_id")
+    .eq("id", reviewId)
+    .maybeSingle();
+
+  if (reviewError || !review) {
+    redirect("/admin/reviews?error=" + encodeURIComponent("Review was not found."));
+  }
+
+  const { data: product } = await supabase.from("products").select("slug").eq("id", review.product_id).maybeSingle();
+  const { error: updateError } = await supabase
+    .from("product_reviews")
+    .update({ status: nextStatus as "approved" | "rejected", moderated_at: new Date().toISOString() })
+    .eq("id", reviewId);
+
+  if (updateError) {
+    redirect("/admin/reviews?error=" + encodeURIComponent("Could not update the review."));
+  }
+
+  revalidatePath("/admin/reviews");
+  revalidatePath("/products");
+
+  if (product?.slug) {
+    revalidatePath("/products/" + product.slug);
+  }
+
+  redirect(
+    "/admin/reviews?notice=" +
+      encodeURIComponent(nextStatus === "approved" ? "Review approved and published." : "Review rejected.")
+  );
+}
+
 
 export async function adminLoginAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();

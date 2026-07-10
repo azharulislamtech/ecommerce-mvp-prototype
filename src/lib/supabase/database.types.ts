@@ -2,6 +2,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type OrderStatus = "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled";
 export type PaymentStatus = "pending" | "paid" | "failed" | "cancelled" | "refunded";
+export type ReviewStatus = "pending" | "approved" | "rejected";
 export type AdminRole = "owner" | "admin";
 
 export type Database = {
@@ -139,6 +140,51 @@ export type Database = {
           alt_text?: string | null;
           sort_order?: number;
           created_at?: string;
+        };
+        Relationships: [];
+      };
+      product_reviews: {
+        Row: {
+          id: string;
+          product_id: string;
+          order_id: string;
+          rating: number;
+          title: string | null;
+          body: string;
+          reviewer_label: string;
+          verified_purchase: boolean;
+          status: ReviewStatus;
+          moderated_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          product_id: string;
+          order_id: string;
+          rating: number;
+          title?: string | null;
+          body: string;
+          reviewer_label?: string;
+          verified_purchase?: boolean;
+          status?: ReviewStatus;
+          moderated_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          product_id?: string;
+          order_id?: string;
+          rating?: number;
+          title?: string | null;
+          body?: string;
+          reviewer_label?: string;
+          verified_purchase?: boolean;
+          status?: ReviewStatus;
+          moderated_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -328,6 +374,33 @@ export type Database = {
       is_owner: {
         Args: Record<string, never>;
         Returns: boolean;
+      };
+      get_product_review_summary: {
+        Args: { p_product_id: string; };
+        Returns: { review_count: number; average_rating: number | null; }[];
+      };
+      get_public_product_reviews: {
+        Args: { p_product_id: string; };
+        Returns: {
+          id: string;
+          rating: number;
+          title: string | null;
+          body: string;
+          reviewer_label: string;
+          verified_purchase: boolean;
+          created_at: string;
+        }[];
+      };
+      submit_verified_product_review: {
+        Args: {
+          p_product_id: string;
+          p_order_number: string;
+          p_customer_phone: string;
+          p_rating: number;
+          p_title: string | null;
+          p_body: string;
+        };
+        Returns: { review_id: string; review_status: string; }[];
       };
       set_updated_at: {
         Args: Record<string, never>;

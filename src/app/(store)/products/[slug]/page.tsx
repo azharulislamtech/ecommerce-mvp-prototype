@@ -4,9 +4,11 @@ import { CheckIcon, ShieldIcon, SupportIcon, TruckIcon } from "@/components/ui/i
 import { ProductPurchaseActions } from "@/components/cart/product-purchase-actions";
 import { ProductCard } from "@/components/modules/product-card";
 import { ProductGallery } from "@/components/modules/product-gallery";
+import { ProductReviewForm } from "@/components/modules/product-review-form";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/lib/data";
 import { getStoreProductBySlug, getStoreProducts, getStoreRelatedProducts } from "@/lib/catalog";
+import { getProductReviewData } from "@/lib/supabase/reviews";
 
 export const revalidate = 60;
 
@@ -28,7 +30,11 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
     notFound();
   }
 
-  const related = await getStoreRelatedProducts(product, 3);
+  const [related, reviewData] = await Promise.all([
+    getStoreRelatedProducts(product, 3),
+    getProductReviewData(product.id)
+  ]);
+  const { summary, reviews } = reviewData;
 
   return (
     <>
@@ -51,7 +57,11 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
                   {product.stock > 0 ? `${product.stock} in stock` : "Sold out"}
                 </StatusBadge>
                 <StatusBadge tone="blue">{product.category}</StatusBadge>
-                <span className="text-sm font-semibold text-amber-600">{product.rating} rating</span>
+                {summary.reviewCount > 0 && summary.averageRating !== null ? (
+                  <a className="text-sm font-semibold text-amber-600 hover:underline" href="#reviews">
+                    {summary.averageRating} rating ({summary.reviewCount} {summary.reviewCount === 1 ? "review" : "reviews"})
+                  </a>
+                ) : null}
               </div>
               <h1 className="mt-4 text-3xl font-bold text-slate-950">{product.name}</h1>
               <p className="mt-3 text-base leading-7 text-slate-600">{product.shortDescription}</p>
@@ -115,8 +125,42 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
         </div>
       </section>
 
+      <section className="py-10" id="reviews">
+        <div className="container-page grid gap-6 lg:grid-cols-[1fr_0.8fr]">
+          <article>
+            <h2 className="text-2xl font-bold text-slate-950">Customer Reviews</h2>
+            {summary.reviewCount > 0 && summary.averageRating !== null ? (
+              <p className="mt-2 text-sm font-semibold text-slate-600">
+                Rated {summary.averageRating} out of 5 by {summary.reviewCount} verified {summary.reviewCount === 1 ? "customer" : "customers"}.
+              </p>
+            ) : (
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                No reviews yet. Be the first verified customer to review this product.
+              </p>
+            )}
+            <ul className="mt-5 grid gap-4">
+              {reviews.map((review) => (
+                <li className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" key={review.id}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-bold text-amber-600">{review.rating}/5</span>
+                    {review.verified_purchase ? <StatusBadge tone="green">Verified purchase</StatusBadge> : null}
+                    <span className="text-xs text-slate-500">
+                      {new Intl.DateTimeFormat("en-BD", { dateStyle: "medium" }).format(new Date(review.created_at))}
+                    </span>
+                  </div>
+                  {review.title ? <h3 className="mt-3 text-base font-bold text-slate-950">{review.title}</h3> : null}
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{review.body}</p>
+                  <p className="mt-3 text-xs font-semibold uppercase text-slate-500">{review.reviewer_label}</p>
+                </li>
+              ))}
+            </ul>
+          </article>
+          <ProductReviewForm productId={product.id} productSlug={product.slug} />
+        </div>
+      </section>
+
       {related.length ? (
-        <section className="py-10">
+        <section className="bg-white py-10">
           <div className="container-page">
             <h2 className="mb-5 text-2xl font-bold text-slate-950">Related Products</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

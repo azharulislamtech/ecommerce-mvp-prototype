@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cleanEnv } from "@/lib/env";
 import { initiateSslcommerzPayment, isSslcommerzConfigured } from "./sslcommerz";
 
 export type CheckoutPaymentMethod = "cash-on-delivery" | "sslcommerz";
@@ -29,7 +30,7 @@ export function normalizeCheckoutPaymentMethod(value: string): CheckoutPaymentMe
 }
 
 export function isOnlineCheckoutEnabled() {
-  return process.env.ENABLE_ONLINE_PAYMENTS === "true";
+  return cleanEnv(process.env.ENABLE_ONLINE_PAYMENTS) === "true";
 }
 
 export function isOnlinePaymentMethod(method: CheckoutPaymentMethod) {

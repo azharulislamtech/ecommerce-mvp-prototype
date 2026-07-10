@@ -2,6 +2,27 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-07-10: Verified Reviews, Env BOM Hardening, Telegram Order Notifications
+
+Changed:
+
+- Completed the verified product reviews feature: `V7__verified_product_reviews.sql` (reviews table, RLS, public/summary/submit RPCs), review form and review list on product detail pages, and a new `/admin/reviews` moderation page with approve/reject actions.
+- Removed the hardcoded `rating` field from the catalog; product pages now show the real approved-review average and count.
+- Fixed the production "Place Order" failure (`Cannot convert argument to a ByteString ... 65279`): an invisible BOM in a Vercel env value broke Supabase request headers. Added `src/lib/env.ts` `cleanEnv` and applied it to every env read that feeds URLs, headers, or credentials (Supabase server/auth/middleware, SSLCommerz, payment base URL).
+- Added free Telegram admin notifications (`src/lib/notifications/telegram.ts`) for new orders and new pending reviews. Failures are logged and swallowed so checkout never blocks. `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` set in `.env.local` and Vercel Production.
+
+Verification:
+
+- `npm run typecheck` and `npm run build` passed.
+- `flyway migrate` applied schema version `7` successfully.
+- `npx playwright test` passed with 3 passed and 1 skipped (admin credentials not set).
+- BOM failure reproduced and fix confirmed against the live Supabase endpoint; live place-order path on `kenasathi.com` now reaches the checkout RPC (verified with a non-persisting invalid-product submission).
+- End-to-end Telegram check: a marked test order on the live site delivered the notification, then the test order was deleted and stock restored.
+
+Notes:
+
+- The poisoned Vercel env value (likely `SUPABASE_SERVICE_ROLE_KEY`) was not re-pasted; `cleanEnv` neutralizes it at read time. Re-paste it if the variable is ever edited.
+
 ## 2026-07-07: Service Role Key Rotated (Exposure Closed)
 
 Changed:

@@ -86,7 +86,6 @@ function mapProduct(row: CatalogProduct): Product {
     price: hasDiscount ? row.discount_price! : row.price,
     oldPrice: hasDiscount ? row.price : undefined,
     stock: row.stock_quantity,
-    rating: fallback?.rating ?? 4.8,
     featured: row.is_featured,
     imageAlt: primaryImage?.alt,
     imageUrl: primaryImage?.url,
