@@ -23,6 +23,7 @@ type NotificationSource = "success" | "fail" | "cancel" | "ipn";
 
 export type SslcommerzNotificationResult = {
   orderNumber: string | null;
+  trackingToken: string | null;
   paymentStatus: PaymentStatus | "unknown";
   customerRedirect: "success" | "failed";
   message: string;
@@ -529,6 +530,7 @@ export async function handleSslcommerzNotification(
   if (!orderNumber) {
     return {
       orderNumber: null,
+      trackingToken: null,
       paymentStatus: "unknown",
       customerRedirect: "failed",
       message: "SSLCommerz callback did not include an order transaction id."
@@ -541,11 +543,14 @@ export async function handleSslcommerzNotification(
   if (!context) {
     return {
       orderNumber,
+      trackingToken: null,
       paymentStatus: "unknown",
       customerRedirect: "failed",
       message: "Payment callback did not match a local order."
     };
   }
+
+  const trackingToken = context.order.tracking_token;
 
   await logPaymentEvent(supabase, context.payment.id, `sslcommerz.${source}.received`, {
     order_number: orderNumber,
@@ -576,6 +581,7 @@ export async function handleSslcommerzNotification(
 
       return {
         orderNumber,
+        trackingToken,
         paymentStatus: context.payment.payment_status,
         customerRedirect: "failed",
         message: "Payment validation failed for amount, currency, or transaction id."
@@ -587,6 +593,7 @@ export async function handleSslcommerzNotification(
     if (nextStatus === "unknown") {
       return {
         orderNumber,
+        trackingToken,
         paymentStatus: context.payment.payment_status,
         customerRedirect: "failed",
         message: "SSLCommerz returned an unknown payment status."
@@ -603,6 +610,7 @@ export async function handleSslcommerzNotification(
 
       return {
         orderNumber,
+        trackingToken,
         paymentStatus: "pending",
         customerRedirect: source === "success" ? "success" : "failed",
         message: isRisky(validationResponse)
@@ -615,6 +623,7 @@ export async function handleSslcommerzNotification(
 
     return {
       orderNumber,
+      trackingToken,
       paymentStatus: nextStatus,
       customerRedirect: nextStatus === "paid" ? "success" : "failed",
       message: nextStatus === "paid" ? "Payment verified." : `Payment marked as ${nextStatus}.`
@@ -631,6 +640,7 @@ export async function handleSslcommerzNotification(
 
     return {
       orderNumber,
+      trackingToken,
       paymentStatus: context.payment.payment_status,
       customerRedirect: source === "success" ? "success" : "failed",
       message

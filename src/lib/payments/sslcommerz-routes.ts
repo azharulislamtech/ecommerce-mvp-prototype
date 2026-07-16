@@ -61,10 +61,17 @@ export async function handleSslcommerzCustomerReturn(request: NextRequest, sourc
 
   revalidatePaymentViews(result.orderNumber);
 
-  const path = result.customerRedirect === "success" ? "/payment/success" : "/payment/failed";
+  const isSuccess = result.customerRedirect === "success";
+  const path = isSuccess ? "/payment/success" : "/payment/failed";
   const redirectUrl = new URL(path, request.url);
 
-  if (result.orderNumber) {
+  if (isSuccess) {
+    // The success page resolves the order from the tracking token; the failed
+    // page only echoes the order number back for support calls.
+    if (result.trackingToken) {
+      redirectUrl.searchParams.set("t", result.trackingToken);
+    }
+  } else if (result.orderNumber) {
     redirectUrl.searchParams.set("order", result.orderNumber);
   }
 

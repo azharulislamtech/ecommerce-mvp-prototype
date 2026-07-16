@@ -192,6 +192,7 @@ export type Database = {
         Row: {
           id: string;
           order_number: string;
+          tracking_token: string;
           customer_name: string;
           customer_phone: string;
           customer_district: string;
@@ -209,6 +210,7 @@ export type Database = {
         Insert: {
           id?: string;
           order_number: string;
+          tracking_token?: string;
           customer_name: string;
           customer_phone: string;
           customer_district: string;
@@ -226,6 +228,7 @@ export type Database = {
         Update: {
           id?: string;
           order_number?: string;
+          tracking_token?: string;
           customer_name?: string;
           customer_phone?: string;
           customer_district?: string;
@@ -360,6 +363,7 @@ export type Database = {
         Returns: {
           order_id: string;
           order_number: string;
+          tracking_token: string;
           subtotal: number;
           delivery_charge: number;
           discount_amount: number;
@@ -370,6 +374,14 @@ export type Database = {
       };      is_admin: {
         Args: Record<string, never>;
         Returns: boolean;
+      };
+      is_within_public_rate_limit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number; };
+        Returns: boolean;
+      };
+      record_public_rate_limit_hit: {
+        Args: { p_key: string; p_window_seconds: number; };
+        Returns: number;
       };
       is_owner: {
         Args: Record<string, never>;

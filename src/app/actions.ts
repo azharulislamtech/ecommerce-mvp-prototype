@@ -518,7 +518,7 @@ export async function createOrderAction(
     redirect(payment.redirectUrl);
   }
 
-  redirect(`/payment/success?order=${encodeURIComponent(order.order_number)}`);
+  redirect(`/payment/success?t=${encodeURIComponent(order.tracking_token)}`);
 }
 
 export async function retryPaymentAction() {
