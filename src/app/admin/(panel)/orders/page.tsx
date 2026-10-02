@@ -6,11 +6,11 @@ import { getAdminOrders } from "@/lib/supabase/orders";
 export const dynamic = "force-dynamic";
 
 type AdminOrderListPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     orderStatus?: string | string[];
     paymentStatus?: string | string[];
     q?: string | string[];
-  };
+  }>;
 };
 
 function firstParam(value: string | string[] | undefined) {
@@ -25,9 +25,10 @@ function formatDate(value: string) {
 }
 
 export default async function AdminOrderListPage({ searchParams }: AdminOrderListPageProps) {
-  const q = firstParam(searchParams?.q) ?? "";
-  const paymentStatus = firstParam(searchParams?.paymentStatus) ?? "";
-  const orderStatus = firstParam(searchParams?.orderStatus) ?? "";
+  const resolvedSearchParams = await searchParams;
+  const q = firstParam(resolvedSearchParams?.q) ?? "";
+  const paymentStatus = firstParam(resolvedSearchParams?.paymentStatus) ?? "";
+  const orderStatus = firstParam(resolvedSearchParams?.orderStatus) ?? "";
   const orders = await getAdminOrders({ orderStatus, paymentStatus, q });
 
   return (

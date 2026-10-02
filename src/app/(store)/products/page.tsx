@@ -6,15 +6,26 @@ import { getStoreCategories, getStoreProducts, type CatalogFilters, type StoreCa
 
 export const revalidate = 60;
 
-export const metadata = {
+const listingMetadata = {
   title: "Shop All Products",
   description:
     "Browse the full Kena Sathi catalog: electronics, fashion, home, beauty, and accessories with cash on delivery across Bangladesh.",
   alternates: { canonical: "/products" }
 };
 
+export async function generateMetadata({ searchParams }: ProductListingPageProps) {
+  const filters = await searchParams;
+  const category = firstValue(filters?.category);
+  const hasFilters = Boolean(filters?.q || filters?.price || filters?.sort);
+  const knownCategory = category && (await getStoreCategories()).some((item) => item.slug === category);
+  return { ...listingMetadata,
+    alternates: { canonical: knownCategory && !hasFilters ? `/categories/${category}` : "/products" },
+    ...(hasFilters ? { robots: { index: false, follow: true } } : {})
+  };
+}
+
 type ProductListingPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 type FilterPanelProps = {
@@ -88,11 +99,12 @@ function FilterPanel({ categories, filters }: FilterPanelProps) {
 }
 
 export default async function ProductListingPage({ searchParams }: ProductListingPageProps) {
+  const resolvedSearchParams = await searchParams;
   const filters: CatalogFilters = {
-    q: firstValue(searchParams?.q),
-    category: firstValue(searchParams?.category),
-    price: firstValue(searchParams?.price),
-    sort: firstValue(searchParams?.sort)
+    q: firstValue(resolvedSearchParams?.q),
+    category: firstValue(resolvedSearchParams?.category),
+    price: firstValue(resolvedSearchParams?.price),
+    sort: firstValue(resolvedSearchParams?.sort)
   };
 
   const [categories, products] = await Promise.all([

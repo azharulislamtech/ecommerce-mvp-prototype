@@ -6,13 +6,13 @@ import { getCurrentAdmin } from "@/lib/supabase/auth";
 export const dynamic = "force-dynamic";
 
 type AdminLoginPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     error?: string;
     reason?: string;
-  };
+  }>;
 };
 
-function getMessage(searchParams: AdminLoginPageProps["searchParams"]) {
+function getMessage(searchParams: Awaited<AdminLoginPageProps["searchParams"]>) {
   if (searchParams?.error) {
     return searchParams.error;
   }
@@ -25,13 +25,14 @@ function getMessage(searchParams: AdminLoginPageProps["searchParams"]) {
 }
 
 export default async function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
+  const resolvedSearchParams = await searchParams;
   const admin = await getCurrentAdmin();
 
   if (admin) {
     redirect("/admin");
   }
 
-  const message = getMessage(searchParams);
+  const message = getMessage(resolvedSearchParams);
 
   return (
     <main className="grid min-h-screen place-items-center bg-slate-100 px-4 py-10">

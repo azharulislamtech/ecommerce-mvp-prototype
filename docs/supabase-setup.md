@@ -6,7 +6,7 @@ This project keeps database changes in Flyway-compatible SQL migrations.
 
 - Supabase project ref: `qguqohukemijphzwqxgs`
 - Public API URL: `https://qguqohukemijphzwqxgs.supabase.co`
-- Flyway migration status: schema version `6`
+- Flyway migration status: remote schema version `10`, applied and verified on 2026-10-02 after encrypted backup and restore/migration testing.
 - Applied migrations:
   - `V1__init_ecommerce_core_schema.sql`
   - `V2__supabase_rls_policies.sql`
@@ -14,6 +14,10 @@ This project keeps database changes in Flyway-compatible SQL migrations.
   - `V4__create_checkout_order_rpc.sql`
   - `V5__sslcommerz_payment_method.sql`
   - `V6__district_delivery_charge.sql`
+  - `V7__verified_product_reviews.sql`
+  - `V8__secure_order_tracking.sql`
+  - `V9__checkout_and_order_integrity.sql`
+  - `V10__reconcile_legacy_cod_payment_status.sql`
 - Working database connection path for Flyway: Supabase Session Pooler
 - Working pooler host found locally: `aws-1-ap-southeast-1.pooler.supabase.com`
 

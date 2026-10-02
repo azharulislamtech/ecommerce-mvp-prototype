@@ -1,113 +1,57 @@
 # Compact Handoff
 
-Use this file to continue the project in a new AI/chat session without rereading the whole history.
+Use this file to resume safely. Explain all user-facing results in Bangla. Read `AGENTS.md`, `AI_HANDOFF.md`, the roadmap and decision log before changes; update engineering/context documentation after meaningful work.
 
-## User Preference
+## Current State (2026-10-02)
 
-- Always explain to the user in Bangla.
-- Keep implementation production-grade and phase-by-phase.
-- Update Markdown context files after meaningful changes so future AI tools can resume safely.
+- Project: Kena Sathi, `D:\WebApplication\Ecommerce application`.
+- Local stack: Next.js 16.3.8, React 19.3, TypeScript, Tailwind, Supabase PostgreSQL/Auth/Storage, Flyway. Read installed Next guides before framework code edits.
+- The existing storefront is deployed at kenasathi.com. This hardening revision is LOCAL and has not been deployed.
+- Authorized remote Flyway rollout: V1-V10 successful, schema version 10. Encrypted DB/Storage backup and restored-data migration/concurrency checks passed. Application deployment still needs Vercel authentication.
+- Existing catalog/admin CRUD, COD checkout, server-calculated Dhaka BDT 60/other districts BDT 120 delivery, cart persistence, secure order tracking, verified reviews/moderation and Telegram notifications remain implemented.
+- Local V9 adds idempotent checkout, accepted-order quotas, duplicate-item normalization, transactional stock release/re-reservation, explicit courier-return inventory confirmation and atomic admin/gateway settlement. Historical cancelled stock is unknown; never bulk-restock. Refund status records an already-completed manual refund.
+- Local SEO adds category canonical URLs, real Product/Breadcrumb JSON-LD, sitemap timestamps and utility/admin noindex. Demo specs were removed; owner-confirmed listing facts still need work.
+- Health/error instrumentation, optional privacy-filtered analytics, CI and disposable DB/browser regression suites are added. Account-side alerts/analytics/backup restore are not activated by source changes.
+- Online SSLCommerz checkout stays disabled. Real sandbox/IPN certification and reservation-expiry policy remain required before enabling it.
 
-## Project
+## Verified Locally
 
-- Name: Kena Sathi e-commerce site.
-- Path: `D:\WebApplication\Ecommerce application`
-- Stack: Next.js App Router, TypeScript, Tailwind CSS, Supabase PostgreSQL, Supabase Storage, Supabase Auth, Flyway.
-- Future backend target: Spring Boot + Kotlin.
+- Lint, typecheck and production build passed.
+- Database tests: 17 passed (actual migrations V1-V10 in PGlite); real Supabase admin RLS CRUD/checkout/stock/settlement transaction checks also passed and were rolled back.
+- Unit tests: 3 passed.
+- Browser tests: 9 passed in development and 9 passed against a production build, including COD server action/tracking, simulated admin login/cancellation/return confirmation, SEO/mobile/cart/admin guards.
+- Registry-backed npm audit: 0 vulnerabilities.
+- Browser fixtures simulate Auth/PostgREST. Separately verified real Supabase role/RLS transaction behavior and Storage file downloads; restored the production public schema to PostgreSQL 18 and tested 3 independent concurrent sessions. Real login/Storage upload, gateway settlement and full cloud platform recovery remain unverified.
 
-## Current Status
+## Release And Safety
 
-- Database foundation is complete through Flyway schema version `6`.
-- Public catalog reads active categories/products from Supabase.
-- Uploaded Supabase Storage product images render on storefront product cards and product detail pages.
-- Admin auth is implemented with Supabase Auth, SSR cookies, route protection, and `admin_users` authorization.
-- Admin product CRUD is implemented and user manually confirmed: add, edit, save draft, deactivate/restore, upload/remove image, delete/safe deactivate, and public active/inactive behavior.
-- Cart is localStorage-backed with quantity update/remove/clear and header count.
-- Checkout creates real pending Cash on Delivery Supabase orders through the `create_checkout_order` PostgreSQL RPC; client price/totals/delivery charge are not trusted.
-- Cash on Delivery redirects to local order success; delivery charge is Dhaka BDT 60 and all other Bangladesh districts BDT 120.
-- SSLCommerz hosted checkout is implemented but disabled by default; checkout hides/rejects it unless `ENABLE_ONLINE_PAYMENTS=true`.
-- Admin orders list/details use Supabase data and admin can update order/payment status.
-- Public track-order uses order number plus phone verification and user manually confirmed admin status updates reflect on storefront.
-- Admin dashboard uses Supabase-backed counts, paid revenue, recent orders, and low-stock products.
-- Playwright E2E smoke foundation exists and default suite is non-destructive.
+- Follow `docs/production-release.md` for remaining real Auth/Storage integration, Vercel deployment, live checks and account-side monitoring/backup gates. V8-V10 are already applied.
+- Confirm actual product models/specs/warranties, images, return address, support/policy commitments and Facebook URL with owner; never invent them.
+- Do not print/commit `.env.local`, `flyway.conf`, service keys, admin passwords or gateway credentials. The earlier exposed service key was rotated on 2026-07-07; see `docs/secret-rotation.md`.
+- Default shared-server E2Es are non-destructive. Mutating tests run through the disposable isolated runner only.
+- Do not share `.next` between a running dev server and build; isolated tests use `.next-isolated`.
 
-## Important Files
-
-- Full handoff: `AI_HANDOFF.md`
-- Roadmap: `docs/production-roadmap.md`
-- Engineering log: `docs/engineering-log.md`
-- Decision log: `docs/decision-log.md`
-- Supabase setup: `docs/supabase-setup.md`
-- E2E guide: `docs/e2e-testing.md`
-- Payment guide: `docs/payment-integration.md`
-- Migrations: `db/migration/`
-- Server actions: `src/app/actions.ts`
-- Supabase helpers: `src/lib/supabase/`
-- Payment service/adapters: `src/lib/payments/`
-- Storefront catalog adapter: `src/lib/catalog.ts`
-- Cart components: `src/components/cart/`
-- Admin product screens: `src/app/admin/(panel)/products/`
-- Admin order screens: `src/app/admin/(panel)/orders/`
-- Track order page: `src/app/(store)/track-order/page.tsx`
-- SSLCommerz callback/IPN routes: `src/app/api/payments/sslcommerz/`
-- E2E tests: `tests/e2e/`, `playwright.config.ts`
-
-## Local Secrets And Safety
-
-- Never print or commit `.env.local` or `flyway.conf`.
-- Supabase service role key was exposed earlier; rotated on 2026-07-07 (new secret key; legacy `service_role` JWT disabled).
-- Do not put admin email/password, SSLCommerz credentials, or service keys in Markdown.
-- Product/order writes should use authenticated admin Supabase session and RLS.
-- Online payment status must only be changed by trusted server-side gateway validation, admin action, or future webhook logic.
-
-## Useful Commands
+## Commands And Files
 
 ```powershell
 npm run dev
-npm run typecheck
 npm run lint
-npm run test:e2e
-```
-
-If Playwright browsers are missing:
-
-```powershell
+npm run typecheck
+npm run test:unit
+npm run test:db
 npm run test:e2e:install
-```
-
-Flyway:
-
-```powershell
+npm run test:e2e:production
+npm run build
+npm audit --audit-level=high
 & "C:\Program Files\flyway\flyway.cmd" -configFiles=".\flyway.conf" info
-& "C:\Program Files\flyway\flyway.cmd" -configFiles=".\flyway.conf" migrate
 ```
 
-## Latest Verified State
-
-- `flyway -configFiles=".\flyway.conf" migrate`: applied schema version `6` successfully.
-- `npm run typecheck`: passed.
-- `npm run lint`: passed.
-- `npm run test:e2e`: passed for default non-destructive smoke tests; latest local run was 3 passed and 1 skipped because admin E2E env vars were not set in that process.
-- User manually confirmed admin product CRUD and order status tracking workflows work in browser.
-
-## Known Risks
-
-- SSLCommerz code is implemented, but online checkout is disabled by default and still needs SSLCommerz sandbox credentials, a public HTTPS callback URL, and `ENABLE_ONLINE_PAYMENTS=true` before use.
-- Supabase service role key was rotated on 2026-07-07 (new secret key live; legacy `service_role` JWT disabled); no longer a production blocker.
-- Latest full dependency audit reported 0 high-level vulnerabilities; do not run force fixes without testing.
-- Failed/cancelled online payment stock restoration remains a decision before enabling online checkout; current active COD checkout decrements stock when the order is created.
-- Destructive E2E tests for real checkout/product/payment writes should only run against a disposable test database.
-- Avoid running `next build` while a dev server is actively using `.next`; restart/clear generated cache if CSS/chunks render broken.
-
-## Next Recommended Phase
-
-Phase 6 follow-up, then Phase 7 production readiness.
-
-Best-practice sequence:
-
-1. Keep COD as the active checkout path. (Service role key rotation is done as of 2026-07-07.)
-2. Finish Phase 7 production readiness: monitoring, backup/restore, and deployment checklist.
-3. Add SSLCommerz sandbox credentials only in `.env.local` or deployment secrets when customer demand justifies online payment.
-4. Use a public HTTPS app URL or tunnel for SSLCommerz callbacks.
-5. Run one sandbox payment and verify `orders`, `payments`, and `payment_events`.
-6. Decide whether failed/cancelled online payments should release reserved stock automatically before setting `ENABLE_ONLINE_PAYMENTS=true`.
+- Detailed context: `AI_HANDOFF.md`.
+- Release/recovery: `docs/production-release.md`.
+- Testing boundaries: `docs/e2e-testing.md`.
+- Engineering/decisions/roadmap: `docs/engineering-log.md`, `docs/decision-log.md`, `docs/production-roadmap.md`.
+- Database/setup: `db/migration/`, `docs/supabase-setup.md`.
+- App actions: `src/app/actions.ts`; async SSR auth: `src/lib/supabase/auth.ts`; proxy: `src/proxy.ts`.
+- Catalog/SEO: `src/lib/catalog.ts`, `src/lib/seo.ts`.
+- Gateway: `src/lib/payments/`, `docs/payment-integration.md`.
+- Tests: `tests/db/`, `tests/unit/`, `tests/e2e/`, `tests/support/`, `scripts/test-isolated-e2e.mjs`.

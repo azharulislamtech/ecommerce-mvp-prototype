@@ -2,6 +2,47 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-10-02: Authorized Supabase Rollout And Recovery Verification
+
+Owner authorized completing the external rollout against the named Supabase project.
+
+- Backed up the complete database archive and all 8 product-image files (947,978 image bytes). Encrypted the recovery ZIP with Windows DPAPI CurrentUser, verified decrypt/hash round-trip and preserved it under ignored `.private-backups/`. Added explicit Git/Vercel exclusions. Removed temporary plaintext copies and stopped scratch clusters after checking the encrypted database hash.
+- Restored the actual production public schema/data into a separate password-protected PostgreSQL 18 cluster on loopback. Applied pending Flyway migrations there, preserved business row counts/stock, and passed 3 independent-session duplicate-checkout plus cancellation tests. This proves application-schema recovery, not a full Supabase cloud/platform restore.
+- Applied V8/V9 remotely, then added/tested/restored/applied V10 to correct four legacy COD pending-payment inconsistencies using existing admin-paid/cancelled order records. Audit events record the source; unknown collection timestamps stay unknown. No gateway settlement, refunds, physical historical-stock assumptions or outbound test notifications occurred.
+- Remote read-only result: schema 10, orders 8, products 9, payments 8, aggregate stock 113, cancelled orders 1, payment mismatches 0. Existing business order counts and stock remained unchanged.
+- Real Supabase integration checks used authenticated-admin RLS product insert/update/delete, service-role COD amount/replay/stock, cancellation/reopening, atomic settlement and downgrade rejection inside a fully rolled-back transaction. No lasting test customer/order/product rows were created.
+- Database regression suite: 17 passed with V1-V10. Production browser suite: 9 passed with all ten migrations. Existing lint/typecheck/unit/build verification remains required for source release.
+- Remaining account boundary: Supabase dashboard and Vercel CLI/browser lack signed-in sessions. Vercel device-login handoff started; no application deployment has been claimed. Browser Auth login, Storage upload, provider monitoring/analytics, off-site backup retention and SSLCommerz remain separate operational gates.
+
+
+## 2026-10-02: Tested SEO And Order Integrity Hardening (Local Release)
+
+Changed:
+
+- Migrated Next 14/React 18 to Next 16.3.8/React 19.3 using bundled framework guides: asynchronous request APIs, proxy convention, React action state, flat ESLint configuration and compatible audited dependency updates.
+- Added V9 for checkout idempotency, accepted-order phone/IP quotas, duplicate product normalization, transactional stock cancellation/reopening, explicit sellable-return confirmation, atomic admin settlement and verified gateway updates. Previously applied SQL migrations were not changed.
+- Preserved COD checkout, delivery pricing, tracking, reviews, admin auth/product management and disabled-by-default online payments. Fixed the cart hydration click race discovered by browser tests.
+- Added category canonical routes, Product/Breadcrumb JSON-LD with actual prices/stock/approved ratings, correct sitemap timestamps, noindex utility pages, safe response headers, real catalog facts instead of demo specs, and incomplete-listing warnings.
+- Added health/error instrumentation, privacy-filtered optional analytics, retry UX, CI, in-memory migration/integrity tests and real server-action browser tests against disposable local services.
+- Typecheck generates Next route definitions first, so verification also works in a fresh checkout before the first build. Production browser checks include health readiness and missing-product 404 responses.
+- Added `production-release.md` and updated handoff/setup/testing/roadmap docs with deployment, reconciliation, backup/restore and monitoring gates.
+
+Verification:
+
+- `npm run lint`, `npm run typecheck` and `npm run build`: passed.
+- `npm run test:db`: 16 passed; all actual V1-V9 migrations applied to disposable PGlite.
+- `npm run test:unit`: 3 passed (checkout retry identity, safe structured data and analytics privacy).
+- `npm run test:e2e:isolated`: 9 passed against development Next; `npm run test:e2e:production`: 9 passed against built production Next. Coverage includes COD creation/tracking, simulated admin auth/dashboard/cancellation/return confirmation, SEO, private headers and mobile/cart regressions.
+- Registry-backed `npm audit --audit-level=high`: 0 vulnerabilities.
+- Read-only remote `flyway info`: schema version 7; V1-V7 successful, V8/V9 pending.
+
+Limits:
+
+- No remote migrations, deployment or production customer writes were performed. Local verification is not a full production-readiness certification.
+- Auth/PostgREST platform interfaces are simulated; PGlite lacks pgcrypto and independent concurrent sessions. Real staging Auth/Storage/product CRUD, gateway certification, cloud restore, monitoring activation, owner-confirmed product/policy facts and live performance remain release gates.
+- Online checkout remains disabled. Failed gateway sessions keep reserved stock until administrative cancellation; automatic expiry needs a separate settlement policy.
+
+
 ## 2026-07-10: Policy Pages, SEO Metadata, Real Footer Contact
 
 Changed:

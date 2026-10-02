@@ -465,60 +465,17 @@ async function applyVerifiedPaymentStatus(
   gatewayPayload: GatewayPayload,
   validationResponse: GatewayJson
 ) {
-  if (context.payment.payment_status === "paid" && nextStatus !== "paid") {
-    await logPaymentEvent(supabase, context.payment.id, "sslcommerz.status_downgrade_ignored", {
-      order_number: context.order.order_number,
-      current_status: context.payment.payment_status,
-      attempted_status: nextStatus,
-      source,
-      gateway_payload: gatewayPayload,
-      validation_response: validationResponse
-    });
-    return;
-  }
-
-  const paidAt = nextStatus === "paid" ? currentTimestamp() : context.payment.paid_at;
-  const gatewayTransactionId =
-    text(validationResponse.bank_tran_id) || text(gatewayPayload.bank_tran_id) || context.order.order_number;
-
-  const paymentUpdate: Database["public"]["Tables"]["payments"]["Update"] = {
-    gateway_name: PROVIDER_NAME,
-    gateway_transaction_id: gatewayTransactionId,
-    payment_method: text(validationResponse.card_type) || PROVIDER_NAME,
-    payment_status: nextStatus,
-    gateway_response: asJson({
-      provider: PROVIDER_NAME,
-      mode: getMode(),
-      event: source,
-      gateway_payload: gatewayPayload,
-      validation_response: validationResponse,
-      updated_at: currentTimestamp()
-    }),
-    paid_at: paidAt
-  };
-
-  const { error: paymentError } = await supabase.from("payments").update(paymentUpdate).eq("id", context.payment.id);
-
-  if (paymentError) {
-    throw new Error(`Could not update payment row: ${paymentError.message}`);
-  }
-
-  const { error: orderError } = await supabase
-    .from("orders")
-    .update({ payment_status: nextStatus })
-    .eq("id", context.order.id);
-
-  if (orderError) {
-    throw new Error(`Could not update order payment status: ${orderError.message}`);
-  }
-
-  await logPaymentEvent(supabase, context.payment.id, "sslcommerz.status_updated", {
-    order_number: context.order.order_number,
-    payment_status: nextStatus,
-    source,
-    gateway_payload: gatewayPayload,
-    validation_response: validationResponse
+  const { data, error } = await supabase.rpc("apply_verified_payment", {
+    p_payment_id: context.payment.id,
+    p_status: nextStatus,
+    p_transaction_id: text(validationResponse.bank_tran_id) || text(gatewayPayload.bank_tran_id) || context.order.order_number,
+    p_method: text(validationResponse.card_type) || PROVIDER_NAME,
+    p_response: asJson({ provider: PROVIDER_NAME, mode: getMode(), event: source,
+      gateway_payload: gatewayPayload, validation_response: validationResponse, updated_at: currentTimestamp() })
   });
+  if (error) throw new Error("Could not commit verified payment status.");
+  return data;
+
 }
 
 export async function handleSslcommerzNotification(
@@ -619,14 +576,14 @@ export async function handleSslcommerzNotification(
       };
     }
 
-    await applyVerifiedPaymentStatus(supabase, context, nextStatus, source, gatewayPayload, validationResponse);
+    const appliedStatus = await applyVerifiedPaymentStatus(supabase, context, nextStatus, source, gatewayPayload, validationResponse);
 
     return {
       orderNumber,
       trackingToken,
-      paymentStatus: nextStatus,
-      customerRedirect: nextStatus === "paid" ? "success" : "failed",
-      message: nextStatus === "paid" ? "Payment verified." : `Payment marked as ${nextStatus}.`
+      paymentStatus: appliedStatus,
+      customerRedirect: appliedStatus === "paid" ? "success" : "failed",
+      message: appliedStatus === "paid" ? "Payment verified." : `Payment marked as ${appliedStatus}.`
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not validate SSLCommerz payment.";

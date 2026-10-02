@@ -55,7 +55,7 @@ function matchesSearch(product: AdminProduct, query: string) {
 }
 
 export async function getAdminCategories() {
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   const { data, error } = await supabase
     .from("categories")
     .select("*")
@@ -69,7 +69,7 @@ export async function getAdminCategories() {
 }
 
 export async function getAdminProducts(filters: AdminProductFilters = {}) {
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   const { data, error } = await supabase
     .from("products")
     .select(
@@ -116,7 +116,7 @@ export async function getAdminProducts(filters: AdminProductFilters = {}) {
 }
 
 export async function getAdminProductById(id: string) {
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   const { data, error } = await supabase
     .from("products")
     .select(

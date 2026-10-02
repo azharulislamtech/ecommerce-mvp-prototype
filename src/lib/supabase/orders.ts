@@ -209,7 +209,7 @@ export async function trackOrderByNumberAndPhone(orderNumber: string, phone: str
 }
 
 export async function getAdminOrders(filters: AdminOrderListFilters = {}) {
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   const { data, error } = await supabase
     .from("orders")
     .select("*")
@@ -230,7 +230,7 @@ export async function getAdminOrders(filters: AdminOrderListFilters = {}) {
 }
 
 export async function getAdminOrderDetails(orderNumber: string): Promise<OrderDetails | null> {
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   const { data: order, error } = await supabase
     .from("orders")
     .select("*")

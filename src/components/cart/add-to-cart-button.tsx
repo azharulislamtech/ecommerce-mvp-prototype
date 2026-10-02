@@ -22,9 +22,10 @@ export function AddToCartButton({
   stock
 }: AddToCartButtonProps) {
   const router = useRouter();
-  const { addItem } = useCart();
+  const { addItem, hydrated } = useCart();
   const [added, setAdded] = useState(false);
-  const disabled = stock < 1;
+  const soldOut = stock < 1;
+  const disabled = soldOut || !hydrated;
 
   return (
     <button
@@ -47,7 +48,7 @@ export function AddToCartButton({
       }}
       type="button"
     >
-      {disabled ? "Sold Out" : added && !checkout ? "Added" : label}
+      {soldOut ? "Sold Out" : added && !checkout ? "Added" : label}
     </button>
   );
 }

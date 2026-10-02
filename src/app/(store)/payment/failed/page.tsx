@@ -3,11 +3,11 @@ import { retryPaymentAction } from "@/app/actions";
 import { CloseIcon } from "@/components/ui/icons";
 
 type PaymentFailedPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     order?: string | string[];
     status?: string | string[];
     reason?: string | string[];
-  };
+  }>;
 };
 
 function firstParam(value: string | string[] | undefined) {
@@ -22,10 +22,11 @@ function readableStatus(value: string | undefined) {
   return value.replace(/-/g, " ");
 }
 
-export default function PaymentFailedPage({ searchParams }: PaymentFailedPageProps) {
-  const orderNumber = firstParam(searchParams?.order);
-  const status = firstParam(searchParams?.status);
-  const reason = firstParam(searchParams?.reason) ?? "Gateway timeout or cancelled payment. Please try again or contact Kena Sathi support.";
+export default async function PaymentFailedPage({ searchParams }: PaymentFailedPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const orderNumber = firstParam(resolvedSearchParams?.order);
+  const status = firstParam(resolvedSearchParams?.status);
+  const reason = firstParam(resolvedSearchParams?.reason) ?? "Gateway timeout or cancelled payment. Please try again or contact Kena Sathi support.";
   const title = status === "cancelled" ? "Payment Cancelled" : "Payment Failed";
 
   return (

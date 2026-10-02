@@ -14,6 +14,8 @@ export type Product = {
   slug: string;
   name: string;
   category: string;
+  categorySlug?: string;
+  updatedAt?: string;
   shortDescription: string;
   description: string;
   price: number;

@@ -6,11 +6,11 @@ import { getAdminProductReviews } from "@/lib/supabase/reviews";
 export const dynamic = "force-dynamic";
 
 type AdminReviewListPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     status?: string | string[];
     notice?: string | string[];
     error?: string | string[];
-  };
+  }>;
 };
 
 const statusFilters = [
@@ -40,9 +40,10 @@ function statusTone(status: string): "green" | "red" | "amber" {
 }
 
 export default async function AdminReviewListPage({ searchParams }: AdminReviewListPageProps) {
-  const status = firstParam(searchParams?.status) ?? "";
-  const notice = firstParam(searchParams?.notice);
-  const error = firstParam(searchParams?.error);
+  const resolvedSearchParams = await searchParams;
+  const status = firstParam(resolvedSearchParams?.status) ?? "";
+  const notice = firstParam(resolvedSearchParams?.notice);
+  const error = firstParam(resolvedSearchParams?.error);
   const reviews = await getAdminProductReviews(status);
 
   return (

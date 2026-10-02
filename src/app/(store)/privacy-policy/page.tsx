@@ -43,6 +43,11 @@ export default function PrivacyPolicyPage() {
               website to function, such as keeping the admin area secure. We do not use third-party
               advertising cookies.
             </p>
+            <p className="mt-2">
+              If enabled, privacy-focused website analytics helps us understand visits to public product
+              and category pages. Our analytics excludes checkout, order tracking and payment pages,
+              and removes search parameters from page URLs.
+            </p>
           </div>
 
           <div>

@@ -6,11 +6,11 @@ import { formatMoney } from "@/lib/data";
 import { getOrderSuccessSummary } from "@/lib/supabase/orders";
 
 type PaymentSuccessPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     t?: string | string[];
     status?: string | string[];
     reason?: string | string[];
-  };
+  }>;
 };
 
 function firstParam(value: string | string[] | undefined) {
@@ -18,12 +18,13 @@ function firstParam(value: string | string[] | undefined) {
 }
 
 export default async function PaymentSuccessPage({ searchParams }: PaymentSuccessPageProps) {
+  const resolvedSearchParams = await searchParams;
   // Resolved from the random tracking token, never the order number: order
   // numbers used to be sequential, so a number-based lookup here let anyone walk
   // the sequence and read every order's total.
-  const trackingToken = firstParam(searchParams?.t);
-  const gatewayStatus = firstParam(searchParams?.status);
-  const gatewayReason = firstParam(searchParams?.reason);
+  const trackingToken = firstParam(resolvedSearchParams?.t);
+  const gatewayStatus = firstParam(resolvedSearchParams?.status);
+  const gatewayReason = firstParam(resolvedSearchParams?.reason);
   const order = trackingToken ? await getOrderSuccessSummary(trackingToken) : null;
 
   return (

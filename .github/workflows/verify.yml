@@ -1,0 +1,33 @@
+name: Verify storefront
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run test:db
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e:production
+      - run: npm run build
+        env:
+          ALLOW_DEMO_CATALOG: "true"
+      - run: npm audit --audit-level=high
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-results
+          path: test-results/
+          retention-days: 7

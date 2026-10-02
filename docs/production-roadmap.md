@@ -32,7 +32,7 @@ Completed:
 - Supabase RLS/policy migration created.
 - Flyway applied migrations through Session Pooler.
 - Baseline MVP catalog seed is versioned as `V3__seed_mvp_catalog.sql`.
-- Schema version is `6`.
+- Remote schema version is `10` (authorized rollout 2026-10-02). V8-V10 applied after encrypted backup and PostgreSQL restore verification; local tests apply V1-V10.
 
 Deferred:
 
@@ -140,7 +140,7 @@ Completed:
 
 Remaining:
 
-- Add opt-in destructive checkout order creation coverage only against a disposable test database.
+- Run real Supabase staging integration checks before release; isolated disposable checkout/stock/admin regression coverage is implemented.
 
 Exit gate:
 
@@ -191,11 +191,12 @@ Goal: make deployment, monitoring, and operations safe.
 
 Tasks:
 
-- Upgrade vulnerable dependencies with tested migration path.
-- Add error logging and operational checklists.
-- Expand E2E coverage for payment gateway callback/webhook once Phase 6 is implemented.
-- Add backup/restore notes for Supabase.
-- Add deployment checklist for Vercel.
+- Completed locally: Next 16/React 19 migration, compatible dependency updates, idempotent checkout/stock/payment integrity, category SEO/structured data, health/error instrumentation, optional privacy-filtered analytics, isolated database/unit/browser tests and CI.
+- Completed documentation: staging/deployment sequence, inventory reconciliation, Supabase database and Storage backup/restore, monitoring and rollback in `production-release.md`.
+- Remaining operational gates: real Supabase staging CRUD/Auth/Storage checks, backup restore drill, V8-V10 applied; finish app deployment, configure monitoring, verify live smoke checks and owner-confirmed catalog/policy content.
+- Online gateway callback/IPN certification remains a separate Phase 6 gate; online checkout stays disabled.
+
+Status: implementation/local verification and remote V8-V10 migration completed, with encrypted backup and restored-data PostgreSQL tests. Application deployment and account-side operational gates remain pending. Tests do not establish full production readiness.
 
 Exit gate:
 

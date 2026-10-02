@@ -6,7 +6,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/api", "/cart", "/checkout", "/payment"]
+      // Public utility pages must remain crawlable so search engines see noindex.
+      disallow: ["/api/"]
     },
     sitemap: getSiteUrl() + "/sitemap.xml"
   };

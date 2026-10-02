@@ -75,7 +75,7 @@ function assertDashboardCount(label: string, result: { count: number | null; err
 }
 
 export async function getAdminDashboardOverview(): Promise<AdminDashboardOverview> {
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
 
   const [
     totalOrderCountResult,

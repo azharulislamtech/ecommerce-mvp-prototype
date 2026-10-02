@@ -8,12 +8,12 @@ import { trackOrderByNumberAndPhone, trackOrderByToken, type TrackOrderResult } 
 export const dynamic = "force-dynamic";
 
 type TrackOrderPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     order?: string | string[];
     orderId?: string | string[];
     phone?: string | string[];
     t?: string | string[];
-  };
+  }>;
 };
 
 const orderSteps: { status: OrderStatus; label: string }[] = [
@@ -75,9 +75,10 @@ function emptyStateCopy(result: TrackOrderResult | null) {
 }
 
 export default async function TrackOrderPage({ searchParams }: TrackOrderPageProps) {
-  const tokenQuery = firstParam(searchParams?.t) ?? "";
-  const orderQuery = firstParam(searchParams?.order) ?? firstParam(searchParams?.orderId) ?? "";
-  const phoneQuery = firstParam(searchParams?.phone) ?? "";
+  const resolvedSearchParams = await searchParams;
+  const tokenQuery = firstParam(resolvedSearchParams?.t) ?? "";
+  const orderQuery = firstParam(resolvedSearchParams?.order) ?? firstParam(resolvedSearchParams?.orderId) ?? "";
+  const phoneQuery = firstParam(resolvedSearchParams?.phone) ?? "";
 
   let result: TrackOrderResult | null = null;
 

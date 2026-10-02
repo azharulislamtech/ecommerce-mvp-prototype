@@ -4,10 +4,10 @@ import { getAdminCategories } from "@/lib/supabase/admin-catalog";
 export const dynamic = "force-dynamic";
 
 type AddProductPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     error?: string | string[];
     notice?: string | string[];
-  };
+  }>;
 };
 
 function firstParam(value: string | string[] | undefined) {
@@ -15,6 +15,7 @@ function firstParam(value: string | string[] | undefined) {
 }
 
 export default async function AddProductPage({ searchParams }: AddProductPageProps) {
+  const resolvedSearchParams = await searchParams;
   const categories = await getAdminCategories();
 
   return (
@@ -26,9 +27,9 @@ export default async function AddProductPage({ searchParams }: AddProductPagePro
       </div>
       <ProductForm
         categories={categories}
-        error={firstParam(searchParams?.error)}
+        error={firstParam(resolvedSearchParams?.error)}
         mode="add"
-        notice={firstParam(searchParams?.notice)}
+        notice={firstParam(resolvedSearchParams?.notice)}
       />
     </div>
   );

@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useMemo, useRef, useState } from "react";
+import { checkoutAttempt, checkoutFingerprint, CHECKOUT_ATTEMPT_STORAGE_KEY } from "@/lib/checkout-attempt";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { createOrderAction, type CheckoutFormState } from "@/app/actions";
 import { useCart } from "@/components/cart/cart-provider";
 import { OrderSummary } from "@/components/modules/order-summary";
@@ -45,7 +47,16 @@ function FieldError({ message }: { message?: string }) {
 
 export function CheckoutClient({ districts, onlinePaymentsEnabled, products }: CheckoutClientProps) {
   const { hydrated, items } = useCart();
-  const [state, formAction] = useFormState(createOrderAction, initialState);
+  const attemptRef = useRef<string | null>(null);
+  const [state, formAction] = useActionState(async (previous: CheckoutFormState, formData: FormData) => {
+    let saved = attemptRef.current;
+    try { saved = sessionStorage.getItem(CHECKOUT_ATTEMPT_STORAGE_KEY) ?? saved; } catch { /* Memory fallback. */ }
+    const attempt = checkoutAttempt(await checkoutFingerprint(formData), saved);
+    attemptRef.current = JSON.stringify(attempt);
+    try { sessionStorage.setItem(CHECKOUT_ATTEMPT_STORAGE_KEY, attemptRef.current); } catch { /* Memory fallback. */ }
+    formData.set("idempotency_key", attempt.key);
+    return createOrderAction(previous, formData);
+  }, initialState);
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const productsById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
   const availableItems = items
@@ -65,7 +76,7 @@ export function CheckoutClient({ districts, onlinePaymentsEnabled, products }: C
           <p className="text-sm font-semibold uppercase text-blue-700">Checkout</p>
           <h1 className="mt-2 text-3xl font-bold text-slate-950">Complete Your Order</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            No customer account is required. Totals are rechecked on the server before the order is created.
+            Order without creating an account. Review your items and delivery charge before placing your order.
           </p>
         </div>
 

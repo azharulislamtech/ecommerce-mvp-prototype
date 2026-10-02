@@ -13,22 +13,22 @@ const FAILURE_WINDOW_SECONDS = 10 * 60;
 
 export const RATE_LIMIT_WINDOW_MINUTES = FAILURE_WINDOW_SECONDS / 60;
 
-function getClientIp() {
-  const requestHeaders = headers();
+async function getClientIp() {
+  const requestHeaders = await headers();
   const forwardedFor = requestHeaders.get("x-forwarded-for");
   const firstForwarded = forwardedFor?.split(",")[0]?.trim();
 
   return firstForwarded || requestHeaders.get("x-real-ip")?.trim() || "unknown";
 }
 
-function bucketKey(scope: string) {
-  return `${scope}:${getClientIp()}`;
+async function bucketKey(scope: string) {
+  return `${scope}:${await getClientIp()}`;
 }
 
 export async function isWithinLookupRateLimit(scope: string) {
   const supabase = createSupabaseServiceClient();
   const { data, error } = await supabase.rpc("is_within_public_rate_limit", {
-    p_key: bucketKey(scope),
+    p_key: await bucketKey(scope),
     p_limit: FAILURE_LIMIT,
     p_window_seconds: FAILURE_WINDOW_SECONDS
   });
@@ -45,7 +45,7 @@ export async function isWithinLookupRateLimit(scope: string) {
 export async function recordLookupFailure(scope: string) {
   const supabase = createSupabaseServiceClient();
   const { error } = await supabase.rpc("record_public_rate_limit_hit", {
-    p_key: bucketKey(scope),
+    p_key: await bucketKey(scope),
     p_window_seconds: FAILURE_WINDOW_SECONDS
   });
 

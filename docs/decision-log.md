@@ -2,6 +2,40 @@
 
 Use this file for architectural, security, database, and product decisions. Keep entries short but explicit.
 
+## 2026-10-02: Restore Before Migration And Preserve Historical COD Facts
+
+Decision: On owner-authorized rollout, take an encrypted database-plus-images backup and restore the actual public schema/data to password-protected local PostgreSQL before applying pending migrations. Verify independent checkout sessions and real Supabase RLS/RPC behavior; roll back all integration-test writes. Store backups outside Git/deployment uploads and remove verified temporary plaintext copies.
+
+Reason: Disposable fixtures alone cannot establish migration compatibility with existing production data or actual PostgreSQL transaction locks.
+
+Consequence: V8-V10 applied remotely with original stock/order counts preserved. V10 changes only pending COD payments when an existing order already records paid/cancelled, and writes audit events. It leaves settled/gateway payments and unknown collection timestamps unchanged. Windows-account-bound encryption protects local copies but does not provide off-site disaster recovery; full Supabase Auth/Storage/cloud restore and dashboard-side operational configuration still need account access.
+
+
+## 2026-10-02: Database Owns Retry, Inventory And Settlement Invariants
+
+Decision: Add V9 without modifying prior migration checksums. Use a request UUID plus normalized payload and transaction advisory lock for checkout retries. Retain the previous seven-argument checkout API; revoke direct access to its renamed internal implementation. Commit admin/gateway order and payment changes atomically, lock orders before payments, and reject settled-payment downgrades.
+
+Reason: Network retries, duplicate cart rows, cancellation saves and out-of-order payment callbacks must not duplicate orders, inventory or inconsistent payment records.
+
+Consequence: Deploy V8/V9 before new code. New undispatched cancellations restock once; reopening reserves again. Historical or dispatched cancellations require explicit physical-stock confirmation, audited through an admin RPC. Marking refunded records a completed manual refund, not a transfer. COD remains active; gateway expiry and real sandbox certification are separate gates.
+
+## 2026-10-02: Publish Verified Commerce Facts And Keep Private URLs Out Of Search
+
+Decision: Use real product prices, stock, images and approved review aggregates in JSON-LD; remove adapter-generated demo specifications. Add canonical category pages; mark transactional/admin pages noindex through metadata and HTTP headers, while allowing utility-page crawling to observe noindex.
+
+Reason: Search engines and customers need accurate product facts and public category URLs; order tokens/customer query values must not enter analytics or referrals.
+
+Consequence: Optional analytics excludes private paths and query/fragment data. Incomplete listing warnings guide owners without inventing warranties/specifications. Search Console validation, real content and field performance remain deployment gates.
+
+## 2026-10-02: Framework Migration And Disposable Regression Boundary
+
+Decision: Upgrade to Next 16/React 19 using bundled docs, asynchronous request APIs, proxy and React action-state conventions. Retain compatible ESLint 9 plugins and flat configuration. Run V1-V9 in PGlite and browser server actions against isolated PostgREST/Auth fixtures in both dev and production modes; CI uses the production runner.
+
+Reason: Dependency fixes need end-to-end behavior evidence without modifying shared customer data. Separate `.next-isolated` output prevents development cache collisions.
+
+Consequence: Local tests cover critical checkout/stock/payment/privacy flows but do not certify Supabase Storage/Auth integration, production pgcrypto entropy, multi-session contention, gateway settlement or cloud recovery. Structured health/error signals and recovery instructions are committed; external monitor/analytics accounts require operational configuration.
+
+
 ## 2026-07-07: Migrate To New Supabase API Keys During Rotation
 
 Decision: When rotating the exposed service role key, migrate from the legacy JWT key model to the new Supabase API keys system — a revocable **secret key** for `SUPABASE_SERVICE_ROLE_KEY` and the **publishable key** for the client — then disable the legacy `service_role`/`anon` JWTs.

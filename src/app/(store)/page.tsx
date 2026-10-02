@@ -7,6 +7,7 @@ import { SectionHeading } from "@/components/modules/section-heading";
 import { getStoreCategories, getStoreFeaturedProducts } from "@/lib/catalog";
 
 export const revalidate = 60;
+export const metadata = { alternates: { canonical: "/" } };
 
 const trustItems = [
   {
@@ -83,7 +84,8 @@ export default async function HomePage() {
               alt="Kena Sathi featured product collage"
               className="h-full w-full object-cover"
               height={720}
-              priority
+              loading="eager"
+              fetchPriority="high"
               src="/hero-products.png"
               width={960}
             />
@@ -102,7 +104,7 @@ export default async function HomePage() {
               {categories.map((category) => (
                 <Link
                   className="group rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft"
-                  href={`/products?category=${category.slug}`}
+                href={`/categories/${category.slug}`}
                   key={category.slug}
                 >
                   <ProductVisual label={category.name} visual={category.visual} />

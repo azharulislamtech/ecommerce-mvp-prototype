@@ -57,7 +57,7 @@ export async function getProductReviewData(productId: string): Promise<ProductRe
 }
 
 export async function getAdminProductReviews(status?: string): Promise<AdminProductReview[]> {
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   let query = supabase
     .from("product_reviews")
     .select(

@@ -20,12 +20,12 @@ function missingAuthConfig() {
   return !supabaseUrl || !supabaseAnonKey;
 }
 
-export function createSupabaseAuthServerClient() {
+export async function createSupabaseAuthServerClient() {
   if (missingAuthConfig()) {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.");
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient<Database>(supabaseUrl!, supabaseAnonKey!, {
     cookies: {
@@ -50,7 +50,7 @@ export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
     return null;
   }
 
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData.user) {

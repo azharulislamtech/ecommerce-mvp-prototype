@@ -1,17 +1,17 @@
 ﻿import { notFound } from "next/navigation";
-import { updateOrderStatusAction } from "@/app/actions";
+import { reconcileCancelledStockAction, updateOrderStatusAction } from "@/app/actions";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/lib/data";
 import { getAdminOrderDetails } from "@/lib/supabase/orders";
 
 type OrderDetailsPageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
-  searchParams?: {
+  }>;
+  searchParams?: Promise<{
     error?: string | string[];
     notice?: string | string[];
-  };
+  }>;
 };
 
 function firstParam(value: string | string[] | undefined) {
@@ -26,9 +26,11 @@ function formatDate(value: string) {
 }
 
 export default async function OrderDetailsPage({ params, searchParams }: OrderDetailsPageProps) {
-  const order = await getAdminOrderDetails(decodeURIComponent(params.id));
-  const notice = firstParam(searchParams?.notice);
-  const error = firstParam(searchParams?.error);
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const order = await getAdminOrderDetails(decodeURIComponent(resolvedParams.id));
+  const notice = firstParam(resolvedSearchParams?.notice);
+  const error = firstParam(resolvedSearchParams?.error);
 
   if (!order) {
     notFound();
@@ -173,6 +175,28 @@ export default async function OrderDetailsPage({ params, searchParams }: OrderDe
               </button>
             </form>
           </section>
+          {order.order_status === "cancelled" && order.stock_released !== true && (
+            <section className="rounded-lg border border-amber-200 bg-amber-50 p-5">
+              <h2 className="font-bold text-slate-950">Confirm returned inventory</h2>
+              <p className="mt-2 text-sm text-slate-700">Stock stays reserved until all items are physically received and sellable. Confirm existing stock counts before continuing.</p>
+              <form action={reconcileCancelledStockAction} className="mt-4 space-y-4">
+                <input name="order_number" type="hidden" value={order.order_number} />
+                <label className="block text-sm">
+                  Inventory state
+                  <select name="inventory_state" required defaultValue="" className="focus-ring mt-2 w-full rounded border border-slate-300 bg-white p-3">
+                    <option value="" disabled>Choose after checking the goods</option>
+                    <option value="returned">Received and sellable; add items back to stock</option>
+                    <option value="already-restocked">Already included in stock; confirm without adding</option>
+                  </select>
+                </label>
+                <label className="flex items-start gap-2 text-sm">
+                  <input name="receipt_confirmed" value="yes" type="checkbox" required className="mt-1" />
+                  I checked all returned items and the inventory count is correct.
+                </label>
+                <button className="focus-ring rounded bg-slate-950 px-4 py-3 text-sm font-semibold text-white">Confirm inventory</button>
+              </form>
+            </section>
+          )}
         </aside>
       </div>
     </div>

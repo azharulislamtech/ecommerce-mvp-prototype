@@ -22,6 +22,8 @@ export function RecentOrdersPanel({ activeToken }: { activeToken?: string }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    // Browser-only storage is intentionally loaded after the SSR hydration pass.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOrders(readRecentOrders());
     setHydrated(true);
   }, []);
