@@ -2,6 +2,18 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-10-02: Vercel Production Deployment And Live Verification
+
+- User completed device authentication; confirmed account `azadbasis-4964`, team `azadbasis-4964s-projects`, existing project `prj_MdYl4Mdwj0hPUAJZmHU5zNGB4Qtk`.
+- Explicitly configured `NEXT_PUBLIC_SITE_URL=https://kenasathi.com`, `ENABLE_ONLINE_PAYMENTS=false`, `ALLOW_DEMO_CATALOG=false` without exposing credentials.
+- Deployed application revision `26e29a1` as `dpl_6x7VyDCPSkxivzgZBno8FHcVCUNf`; cloud build passed. Staged URL https://ecommerce-mvp-prototype-6pij5s22n-azadbasis-4964s-projects.vercel.app passed 13 HTTP/SEO/health checks before promotion.
+- Promoted to the production domains. The same 13 checks passed on https://kenasathi.com, including health 200, category/product JSON-LD/canonicals, sitemap, private noindex, missing-product 404 and signed-out admin redirect.
+- Non-destructive live Playwright suite: 6 passed, 3 intentionally skipped (no admin credentials and isolated-only mutations). No checkout notifications or lasting test customer/order mutations were sent to production.
+- Previous ready deployment retained for rollback: https://ecommerce-mvp-prototype-nn7hdp8eh-azadbasis-4964s-projects.vercel.app. Remote DB remains at V10; do not remove migrations on application rollback.
+- Added a reusable non-mutating `scripts/verify-live-release.mjs`. Vercel deployment uploads contained no private backup/credential files; the dry-run's empty private directory entry contained zero bytes and its contents were excluded.
+- Remaining limits: real browser admin login/Storage upload, off-site host-loss recovery, account-side alert/analytics activation, physical return reconciliation and owner-confirmed product/policy facts. Online gateway remains disabled pending real certification.
+
+
 ## 2026-10-02: Authorized Supabase Rollout And Recovery Verification
 
 Owner authorized completing the external rollout against the named Supabase project.

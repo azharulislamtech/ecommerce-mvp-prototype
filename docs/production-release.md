@@ -1,8 +1,10 @@
 # Production release and recovery
 
-The database rollout is completed; application deployment is awaiting Vercel authentication. Passing tests is not evidence of a deployed application, live gateway certification, or a full Supabase cloud backup restore.
+Database and application rollout completed on 2026-10-02. The application is live at https://kenasathi.com. This verifies the tested COD storefront release, not live gateway certification or a full Supabase cloud backup restore.
 
-Initial local verification on 2026-10-02 passed lint/typecheck/build, 16 database tests, 3 unit tests and 9 browser tests in each mode, with 0 audited vulnerabilities. After owner authorization, encrypted DB/Storage backup and restored-data PostgreSQL concurrency/migration checks passed; remote V8-V10 applied successfully. Current schema is 10, with 8 orders, 9 products, 8 payments, stock total 113 and 0 payment mismatches. Updated database suite has 17 passing tests; production browser suite has 9. Real Supabase RLS/RPC transaction checks passed and all test writes rolled back. Application deployment is not yet verified.
+Local lint/typecheck/build, 17 database tests, 3 unit tests and 9 isolated production-browser tests passed, with 0 audited vulnerabilities. Encrypted DB/Storage backup and restored-data PostgreSQL concurrency/migration checks passed; remote V8-V10 applied successfully. Real Supabase RLS/RPC transaction checks passed with complete rollback. Vercel cloud build and 13 staged/live release checks passed. Live Playwright: 6 passed, 3 intentionally skipped (authenticated admin without credentials and isolated-only order mutations).
+
+Deployment: `dpl_6x7VyDCPSkxivzgZBno8FHcVCUNf`, application revision `26e29a1`, unique URL https://ecommerce-mvp-prototype-6pij5s22n-azadbasis-4964s-projects.vercel.app. Previous rollback target: https://ecommerce-mvp-prototype-nn7hdp8eh-azadbasis-4964s-projects.vercel.app. Production environment explicitly sets site URL to kenasathi.com, disables online payments and disables demo catalog. Credentials/backups were excluded from upload. `node scripts/verify-live-release.mjs https://kenasathi.com` repeats the non-mutating release checks.
 
 ## Local recovery utilities
 

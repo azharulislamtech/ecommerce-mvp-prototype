@@ -6,7 +6,7 @@ A responsive Next.js e-commerce storefront for Kena Sathi, focused on product di
 
 - Kena Sathi storefront and admin UI are deployed on the production domain.
 - Supabase PostgreSQL schema is versioned with Flyway.
-- Authorized Flyway rollout on 2026-10-02 applied V8-V10; remote schema is version `10`. The application hardening revision still awaits Vercel deployment.
+- Authorized rollout on 2026-10-02 applied V8-V10 (schema `10`) and deployed the hardening revision to `https://kenasathi.com`. Live release checks and non-destructive browser regressions passed; see `docs/production-release.md` for evidence and remaining operational gates.
 - Hardening adds Next.js 16/React 19, checkout retry protection, atomic stock/payment updates, category SEO, structured data, health checks and isolated regression tests. Follow `docs/production-release.md` for release evidence and remaining account-side gates.
 - Public catalog pages read active categories/products and uploaded product images from Supabase; admin panel routes are protected by Supabase Auth; admin product CRUD is implemented with Supabase RLS; cart and checkout create real pending Cash on Delivery Supabase orders through a trusted PostgreSQL RPC with district-based delivery charges; admin order list/details/dashboard overview are Supabase-backed; SSLCommerz hosted checkout code is implemented but disabled by default until gateway verification/customer demand.
 

@@ -196,7 +196,7 @@ Tasks:
 - Remaining operational gates: real Supabase staging CRUD/Auth/Storage checks, backup restore drill, V8-V10 applied; finish app deployment, configure monitoring, verify live smoke checks and owner-confirmed catalog/policy content.
 - Online gateway callback/IPN certification remains a separate Phase 6 gate; online checkout stays disabled.
 
-Status: implementation/local verification and remote V8-V10 migration completed, with encrypted backup and restored-data PostgreSQL tests. Application deployment and account-side operational gates remain pending. Tests do not establish full production readiness.
+Status: implementation, V8-V10 migration and Vercel production deployment completed with encrypted backup, restored-data PostgreSQL tests, cloud build and live release/browser checks. Account-side off-site recovery/alerts, real admin login/Storage upload and owner-confirmed merchandising facts remain operational gates. Online gateway certification is still deferred.
 
 Exit gate:
 
