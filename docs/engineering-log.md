@@ -2,6 +2,14 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-10-02: Consistent Brand Logo And Browser Icons
+
+- Preserved the existing emerald/gold KS identity as a font-independent SVG in `src/app/icon.svg`; the shared storefront/footer/admin logo uses the same asset with fixed 36px dimensions, accessible link naming, keyboard focus and a 44px minimum link height.
+- Added a multi-resolution 16/32/48px ICO favicon, opaque 180px Apple touch icon, 192/512px PNG icons and a separate padded maskable 512px icon. Next's metadata file conventions register icons and the manifest automatically; the manifest uses browser display and does not imply offline support.
+- Home Organization JSON-LD identifies the real Kena Sathi URL and a crawlable 512px logo. No customer/order/database/payment behavior changed.
+- Verified desktop and 320px mobile rendering, shared admin logo, icon responses/types/dimensions and metadata. Lint/typecheck and isolated production build plus all 9 existing browser regressions passed.
+- The SVG is the master artwork. Regenerate PNG/ICO assets from it when changing branding; keep maskable/Apple artwork on an opaque emerald background with 70% scale/15% padding. Do not introduce platform-specific logo designs or unsupported SEO guarantees.
+
 ## 2026-10-02: Vercel Production Deployment And Live Verification
 
 - After explicit owner approval, PR #1 merged into `main` as `04249976e5064deab2bd31b10129910bbabb3a49`. [GitHub CI run 36997183643](https://github.com/azharulislamtech/ecommerce-mvp-prototype/actions/runs/36997183643) completed successfully, including lint/typecheck/unit/database tests, isolated production-browser tests, build and dependency audit. Workspace synchronized to main; deployed application code matches this release (later additions are release documentation/verifier).
