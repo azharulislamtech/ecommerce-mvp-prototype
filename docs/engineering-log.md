@@ -4,6 +4,7 @@ Append meaningful changes here. Keep newest entries at the top.
 
 ## 2026-10-02: Vercel Production Deployment And Live Verification
 
+- After explicit owner approval, PR #1 merged into `main` as `04249976e5064deab2bd31b10129910bbabb3a49`. [GitHub CI run 36997183643](https://github.com/azharulislamtech/ecommerce-mvp-prototype/actions/runs/36997183643) completed successfully, including lint/typecheck/unit/database tests, isolated production-browser tests, build and dependency audit. Workspace synchronized to main; deployed application code matches this release (later additions are release documentation/verifier).
 - User completed device authentication; confirmed account `azadbasis-4964`, team `azadbasis-4964s-projects`, existing project `prj_MdYl4Mdwj0hPUAJZmHU5zNGB4Qtk`.
 - Explicitly configured `NEXT_PUBLIC_SITE_URL=https://kenasathi.com`, `ENABLE_ONLINE_PAYMENTS=false`, `ALLOW_DEMO_CATALOG=false` without exposing credentials.
 - Deployed application revision `26e29a1` as `dpl_6x7VyDCPSkxivzgZBno8FHcVCUNf`; cloud build passed. Staged URL https://ecommerce-mvp-prototype-6pij5s22n-azadbasis-4964s-projects.vercel.app passed 13 HTTP/SEO/health checks before promotion.

@@ -6,6 +6,8 @@ Local lint/typecheck/build, 17 database tests, 3 unit tests and 9 isolated produ
 
 Deployment: `dpl_6x7VyDCPSkxivzgZBno8FHcVCUNf`, application revision `26e29a1`, unique URL https://ecommerce-mvp-prototype-6pij5s22n-azadbasis-4964s-projects.vercel.app. Previous rollback target: https://ecommerce-mvp-prototype-nn7hdp8eh-azadbasis-4964s-projects.vercel.app. Production environment explicitly sets site URL to kenasathi.com, disables online payments and disables demo catalog. Credentials/backups were excluded from upload. `node scripts/verify-live-release.mjs https://kenasathi.com` repeats the non-mutating release checks.
 
+Source PR #1 merged into main with explicit owner approval (`0424997`). [GitHub cloud CI](https://github.com/azharulislamtech/ecommerce-mvp-prototype/actions/runs/36997183643) completed successfully. The merged source includes the live verifier and release evidence added after deploying the application code.
+
 ## Local recovery utilities
 
 `scripts/backup-production.ps1` reads ignored Flyway credentials without printing them, creates a full custom-format DB archive plus product-image backup, and encrypts it using Windows DPAPI CurrentUser. `scripts/verify-postgres-release.ps1` restores the public schema/data into a separate loopback/password-protected PostgreSQL 18 cluster, applies pending Flyway migrations and verifies independent-session retry and cancellation behavior. `scripts/read-production-health.ps1 -VerifyTransactions` runs real Supabase RLS/checkout/settlement checks with a complete rollback. `scripts/cleanup-backup-plaintext.ps1` compares the encrypted database hash before removing temporary plaintext copies/stopped scratch clusters.
