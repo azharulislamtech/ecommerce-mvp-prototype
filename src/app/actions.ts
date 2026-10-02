@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { createHash } from "node:crypto";
 import { redirect } from "next/navigation";
 import {
   getPaymentConfigError,
@@ -298,7 +299,7 @@ function parseProductForm(formData: FormData): { payload?: ProductPayload; state
 }
 
 async function ensureUniqueProductSlug(
-  supabase: ReturnType<typeof createSupabaseAuthServerClient>,
+  supabase: Awaited<ReturnType<typeof createSupabaseAuthServerClient>>,
   slug: string,
   currentProductId?: string
 ) {
@@ -316,7 +317,7 @@ async function ensureUniqueProductSlug(
 }
 
 async function uploadProductImages(
-  supabase: ReturnType<typeof createSupabaseAuthServerClient>,
+  supabase: Awaited<ReturnType<typeof createSupabaseAuthServerClient>>,
   productId: string,
   productName: string,
   imageFiles: File[]
@@ -371,6 +372,8 @@ async function uploadProductImages(
 function revalidateProductPaths(slug?: string | null) {
   revalidatePath("/");
   revalidatePath("/products");
+  revalidatePath("/categories/[slug]", "page");
+  revalidatePath("/sitemap.xml");
   revalidatePath("/admin");
   revalidatePath("/admin/products");
 
@@ -383,14 +386,14 @@ function redirectToProducts(message: string, type: "notice" | "error" = "notice"
   redirect(`/admin/products?${type}=${encodeURIComponent(message)}`);
 }
 
-function getAppBaseUrl() {
+async function getAppBaseUrl() {
   const configuredBaseUrl = cleanEnv(process.env.NEXT_PUBLIC_SITE_URL) ?? cleanEnv(process.env.APP_BASE_URL);
 
   if (configuredBaseUrl) {
     return configuredBaseUrl.replace(/\/+$/, "");
   }
 
-  const requestHeaders = headers();
+  const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
 
   if (!host) {
@@ -413,9 +416,14 @@ export async function createOrderAction(
   const canonicalDistrict = getCanonicalDistrict(customerDistrict);
   const customerAddress = getText(formData, "customer_address");
   const customerNote = getText(formData, "customer_note");
+  if (customerNote.length > 1000) return checkoutFormError("Please keep the order note within 1,000 characters.");
   const paymentMethod = normalizeCheckoutPaymentMethod(getText(formData, "payment_method"));
   const checkoutItems = parseCheckoutItems(getText(formData, "cart_items"));
   const fieldErrors: CheckoutFormState["fieldErrors"] = {};
+  const idempotencyKey = getText(formData, "idempotency_key");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
+    return checkoutFormError("Please refresh checkout and try again.");
+  }
   let onlinePaymentBaseUrl: string | null = null;
 
   if (!checkoutItems) {
@@ -451,7 +459,7 @@ export async function createOrderAction(
 
     if (isOnlinePaymentMethod(paymentMethod) && !configError) {
       try {
-        onlinePaymentBaseUrl = getAppBaseUrl();
+        onlinePaymentBaseUrl = await getAppBaseUrl();
       } catch (error) {
         fieldErrors.payment_method =
           error instanceof Error ? error.message : "Could not prepare payment callback URLs.";
@@ -464,6 +472,10 @@ export async function createOrderAction(
   }
 
   const supabase = createSupabaseServiceClient();
+  const requestHeaders = await headers();
+  // The deployment's trusted reverse proxy must overwrite forwarded headers.
+  const clientIp = requestHeaders.get("x-vercel-forwarded-for")?.split(",")[0]?.trim()
+    || requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const { data, error } = await supabase.rpc("create_checkout_order", {
     p_customer_name: customerName,
     p_customer_phone: customerPhone,
@@ -471,11 +483,16 @@ export async function createOrderAction(
     p_customer_address: customerAddress,
     p_customer_note: customerNote || null,
     p_payment_method: paymentMethod,
-    p_items: checkoutItems as unknown as Json
+    p_items: checkoutItems as unknown as Json,
+    p_idempotency_key: idempotencyKey,
+    p_request_key: createHash("sha256").update(clientIp).digest("hex")
   });
 
   if (error) {
-    return checkoutFormError(error.message || "Could not create order.", {
+    console.error("Checkout rejected", { code: error.code });
+    const safeMessage = error.message.startsWith("Too many orders.") || error.message.startsWith("Checkout details changed.")
+      ? error.message : "Could not create order. Please check product availability and try again.";
+    return checkoutFormError(safeMessage, {
       cart_items: "Review cart stock and try again."
     });
   }
@@ -491,7 +508,7 @@ export async function createOrderAction(
   revalidatePath("/products");
 
   const itemCount = checkoutItems.reduce((total, item) => total + item.quantity, 0);
-  await sendTelegramNotification(
+  if (!order.replayed) await sendTelegramNotification(
     [
       "New order " + order.order_number,
       "Total: BDT " + order.total_amount + " (" + paymentMethod + ")",
@@ -507,6 +524,7 @@ export async function createOrderAction(
   );
 
   if (isOnlinePaymentMethod(paymentMethod)) {
+    if (order.payment_status === "paid") redirect(`/payment/success?t=${encodeURIComponent(order.tracking_token)}`);
     const payment = await initiateOnlinePaymentForOrder(order.order_id, paymentMethod, onlinePaymentBaseUrl!);
 
     if (!payment.ok) {
@@ -518,7 +536,7 @@ export async function createOrderAction(
     redirect(payment.redirectUrl);
   }
 
-  redirect(`/payment/success?order=${encodeURIComponent(order.order_number)}`);
+  redirect(`/payment/success?t=${encodeURIComponent(order.tracking_token)}`);
 }
 
 export async function retryPaymentAction() {
@@ -613,7 +631,7 @@ export async function moderateProductReviewAction(formData: FormData) {
     redirect("/admin/reviews?error=" + encodeURIComponent("Invalid review update."));
   }
 
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   const { data: review, error: reviewError } = await supabase
     .from("product_reviews")
     .select("product_id")
@@ -656,7 +674,7 @@ export async function adminLoginAction(formData: FormData) {
     loginRedirect("Email and password are required.");
   }
 
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
@@ -686,11 +704,10 @@ export async function updateOrderStatusAction(formData: FormData) {
     redirect(`/admin/orders/${encodeURIComponent(orderNumber || "")}?error=${encodeURIComponent("Invalid order status update.")}`);
   }
 
-  const supabase = createSupabaseAuthServerClient();
-  const { error } = await supabase
-    .from("orders")
-    .update({ order_status: orderStatus as never, payment_status: paymentStatus as never })
-    .eq("order_number", orderNumber);
+  const supabase = await createSupabaseAuthServerClient();
+  const { error } = await supabase.rpc("update_admin_order", {
+    p_order_number: orderNumber, p_order_status: orderStatus, p_payment_status: paymentStatus
+  });
 
   if (error) {
     redirect(`/admin/orders/${encodeURIComponent(orderNumber)}?error=${encodeURIComponent(`Could not update order: ${error.message}`)}`);
@@ -700,13 +717,35 @@ export async function updateOrderStatusAction(formData: FormData) {
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${orderNumber}`);
   revalidatePath("/track-order");
+  revalidatePath("/products", "layout");
+  revalidatePath("/");
   revalidatePath("/payment/success");
   redirect(`/admin/orders/${encodeURIComponent(orderNumber)}?notice=${encodeURIComponent("Order status updated.")}`);
 }
 export async function adminLogoutAction() {
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   await supabase.auth.signOut();
   redirect("/admin/login");
+}
+
+export async function reconcileCancelledStockAction(formData: FormData) {
+  await requireAdmin();
+  const orderNumber = getText(formData, "order_number");
+  const inventoryState = getText(formData, "inventory_state");
+  const confirmed = getText(formData, "receipt_confirmed") === "yes";
+  const path = `/admin/orders/${encodeURIComponent(orderNumber)}`;
+  if (!orderNumber || !confirmed || !["returned", "already-restocked"].includes(inventoryState)) {
+    redirect(`${path}?error=${encodeURIComponent("Confirm that all returned items are physically received and sellable.")}`);
+  }
+  const supabase = await createSupabaseAuthServerClient();
+  const { error } = await supabase.rpc("reconcile_cancelled_stock", {
+    p_order_number: orderNumber, p_already_restocked: inventoryState === "already-restocked"
+  });
+  if (error) redirect(`${path}?error=${encodeURIComponent("Could not reconcile cancelled inventory. Please check the order and try again.")}`);
+  revalidatePath(path);
+  revalidateProductPaths();
+  revalidatePath("/products/[slug]", "page");
+  redirect(`${path}?notice=${encodeURIComponent("Physical inventory confirmed. Repeated saves will not add stock again.")}`);
 }
 
 export async function createProductAction(
@@ -721,7 +760,7 @@ export async function createProductAction(
     return parsed.state ?? productFormError("Could not read product form data.");
   }
 
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   const duplicateSlugMessage = await ensureUniqueProductSlug(supabase, parsed.payload.slug);
 
   if (duplicateSlugMessage) {
@@ -778,7 +817,7 @@ export async function updateProductAction(
     return parsed.state ?? productFormError("Could not read product form data.");
   }
 
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   const duplicateSlugMessage = await ensureUniqueProductSlug(supabase, parsed.payload.slug, productId);
 
   if (duplicateSlugMessage) {
@@ -833,7 +872,7 @@ export async function updateProductStatusAction(formData: FormData) {
     redirectToProducts("Invalid product status request.", "error");
   }
 
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   const { data: product, error } = await supabase
     .from("products")
     .update({ is_active: nextStatus === "active" })
@@ -859,7 +898,7 @@ export async function deleteProductImageAction(formData: FormData) {
     redirect(`/admin/products/${productId || ""}/edit?error=${encodeURIComponent("Invalid image delete request.")}`);
   }
 
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   const { data: image, error: loadError } = await supabase
     .from("product_images")
     .select("image_url")
@@ -900,7 +939,7 @@ export async function deleteProductAction(formData: FormData) {
     redirectToProducts("Invalid product delete request.", "error");
   }
 
-  const supabase = createSupabaseAuthServerClient();
+  const supabase = await createSupabaseAuthServerClient();
   const { data: product, error: loadError } = await supabase
     .from("products")
     .select("slug")

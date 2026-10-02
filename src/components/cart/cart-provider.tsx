@@ -44,6 +44,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartLine[]>([]);
 
   useEffect(() => {
+    // Read browser storage after hydration so SSR and the first client render agree.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems(readStoredCart());
     setHydrated(true);
   }, []);

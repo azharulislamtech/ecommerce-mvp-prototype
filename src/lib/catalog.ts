@@ -81,6 +81,8 @@ function mapProduct(row: CatalogProduct): Product {
     slug: row.slug,
     name: row.name,
     category: categoryName,
+    categorySlug: row.category?.slug,
+    updatedAt: row.updated_at,
     shortDescription: row.short_description ?? fallback?.shortDescription ?? "A carefully selected product.",
     description: row.description ?? fallback?.description ?? "More product details will be available soon.",
     price: hasDiscount ? row.discount_price! : row.price,
@@ -91,7 +93,7 @@ function mapProduct(row: CatalogProduct): Product {
     imageUrl: primaryImage?.url,
     images,
     visual: fallback?.visual ?? visualFromSlug(categorySlug),
-    specs: fallback?.specs ?? ["Quality checked", "Fast delivery", "Support available"]
+    specs: []
   };
 }
 
@@ -115,7 +117,7 @@ function applyFilters(products: Product[], filters: CatalogFilters = {}) {
   }
 
   if (category) {
-    result = result.filter((product) => product.category.toLowerCase().replace(/\s+/g, "-").replace("&", "").replace(/--+/g, "-") === category || product.category.toLowerCase() === category);
+    result = result.filter((product) => product.categorySlug === category || product.category.toLowerCase().replace(/\s+/g, "-").replace("&", "").replace(/--+/g, "-") === category || product.category.toLowerCase() === category);
   }
 
   if (price === "under-1500") {
@@ -137,8 +139,15 @@ function applyFilters(products: Product[], filters: CatalogFilters = {}) {
   return result;
 }
 
+function requireCatalogConfig() {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_DEMO_CATALOG !== "true") {
+    throw new Error("Production catalog configuration is missing.");
+  }
+}
+
 export async function getStoreCategories() {
   if (!hasSupabasePublicConfig()) {
+    requireCatalogConfig();
     return mockCategories;
   }
 
@@ -148,6 +157,7 @@ export async function getStoreCategories() {
 
 export async function getStoreProducts(filters: CatalogFilters = {}) {
   if (!hasSupabasePublicConfig()) {
+    requireCatalogConfig();
     return applyFilters(mockProducts, filters);
   }
 
@@ -162,6 +172,7 @@ export async function getStoreFeaturedProducts(limit = 8) {
 
 export async function getStoreProductBySlug(slug: string) {
   if (!hasSupabasePublicConfig()) {
+    requireCatalogConfig();
     return getMockProductBySlug(slug) ?? null;
   }
 

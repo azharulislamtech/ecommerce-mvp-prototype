@@ -192,6 +192,8 @@ export type Database = {
         Row: {
           id: string;
           order_number: string;
+          tracking_token: string;
+          stock_released: boolean | null;
           customer_name: string;
           customer_phone: string;
           customer_district: string;
@@ -209,6 +211,7 @@ export type Database = {
         Insert: {
           id?: string;
           order_number: string;
+          tracking_token?: string;
           customer_name: string;
           customer_phone: string;
           customer_district: string;
@@ -226,6 +229,7 @@ export type Database = {
         Update: {
           id?: string;
           order_number?: string;
+          tracking_token?: string;
           customer_name?: string;
           customer_phone?: string;
           customer_district?: string;
@@ -356,20 +360,45 @@ export type Database = {
           p_customer_note: string | null;
           p_payment_method: string;
           p_items: Json;
+          p_idempotency_key: string;
+          p_request_key: string;
         };
         Returns: {
           order_id: string;
           order_number: string;
+          tracking_token: string;
           subtotal: number;
           delivery_charge: number;
           discount_amount: number;
           total_amount: number;
           payment_status: string;
           order_status: string;
+          replayed: boolean;
         }[];
-      };      is_admin: {
+      };
+      update_admin_order: {
+        Args: { p_order_number: string; p_order_status: string; p_payment_status: string };
+        Returns: undefined;
+      };
+      reconcile_cancelled_stock: {
+        Args: { p_order_number: string; p_already_restocked: boolean };
+        Returns: undefined;
+      };
+      apply_verified_payment: {
+        Args: { p_payment_id: string; p_status: string; p_transaction_id: string; p_method: string; p_response: Json };
+        Returns: PaymentStatus;
+      };
+      is_admin: {
         Args: Record<string, never>;
         Returns: boolean;
+      };
+      is_within_public_rate_limit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number; };
+        Returns: boolean;
+      };
+      record_public_rate_limit_hit: {
+        Args: { p_key: string; p_window_seconds: number; };
+        Returns: number;
       };
       is_owner: {
         Args: Record<string, never>;

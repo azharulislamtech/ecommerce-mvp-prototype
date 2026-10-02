@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { submitProductReviewAction, type ProductReviewFormState } from "@/app/actions";
 
 const initialState: ProductReviewFormState = {
@@ -34,7 +35,7 @@ function FieldError({ message }: { message?: string }) {
 
 export function ProductReviewForm({ productId, productSlug }: ProductReviewFormProps) {
   const action = submitProductReviewAction.bind(null, productId, productSlug);
-  const [state, formAction] = useFormState(action, initialState);
+  const [state, formAction] = useActionState(action, initialState);
 
   return (
     <section className="rounded-lg border border-slate-200 bg-slate-50 p-5" id="write-review">

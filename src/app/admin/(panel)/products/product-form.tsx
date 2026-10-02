@@ -1,7 +1,8 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import {
   createProductAction,
   deleteProductImageAction,
@@ -10,6 +11,7 @@ import {
 } from "@/app/actions";
 import type { AdminProduct } from "@/lib/supabase/admin-catalog";
 import type { CategoryRow } from "@/lib/supabase/database.types";
+import { catalogReadiness } from "@/lib/catalog-readiness";
 
 const initialState: ProductFormState = {
   status: "idle",
@@ -77,12 +79,17 @@ function DeleteImageButton() {
 
 export function ProductForm({ categories, error, mode, notice, product }: ProductFormProps) {
   const action = mode === "edit" && product ? updateProductAction.bind(null, product.id) : createProductAction;
-  const [state, formAction] = useFormState(action, initialState);
+  const [state, formAction] = useActionState(action, initialState);
   const cannotSave = categories.length === 0;
   const currentStatus = product?.is_active === false ? "inactive" : "active";
+  const contentIssues = product ? catalogReadiness(product) : [];
 
   return (
     <div className="space-y-5">
+      {contentIssues.length > 0 && <aside className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <h2 className="font-bold">Improve this listing before promotion</h2>
+        <ul className="mt-2 list-inside list-disc">{contentIssues.map((issue) => <li key={issue}>{issue}</li>)}</ul>
+      </aside>}
       {notice ? (
         <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
           {notice}

@@ -29,6 +29,8 @@ export function ProductVisual({
           fill
           sizes={large ? "(min-width: 1024px) 50vw, 100vw" : compact ? "80px" : "(min-width: 1024px) 25vw, 50vw"}
           src={imageUrl}
+          loading={large ? "eager" : "lazy"}
+          fetchPriority={large ? "high" : "auto"}
         />
       </div>
     );

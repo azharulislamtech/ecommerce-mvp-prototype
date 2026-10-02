@@ -12,6 +12,14 @@ npm run test:e2e:ui
 
 `test:e2e:install` installs the Chromium browser binary used by Playwright. Run it once per machine or CI image.
 
+## Isolated regression tests
+
+Run `npm run test:unit`, `npm run test:db`, and `npm run test:e2e:production` for release verification. `npm run test:e2e:isolated` runs the same browser suite against the development server.
+
+The isolated runner creates a disposable PGlite database, applies V1-V10, starts a loopback PostgREST/Auth fixture and overrides Supabase/notification/payment configuration for the child app. It uses `.next-isolated` to avoid sharing the development cache. The isolated-only browser tests submit COD orders and authenticate a fake admin to exercise dashboard, dispatch/cancellation and confirmed-return inventory actions. They also check canonical/structured-data output, private-page headers, sitemap, mobile layout and existing cart/tracking/admin guards. They are skipped in the default shared-server suite.
+
+Auth is simulated and Storage uploads are not emulated. Staging tests against real Supabase remain necessary. PGlite tests do not certify pgcrypto randomness or multi-session database contention. The separate PostgreSQL restore drill exercises real pgcrypto and three independent checkout sessions. Never set `E2E_ISOLATED=1` for a shared/production server; use the runner to configure its disposable services.
+
 ## Server Selection
 
 By default, Playwright reuses an existing server on port `3000` or starts one with:

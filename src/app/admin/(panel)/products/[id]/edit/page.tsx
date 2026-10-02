@@ -5,13 +5,13 @@ import { getAdminCategories, getAdminProductById } from "@/lib/supabase/admin-ca
 export const dynamic = "force-dynamic";
 
 type EditProductPageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
-  searchParams?: {
+  }>;
+  searchParams?: Promise<{
     error?: string | string[];
     notice?: string | string[];
-  };
+  }>;
 };
 
 function firstParam(value: string | string[] | undefined) {
@@ -19,7 +19,9 @@ function firstParam(value: string | string[] | undefined) {
 }
 
 export default async function EditProductPage({ params, searchParams }: EditProductPageProps) {
-  const [product, categories] = await Promise.all([getAdminProductById(params.id), getAdminCategories()]);
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const [product, categories] = await Promise.all([getAdminProductById(resolvedParams.id), getAdminCategories()]);
 
   if (!product) {
     notFound();
@@ -34,9 +36,9 @@ export default async function EditProductPage({ params, searchParams }: EditProd
       </div>
       <ProductForm
         categories={categories}
-        error={firstParam(searchParams?.error)}
+        error={firstParam(resolvedSearchParams?.error)}
         mode="edit"
-        notice={firstParam(searchParams?.notice)}
+        notice={firstParam(resolvedSearchParams?.notice)}
         product={product}
       />
     </div>

@@ -8,12 +8,12 @@ import { getAdminProducts, type AdminProduct } from "@/lib/supabase/admin-catalo
 export const dynamic = "force-dynamic";
 
 type AdminProductListPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     error?: string | string[];
     notice?: string | string[];
     q?: string | string[];
     status?: string | string[];
-  };
+  }>;
 };
 
 const visualByCategorySlug: Record<string, ProductVisualType> = {
@@ -54,10 +54,11 @@ function ProductThumbnail({ product }: { product: AdminProduct }) {
 }
 
 export default async function AdminProductListPage({ searchParams }: AdminProductListPageProps) {
-  const q = firstParam(searchParams?.q) ?? "";
-  const status = firstParam(searchParams?.status) ?? "all";
-  const notice = firstParam(searchParams?.notice);
-  const error = firstParam(searchParams?.error);
+  const resolvedSearchParams = await searchParams;
+  const q = firstParam(resolvedSearchParams?.q) ?? "";
+  const status = firstParam(resolvedSearchParams?.status) ?? "all";
+  const notice = firstParam(resolvedSearchParams?.notice);
+  const error = firstParam(resolvedSearchParams?.error);
   const products = await getAdminProducts({ q, status });
 
   return (

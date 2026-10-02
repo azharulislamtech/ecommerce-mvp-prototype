@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { ClearCartOnSuccess } from "@/components/cart/clear-cart-on-success";
+import { SaveRecentOrder } from "@/components/orders/save-recent-order";
 import { CheckIcon } from "@/components/ui/icons";
 import { formatMoney } from "@/lib/data";
 import { getOrderSuccessSummary } from "@/lib/supabase/orders";
 
 type PaymentSuccessPageProps = {
-  searchParams?: {
-    order?: string | string[];
+  searchParams?: Promise<{
+    t?: string | string[];
     status?: string | string[];
     reason?: string | string[];
-  };
+  }>;
 };
 
 function firstParam(value: string | string[] | undefined) {
@@ -17,14 +18,19 @@ function firstParam(value: string | string[] | undefined) {
 }
 
 export default async function PaymentSuccessPage({ searchParams }: PaymentSuccessPageProps) {
-  const orderNumber = firstParam(searchParams?.order);
-  const gatewayStatus = firstParam(searchParams?.status);
-  const gatewayReason = firstParam(searchParams?.reason);
-  const order = orderNumber ? await getOrderSuccessSummary(orderNumber) : null;
+  const resolvedSearchParams = await searchParams;
+  // Resolved from the random tracking token, never the order number: order
+  // numbers used to be sequential, so a number-based lookup here let anyone walk
+  // the sequence and read every order's total.
+  const trackingToken = firstParam(resolvedSearchParams?.t);
+  const gatewayStatus = firstParam(resolvedSearchParams?.status);
+  const gatewayReason = firstParam(resolvedSearchParams?.reason);
+  const order = trackingToken ? await getOrderSuccessSummary(trackingToken) : null;
 
   return (
     <section className="py-12">
       <ClearCartOnSuccess enabled={Boolean(order)} />
+      {order ? <SaveRecentOrder orderNumber={order.order_number} trackingToken={order.tracking_token} /> : null}
       <div className="container-page">
         <div className="mx-auto max-w-xl rounded-lg border border-emerald-200 bg-white p-6 text-center shadow-sm">
           <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-50 text-emerald-700">
@@ -40,24 +46,29 @@ export default async function PaymentSuccessPage({ searchParams }: PaymentSucces
             </div>
           ) : null}
           {order ? (
-            <dl className="mt-6 grid gap-3 rounded-lg bg-slate-50 p-4 text-left text-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-slate-500">Order ID</dt>
-                <dd className="font-bold text-slate-950">{order.order_number}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-slate-500">Order Status</dt>
-                <dd className="font-bold text-blue-700">{order.order_status}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-slate-500">Payment Status</dt>
-                <dd className="font-bold text-amber-700">{order.payment_status}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-slate-500">Total Amount</dt>
-                <dd className="font-bold text-slate-950">{formatMoney(order.total_amount)}</dd>
-              </div>
-            </dl>
+            <>
+              <dl className="mt-6 grid gap-3 rounded-lg bg-slate-50 p-4 text-left text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-slate-500">Order ID</dt>
+                  <dd className="font-bold text-slate-950">{order.order_number}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-slate-500">Order Status</dt>
+                  <dd className="font-bold text-blue-700">{order.order_status}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-slate-500">Payment Status</dt>
+                  <dd className="font-bold text-amber-700">{order.payment_status}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-slate-500">Total Amount</dt>
+                  <dd className="font-bold text-slate-950">{formatMoney(order.total_amount)}</dd>
+                </div>
+              </dl>
+              <p className="mt-3 text-xs leading-5 text-slate-500">
+                This order is saved on this device, so you can reopen it from the Track Order page without the order ID.
+              </p>
+            </>
           ) : (
             <div className="mt-6 rounded-lg bg-amber-50 p-4 text-left text-sm font-semibold text-amber-800">
               Order summary is unavailable. Please keep your Kena Sathi order confirmation or contact support.
@@ -72,7 +83,7 @@ export default async function PaymentSuccessPage({ searchParams }: PaymentSucces
             </Link>
             <Link
               className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-slate-300 px-5 text-sm font-semibold text-slate-950 hover:bg-slate-50"
-              href="/track-order"
+              href={order ? `/track-order?t=${encodeURIComponent(order.tracking_token)}` : "/track-order"}
             >
               Track Order
             </Link>

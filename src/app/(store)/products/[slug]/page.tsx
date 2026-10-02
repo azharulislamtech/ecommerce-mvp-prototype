@@ -10,13 +10,16 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/lib/data";
 import { getStoreProductBySlug, getStoreProducts, getStoreRelatedProducts } from "@/lib/catalog";
 import { getProductReviewData } from "@/lib/supabase/reviews";
+import { StructuredData } from "@/components/modules/structured-data";
+import { breadcrumbStructuredData, productStructuredData } from "@/lib/seo";
+import { getSiteUrl } from "@/lib/site";
 
 export const revalidate = 60;
 
 type ProductDetailsPageProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
 export async function generateStaticParams() {
@@ -25,7 +28,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: ProductDetailsPageProps): Promise<Metadata> {
-  const product = await getStoreProductBySlug(params.slug);
+  const resolvedParams = await params;
+  const product = await getStoreProductBySlug(resolvedParams.slug);
 
   if (!product) {
     return { title: "Product Not Found" };
@@ -48,7 +52,8 @@ export async function generateMetadata({ params }: ProductDetailsPageProps): Pro
 }
 
 export default async function ProductDetailsPage({ params }: ProductDetailsPageProps) {
-  const product = await getStoreProductBySlug(params.slug);
+  const resolvedParams = await params;
+  const product = await getStoreProductBySlug(resolvedParams.slug);
 
   if (!product) {
     notFound();
@@ -62,6 +67,12 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
 
   return (
     <>
+      <StructuredData data={productStructuredData(product, getSiteUrl(), summary)} />
+      <StructuredData data={breadcrumbStructuredData([
+        { name: "Home", url: getSiteUrl() },
+        { name: "Products", url: `${getSiteUrl()}/products` },
+        { name: product.name, url: `${getSiteUrl()}/products/${product.slug}` }
+      ])} />
       <section className="py-8 md:py-10">
         <div className="container-page grid gap-8 lg:grid-cols-[1fr_0.9fr]">
           <div className="min-w-0">
@@ -127,7 +138,7 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
           <article>
             <h2 className="text-2xl font-bold text-slate-950">Description</h2>
             <p className="mt-3 leading-7 text-slate-600">{product.description}</p>
-            <h3 className="mt-8 text-lg font-bold text-slate-950">Specification</h3>
+            {product.specs.length > 0 && <h3 className="mt-8 text-lg font-bold text-slate-950">Specification</h3>}
             <ul className="mt-3 grid gap-3 sm:grid-cols-2">
               {product.specs.map((spec) => (
                 <li className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" key={spec}>

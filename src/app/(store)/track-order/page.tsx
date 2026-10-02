@@ -1,15 +1,19 @@
+import { RecentOrdersPanel } from "@/components/orders/recent-orders-panel";
+import { SaveRecentOrder } from "@/components/orders/save-recent-order";
 import { formatMoney } from "@/lib/data";
+import { RATE_LIMIT_WINDOW_MINUTES } from "@/lib/rate-limit";
 import type { OrderStatus } from "@/lib/supabase/database.types";
-import { getPublicTrackedOrder } from "@/lib/supabase/orders";
+import { trackOrderByNumberAndPhone, trackOrderByToken, type TrackOrderResult } from "@/lib/supabase/orders";
 
 export const dynamic = "force-dynamic";
 
 type TrackOrderPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     order?: string | string[];
     orderId?: string | string[];
     phone?: string | string[];
-  };
+    t?: string | string[];
+  }>;
 };
 
 const orderSteps: { status: OrderStatus; label: string }[] = [
@@ -49,16 +53,52 @@ function statusTone(status: OrderStatus) {
   return "border-blue-200 bg-blue-50 text-blue-700";
 }
 
+function emptyStateCopy(result: TrackOrderResult | null) {
+  if (result?.status === "rate-limited") {
+    return {
+      heading: "Too Many Attempts",
+      body: `Too many order lookups failed from this connection. Please wait ${RATE_LIMIT_WINDOW_MINUTES} minutes and try again, or call Kena Sathi support.`
+    };
+  }
+
+  if (result?.status === "not-found") {
+    return {
+      heading: "Order Not Found",
+      body: "We could not match that order ID and phone number. Please check both values and try again."
+    };
+  }
+
+  return {
+    heading: "Enter Order Details",
+    body: "Submit your order ID and checkout phone number to see the latest admin-updated delivery status."
+  };
+}
+
 export default async function TrackOrderPage({ searchParams }: TrackOrderPageProps) {
-  const orderQuery = firstParam(searchParams?.order) ?? firstParam(searchParams?.orderId) ?? "";
-  const phoneQuery = firstParam(searchParams?.phone) ?? "";
-  const hasSubmitted = Boolean(orderQuery || phoneQuery);
-  const trackedOrder = orderQuery && phoneQuery ? await getPublicTrackedOrder(orderQuery, phoneQuery) : null;
+  const resolvedSearchParams = await searchParams;
+  const tokenQuery = firstParam(resolvedSearchParams?.t) ?? "";
+  const orderQuery = firstParam(resolvedSearchParams?.order) ?? firstParam(resolvedSearchParams?.orderId) ?? "";
+  const phoneQuery = firstParam(resolvedSearchParams?.phone) ?? "";
+
+  let result: TrackOrderResult | null = null;
+
+  if (tokenQuery) {
+    result = await trackOrderByToken(tokenQuery);
+  } else if (orderQuery && phoneQuery) {
+    result = await trackOrderByNumberAndPhone(orderQuery, phoneQuery);
+  }
+
+  const trackedOrder = result?.status === "found" ? result.order : null;
   const currentStepIndex = trackedOrder ? orderSteps.findIndex((step) => step.status === trackedOrder.order_status) : -1;
   const isCancelled = trackedOrder?.order_status === "cancelled";
+  const emptyState = emptyStateCopy(result);
 
   return (
     <section className="py-8 md:py-10">
+      {/* Tracking on a new device teaches that device the order, so the next visit is one tap. */}
+      {trackedOrder ? (
+        <SaveRecentOrder orderNumber={trackedOrder.order_number} trackingToken={trackedOrder.tracking_token} />
+      ) : null}
       <div className="container-page grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
         <div>
           <p className="text-sm font-semibold uppercase text-blue-700">Order Tracking</p>
@@ -73,7 +113,7 @@ export default async function TrackOrderPage({ searchParams }: TrackOrderPagePro
                 className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 px-3 text-sm"
                 defaultValue={orderQuery}
                 name="order"
-                placeholder="SP-20260704-001001"
+                placeholder="SP-20260704-K7M2QX"
                 required
               />
             </label>
@@ -92,6 +132,7 @@ export default async function TrackOrderPage({ searchParams }: TrackOrderPagePro
               Track Order
             </button>
           </form>
+          <RecentOrdersPanel activeToken={trackedOrder?.tracking_token} />
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -184,14 +225,8 @@ export default async function TrackOrderPage({ searchParams }: TrackOrderPagePro
           ) : (
             <div className="flex min-h-[360px] flex-col justify-center rounded-md bg-slate-50 p-6 text-center">
               <p className="text-sm font-semibold uppercase text-blue-700">Live Order Lookup</p>
-              <h2 className="mt-2 text-2xl font-bold text-slate-950">
-                {hasSubmitted ? "Order Not Found" : "Enter Order Details"}
-              </h2>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">
-                {hasSubmitted
-                  ? "We could not match that order ID and phone number. Please check both values and try again."
-                  : "Submit your order ID and checkout phone number to see the latest admin-updated delivery status."}
-              </p>
+              <h2 className="mt-2 text-2xl font-bold text-slate-950">{emptyState.heading}</h2>
+              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">{emptyState.body}</p>
             </div>
           )}
         </div>

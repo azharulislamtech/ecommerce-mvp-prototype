@@ -1,5 +1,7 @@
 node_modules
 .next
+.next-isolated
+.private-backups/
 out
 dist
 .env*.local
