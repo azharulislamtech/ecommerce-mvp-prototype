@@ -7,6 +7,7 @@ Use this file to resume safely. Explain all user-facing results in Bangla. Read 
 - Project: Kena Sathi, `D:\WebApplication\Ecommerce application`.
 - Local stack: Next.js 16.3.8, React 19.3, TypeScript, Tailwind, Supabase PostgreSQL/Auth/Storage, Flyway. Read installed Next guides before framework code edits.
 - The existing storefront is deployed at kenasathi.com. This hardening revision is LOCAL and has not been deployed.
+- Source is published on `codex/production-hardening`, draft PR https://github.com/azharulislamtech/ecommerce-mvp-prototype/pull/1. No cloud CI run observed yet. Vercel login handoff is pending; home/products/tracking remain 200, new health route remains 404 on live deployment.
 - Authorized remote Flyway rollout: V1-V10 successful, schema version 10. Encrypted DB/Storage backup and restored-data migration/concurrency checks passed. Application deployment still needs Vercel authentication.
 - Existing catalog/admin CRUD, COD checkout, server-calculated Dhaka BDT 60/other districts BDT 120 delivery, cart persistence, secure order tracking, verified reviews/moderation and Telegram notifications remain implemented.
 - Local V9 adds idempotent checkout, accepted-order quotas, duplicate-item normalization, transactional stock release/re-reservation, explicit courier-return inventory confirmation and atomic admin/gateway settlement. Historical cancelled stock is unknown; never bulk-restock. Refund status records an already-completed manual refund.

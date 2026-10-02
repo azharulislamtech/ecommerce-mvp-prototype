@@ -13,6 +13,8 @@ Owner authorized completing the external rollout against the named Supabase proj
 - Real Supabase integration checks used authenticated-admin RLS product insert/update/delete, service-role COD amount/replay/stock, cancellation/reopening, atomic settlement and downgrade rejection inside a fully rolled-back transaction. No lasting test customer/order/product rows were created.
 - Database regression suite: 17 passed with V1-V10. Production browser suite: 9 passed with all ten migrations. Existing lint/typecheck/unit/build verification remains required for source release.
 - Remaining account boundary: Supabase dashboard and Vercel CLI/browser lack signed-in sessions. Vercel device-login handoff started; no application deployment has been claimed. Browser Auth login, Storage upload, provider monitoring/analytics, off-site backup retention and SSLCommerz remain separate operational gates.
+- Published source revision `c3e4515` on `codex/production-hardening` and draft PR [#1](https://github.com/azharulislamtech/ecommerce-mvp-prototype/pull/1). GitHub Actions is enabled, but no cloud workflow run was observed; local passing checks are not a cloud-CI result.
+- Post-migration live read-only checks: home/products/tracking/sitemap return 200; new `/api/health` remains 404 and category sitemap entries are absent, confirming the new application revision is not deployed. Do not merge/deploy or describe it as live solely from database migration success.
 
 
 ## 2026-10-02: Tested SEO And Order Integrity Hardening (Local Release)
