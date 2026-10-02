@@ -4,6 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
+  applicationName: "Kena Sathi",
   title: {
     default: "Kena Sathi | Trusted Online Shopping in Bangladesh",
     template: "%s | Kena Sathi"

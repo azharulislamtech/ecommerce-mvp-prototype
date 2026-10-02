@@ -5,6 +5,7 @@ A responsive Next.js e-commerce storefront for Kena Sathi, focused on product di
 ## Current Status
 
 - Kena Sathi storefront and admin UI are deployed on the production domain.
+- Shared SVG branding, browser/favicon/Apple icons, manifest icons and Organization logo metadata use the same emerald/gold KS identity. Master artwork: `src/app/icon.svg`; derived PNG icons: `public/brand/`.
 - Supabase PostgreSQL schema is versioned with Flyway.
 - Authorized rollout on 2026-10-02 applied V8-V10 (schema `10`) and deployed the hardening revision to `https://kenasathi.com`. Live release checks and non-destructive browser regressions passed; see `docs/production-release.md` for evidence and remaining operational gates.
 - Hardening adds Next.js 16/React 19, checkout retry protection, atomic stock/payment updates, category SEO, structured data, health checks and isolated regression tests. Follow `docs/production-release.md` for release evidence and remaining account-side gates.

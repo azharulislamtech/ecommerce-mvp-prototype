@@ -5,6 +5,8 @@ import { ProductCard } from "@/components/modules/product-card";
 import { ProductVisual } from "@/components/modules/product-visual";
 import { SectionHeading } from "@/components/modules/section-heading";
 import { getStoreCategories, getStoreFeaturedProducts } from "@/lib/catalog";
+import { jsonLd } from "@/lib/seo";
+import { getSiteUrl } from "@/lib/site";
 
 export const revalidate = 60;
 export const metadata = { alternates: { canonical: "/" } };
@@ -40,6 +42,19 @@ export default async function HomePage() {
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": `${getSiteUrl()}#organization`,
+        name: "Kena Sathi",
+        url: getSiteUrl(),
+        logo: {
+          "@type": "ImageObject",
+          url: `${getSiteUrl()}/brand/icon-512.png`,
+          width: 512,
+          height: 512
+        }
+      }) }} />
       <section className="bg-white">
         <div className="container-page grid items-center gap-8 py-8 md:grid-cols-[0.9fr_1.1fr] md:py-12">
           <div className="max-w-xl">
