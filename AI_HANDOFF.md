@@ -21,6 +21,7 @@ Build a clean, mobile-first single-brand e-commerce MVP where customers can brow
 
 ## Important Local Files
 
+- Latest logo-only production release: `dpl_C2qv3XQa3UhMRHvvfpNU8BftpfRp`, source `df1175e`, PR #2 merged as `d044060`; 9 isolated production-browser tests, GitHub CI and 13 staged/live release checks passed. Live SVG/favicon/Apple/PNG/manifest assets verified. Master logo is `src/app/icon.svg`; update all derived icons together. See the newest engineering-log entry for the immediate rollback target.
 - Compact handoff: `COMPACT_HANDOFF.md`
 - MVP spec: `ecommerce_mvp_wireframe_spec.md`
 - Roadmap: `docs/production-roadmap.md`

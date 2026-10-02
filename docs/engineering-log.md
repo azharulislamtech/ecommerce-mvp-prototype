@@ -4,6 +4,7 @@ Append meaningful changes here. Keep newest entries at the top.
 
 ## 2026-10-02: Consistent Brand Logo And Browser Icons
 
+- Published and promoted as `dpl_C2qv3XQa3UhMRHvvfpNU8BftpfRp`, source `df1175e`; [PR #2](https://github.com/azharulislamtech/ecommerce-mvp-prototype/pull/2) merged into main as `d044060`. [GitHub CI](https://github.com/azharulislamtech/ecommerce-mvp-prototype/actions/runs/37019691713) passed. All 13 staged/live release checks, six live icon asset checks and the live manifest passed; browser confirmed the live header SVG loaded at 36px. Previous hardening deployment `dpl_6x7VyDCPSkxivzgZBno8FHcVCUNf` remains the immediate application rollback target.
 - Preserved the existing emerald/gold KS identity as a font-independent SVG in `src/app/icon.svg`; the shared storefront/footer/admin logo uses the same asset with fixed 36px dimensions, accessible link naming, keyboard focus and a 44px minimum link height.
 - Added a multi-resolution 16/32/48px ICO favicon, opaque 180px Apple touch icon, 192/512px PNG icons and a separate padded maskable 512px icon. Next's metadata file conventions register icons and the manifest automatically; the manifest uses browser display and does not imply offline support.
 - Home Organization JSON-LD identifies the real Kena Sathi URL and a crawlable 512px logo. No customer/order/database/payment behavior changed.
