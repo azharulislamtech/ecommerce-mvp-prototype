@@ -1,5 +1,9 @@
 @AGENTS.md
 
+# Website redesign (track progress here)
+
+Before any redesign work — homepage, Kids & Baby page, Home Solutions / problem pages, product page, "শীঘ্রই আসছে", gift wrap, WhatsApp updates, header/footer, categories, or the database changes behind them — read `docs/website-redesign-plan.md` and follow its resume protocol (section ০). Pick up any task marked 🔄 first. When you start, pause or finish a task, update its status and add a line to the log (section ৯) in the same commit as the work.
+
 # Product guidelines (always follow)
 
 Any work that touches products — choosing what to sell, writing or uploading a listing, product pages, categories, stock, prices, discounts, "শীঘ্রই আসছে" / "আগ্রহ জানান", bundles, product images or videos, or the code behind them — must follow these files. Read them before starting such work:
