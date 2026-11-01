@@ -2,6 +2,14 @@
 
 Use this file for architectural, security, database, and product decisions. Keep entries short but explicit.
 
+## 2026-11-02: Patch Next.js And Transitive Advisories Within Current Majors
+
+Decision: Upgrade `next` and `eslint-config-next` from 16.3.8 to 16.4.3 and run `npm audit fix` (no `--force`), which moves `zod` to 4.6.7, `source-map-js` to 1.2.2 and `postcss-selector-parser` to 6.1.5.
+
+Reason: New advisories made CI's `npm audit --audit-level=high` step fail: a critical Next.js range (16.0.0-16.4.0, including unauthenticated RCE in the image optimizer with SVGs and in `use cache`) plus high `zod` (GHSA-mrhx-c7xc-m3w5) and `source-map-js` (GHSA-68fv-2mgg-jv7q). The Next.js issue also affects the live site.
+
+Consequence: No high/critical advisories remain and no app code changed. 16 moderate `minimatch` advisories in the ESLint toolchain remain because the only offered fix is a breaking `--force` downgrade; they are dev-only. Production must be redeployed after merge to pick up the patched Next.js.
+
 ## 2026-10-02: Restore Before Migration And Preserve Historical COD Facts
 
 Decision: On owner-authorized rollout, take an encrypted database-plus-images backup and restore the actual public schema/data to password-protected local PostgreSQL before applying pending migrations. Verify independent checkout sessions and real Supabase RLS/RPC behavior; roll back all integration-test writes. Store backups outside Git/deployment uploads and remove verified temporary plaintext copies.
