@@ -27,7 +27,8 @@
 | wireframe | চূড়ান্ত, ৫ পেজ (অংশ ৪) |
 | গাইডলাইন | ৩টা ফাইল লেখা আর commit হয়েছে (commit `d13a079`), এখনো `main`-এ merge হয়নি |
 | কাজের branch | `claude/product-combination-uiux-planning-446012` |
-| পরের কাজ | R0.1 — গাইডলাইন আর এই ফাইল `main`-এ নেওয়া |
+| খোলা PR | [#3](https://github.com/azharulislamtech/ecommerce-mvp-prototype/pull/3) npm audit নিরাপত্তা আপডেট (আগে merge, তারপর `npx vercel --prod`) · [#4](https://github.com/azharulislamtech/ecommerce-mvp-prototype/pull/4) গাইডলাইন আর এই ফাইল |
+| পরের কাজ | R0.1 — PR #3, তারপর #4 merge করা; R0.2 — Q1–Q7-এর উত্তর |
 
 ---
 
@@ -170,7 +171,7 @@
 
 | ID | কাজ | অবস্থা | নির্ভরতা | শেষ বলে ধরা হবে যখন |
 |---|---|---|---|---|
-| R0.1 | গাইডলাইন, CLAUDE.md আর এই ফাইল `main`-এ নেওয়া (PR → merge) | ⬜ | — | `main`-এ ফাইলগুলো আছে |
+| R0.1 | গাইডলাইন, CLAUDE.md আর এই ফাইল `main`-এ নেওয়া (PR #4 → merge; আগে PR #3 merge) | 🔄 | — | `main`-এ ফাইলগুলো আছে |
 | R0.2 | অংশ ৬-এর Q1–Q7 মালিকের কাছ থেকে জেনে এখানে লেখা | ⬜ | — | প্রতিটা প্রশ্নের পাশে উত্তর |
 
 ### R1 — ডাটাবেস (migration `V11`, মালিক হাতে চালাবেন)
@@ -278,3 +279,4 @@
 |---|---|---|---|---|
 | ২০২৬-১১-০১ | — | পণ্যের মিশ্রণ আর UI/UX পরিকল্পনা; ৫ পেজের wireframe চূড়ান্ত; ৩টা গাইডলাইন লেখা; CLAUDE.md-তে গাইডলাইন মানার নিয়ম | R0.1: `main`-এ merge; R0.2: Q1–Q7 জানা | `claude/product-combination-uiux-planning-446012` / `d13a079` |
 | ২০২৬-১১-০১ | — | Kids & Baby পেজ যোগ (toyhavenbd, babyworldbangladesh আর toyo.bd দেখে); ফ্রি ডেলিভারি, পণ্যের সংখ্যা, উপহার র‍্যাপ, WhatsApp যোগ; এই ফাইল তৈরি | একই | একই branch |
+| ২০২৬-১১-০২ | R0.1 | PR #4 খোলা হলো। এর CI শুধু `npm audit`-এ ব্যর্থ (নতুন advisory: `next` critical, `zod` ও `source-map-js` high); আলাদা branch `claude/fix-npm-audit`-এ ঠিক করে PR #3 খোলা হলো, লোকালি সব ধাপ পাস | মালিক: আগে #3 merge, প্রোডাকশন রিডিপ্লয়, তারপর #4 merge; merge হলে R0.1 ✅ | `claude/product-combination-uiux-planning-446012` (#4), `claude/fix-npm-audit` (#3) |
