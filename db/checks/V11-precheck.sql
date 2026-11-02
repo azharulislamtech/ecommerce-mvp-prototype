@@ -88,9 +88,10 @@ checks(check_name, ok, detail) as (
                    where pid <> pg_backend_pid() and xact_start is not null
                      and xact_start < now() - interval '1 minute' and state <> 'idle'), 'none')
   union all
-  select '14 nine products, all inactive',
-         (select count(*) from products) = 9 and (select count(*) from products where is_active) = 0,
+  select '14 no active products (all legacy rows are dummy)',
+         (select count(*) from products where is_active) = 0,
          'total=' || (select count(*) from products) || ' active=' || (select count(*) from products where is_active)
+           || ' (production on 2026-11-02: total=10)'
   union all
   select '15 the five old categories',
          (select count(*) from categories

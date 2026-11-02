@@ -86,6 +86,7 @@ checks(check_name, ok, detail) as (
           from f where name = 'create_checkout_order_internal'), 'no API role'
   union all
   select '15 dummy products stay unavailable',
-         not exists (select 1 from products p, lateral get_unavailable_product(p.slug) x), 'lookup returns nothing for the 9'
+         not exists (select 1 from products p, lateral get_unavailable_product(p.slug) x),
+         'lookup returns nothing for the never-stocked dummy products'
 )
 select check_name, ok, detail from checks order by check_name;

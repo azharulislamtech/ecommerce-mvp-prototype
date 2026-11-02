@@ -12,7 +12,7 @@
 
 দুটো check-ই PGlite-এ টেস্ট করা (`tests/db/v11-checks.test.mjs`): V10-এর ডাটাবেসে precheck সব ঠিক, V11-এর পরে precheck নতুন জিনিস ধরে আর postcheck সব ঠিক।
 
-Production facts checked read-only on 2026-11-02: existing categories are electronics, fashion, home-living, beauty, accessories (no seed slug collision); `interest_requests` and `whatsapp_subscribers` do not exist yet.
+Production facts checked read-only on 2026-11-02: existing categories are electronics, fashion, home-living, beauty, accessories (no seed slug collision); 10 products, all inactive dummies (the 10th, `aurora-wireless-earbuds`, was already inactive and was missed by an anon-key listing); `interest_requests` and `whatsapp_subscribers` do not exist yet.
 
 এই migration শুধু নতুন জিনিস যোগ করে। গ্রাহক কিছু বদল দেখবেন না: নতুন ক্যাটাগরি বন্ধ অবস্থায় যোগ হয়, পুরনো সব পণ্য `available` আর `first_stocked_at = NULL` পায়, আর checkout-এর প্রকাশ্য signature, ফেরতের আকার আর grant একই থাকে। কিছু লুকানো, সরানো বা মোছা হয় না (সেটা V12, R1.8)।
 
@@ -57,7 +57,7 @@ Hidden has one source: `is_active = false`. No stored state column.
 Triggers on `products` (Postgres fires same-event BEFORE triggers in name order, so the guard runs first):
 1. `guard_coming_soon_stock` (before update **of availability**): if the caller's row has `availability = 'coming_soon'` and stock > 0, it raises *"A coming-soon product cannot have stock…"*. It fires whenever `availability` is in the SET list, even with an unchanged value. **Admin form rule (R10.1):** send `availability` only when it changes, or set stock to 0 when choosing coming_soon. **Current behaviour to know:** today's admin form (`src/app/actions.ts`) does not send `availability` at all, so adding stock to a `coming_soon` product turns it into `available`. That matches the guideline: when the goods arrive, put them on sale and remove the coming-soon badge.
 2. `track_product_stock_state` (before insert or update, every row):
-   - `first_stocked_at` is owned by the trigger. A caller-supplied value is always ignored: on INSERT it is reset to NULL, on UPDATE to the old value. Then the single rule applies: set to `now()` when NULL and (INSERT with stock > 0, or stock 0/NULL → > 0). Once set it is never changed or cleared. A legacy correction, if ever needed, must be a separate admin-only function (none exists; all 9 legacy rows are dummy).
+   - `first_stocked_at` is owned by the trigger. A caller-supplied value is always ignored: on INSERT it is reset to NULL, on UPDATE to the old value. Then the single rule applies: set to `now()` when NULL and (INSERT with stock > 0, or stock 0/NULL → > 0). Once set it is never changed or cleared. A legacy correction, if ever needed, must be a separate admin-only function (none exists; all 10 legacy rows are dummy).
    - Legacy rows (existing before V11) keep NULL even if they have stock; nothing is inferred.
    - A **stock-only** update that restocks a `coming_soon` product (the V9 cancellation restock, where `availability` is not in the SET list) turns it into `available` instead of breaking the constraint.
 
@@ -123,7 +123,7 @@ Rate limits: 5 per phone per hour, 30 per request key per hour.
 ## 5. `get_unavailable_product(p_slug text)` (new, R1.9)
 
 Returns `(name text, slug text, state text)`, at most one row; stable, security definer; execute: anon, authenticated, service_role.
-Exact slug match only (no pattern, no listing), slug 1–200 chars. Returns a row only for an **inactive** product that was real: `first_stocked_at is not null` or `availability = 'coming_soon'`. Never-stocked inactive rows (the nine legacy dummies) return nothing, so their URLs stay 404. No price, stock or images.
+Exact slug match only (no pattern, no listing), slug 1–200 chars. Returns a row only for an **inactive** product that was real: `first_stocked_at is not null` or `availability = 'coming_soon'`. Never-stocked inactive rows (the ten legacy dummies) return nothing, so their URLs stay 404. No price, stock or images.
 
 ## 6. Checkout (`create_checkout_order_internal`, replaced)
 

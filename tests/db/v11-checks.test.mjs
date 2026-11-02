@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import { applyMigrationFile, createTestDatabase } from "../support/database.mjs";
 
 // The pre/post check scripts must be read-only and report ok=true on a database
-// shaped like production (V10, nine inactive products, five old categories).
+// shaped like production (V10, ten inactive dummy products, five old categories).
 let db;
 const run = async (file) => {
   const sql = await readFile(`db/checks/${file}`, "utf8");
@@ -17,7 +17,7 @@ const failing = (rows) => rows.filter((r) => r.ok !== true).map((r) => `${r.chec
 before(async () => {
   db = await createTestDatabase({ maxVersion: 10 });
   const existing = (await db.query("select count(*)::int as n from products")).rows[0].n;
-  for (let i = existing; i < 9; i++) {
+  for (let i = existing; i < 10; i++) {
     const id = randomUUID();
     await db.query("insert into products(id,name,slug,price,stock_quantity) values($1::uuid,'Dummy',$2,100,5)", [id, id]);
   }
