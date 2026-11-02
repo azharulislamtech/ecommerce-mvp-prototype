@@ -37,6 +37,9 @@ as $$
 declare
   v_parent categories%rowtype;
 begin
+  -- Serialise hierarchy edits so two concurrent saves cannot together build a
+  -- third level or a mixed-section tree. The table is tiny and rarely written.
+  lock table categories in share row exclusive mode;
   if new.parent_id is not null then
     select * into v_parent from categories where id = new.parent_id;
     if not found then
@@ -108,21 +111,46 @@ alter table products drop constraint if exists products_estimated_price_non_nega
 alter table products add constraint products_estimated_price_non_negative
   check (estimated_price is null or estimated_price >= 0);
 
--- first_stocked_at is set once, when a product first goes from no stock to stock.
--- It is never overwritten and never inferred for legacy rows (they keep NULL).
--- Restocking a coming_soon product through an order cancellation (V9 trigger)
--- turns it back into 'available' instead of violating the no-stock rule; an
--- explicit save of coming_soon with stock > 0 is still rejected by the constraint.
+-- An explicit availability save (the column is in the UPDATE's SET list) may not
+-- combine coming_soon with stock. This trigger's name sorts before
+-- track_product_stock_state, so it sees the caller's values before any auto-flip.
+-- The admin form therefore sends availability only when it changes, or the owner
+-- sets stock to 0 when choosing coming_soon (R10.1).
+create or replace function guard_coming_soon_stock()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.availability = 'coming_soon' and new.stock_quantity > 0 then
+    raise exception 'A coming-soon product cannot have stock. Set stock to 0 or choose available.'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists guard_coming_soon_stock on products;
+create trigger guard_coming_soon_stock
+before update of availability on products
+for each row execute function guard_coming_soon_stock();
+
+-- first_stocked_at is owned by this trigger: any value a caller supplies is
+-- ignored. It is set once, when a product first goes from no stock to stock,
+-- and never overwritten, cleared or inferred for legacy rows (they keep NULL).
+-- A legacy correction, if ever needed, must be a separate admin-only function.
+-- A stock-only update that restocks a coming_soon product (the V9 cancellation
+-- restock) turns it back into 'available' instead of violating the no-stock rule.
 create or replace function track_product_stock_state()
 returns trigger
 language plpgsql
 set search_path = public
 as $$
 begin
-  if tg_op = 'UPDATE' then
-    if old.first_stocked_at is not null then
-      new.first_stocked_at := old.first_stocked_at;
-    end if;
+  if tg_op = 'INSERT' then
+    new.first_stocked_at := null;
+  else
+    new.first_stocked_at := old.first_stocked_at;
     if new.availability = 'coming_soon' and old.availability = 'coming_soon'
        and new.stock_quantity > 0 and coalesce(old.stock_quantity, 0) = 0 then
       new.availability := 'available';
@@ -326,9 +354,12 @@ end;
 $$;
 
 -- 6. WhatsApp update subscribers (R1.6) -------------------------------------------
--- An opted-out number stays as a record. It becomes active again only through a
--- new explicit consent (new consent_at and consent_version). last_response_at is
--- set by an admin when the person replies to a broadcast.
+-- An opted-out number stays as a record and is never reactivated by the web form:
+-- anyone can type someone else's number there. A form submit for an opted-out
+-- number only marks it "pending re-consent" (reconsent_requested_at). The owner
+-- reactivates it in admin, with a new consent_at and consent_version, only after
+-- the person messages the shop on WhatsApp (the Q7 manual broadcast flow).
+-- last_response_at is set by an admin when the person replies to a broadcast.
 
 create table if not exists whatsapp_subscribers (
   id uuid primary key default gen_random_uuid(),
@@ -337,11 +368,17 @@ create table if not exists whatsapp_subscribers (
   consent_version text not null,
   last_response_at timestamptz,
   opted_out_at timestamptz,
+  reconsent_requested_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint whatsapp_subscribers_phone_valid check (phone ~ '^01[3-9][0-9]{8}$'),
-  constraint whatsapp_subscribers_consent_version_valid check (consent_version ~ '^[A-Za-z0-9._-]{1,40}$')
+  constraint whatsapp_subscribers_consent_version_valid check (consent_version ~ '^[A-Za-z0-9._-]{1,40}$'),
+  constraint whatsapp_subscribers_reconsent_only_when_opted_out
+    check (reconsent_requested_at is null or opted_out_at is not null)
 );
+
+create index if not exists idx_whatsapp_subscribers_pending_reconsent on whatsapp_subscribers (reconsent_requested_at)
+  where reconsent_requested_at is not null;
 
 create index if not exists idx_whatsapp_subscribers_active on whatsapp_subscribers (consent_at)
   where opted_out_at is null;
@@ -357,9 +394,14 @@ language plpgsql
 set search_path = public
 as $$
 begin
-  if old.opted_out_at is not null and new.opted_out_at is null
-     and (new.consent_at <= old.opted_out_at or new.consent_version is null) then
-    raise exception 'An opted-out number needs new explicit consent to subscribe again.' using errcode = '23514';
+  if old.opted_out_at is not null and new.opted_out_at is null then
+    if not is_admin() then
+      raise exception 'Only an admin can reactivate an opted-out number.' using errcode = '42501';
+    end if;
+    if new.consent_at <= old.opted_out_at or new.consent_version is not distinct from old.consent_version then
+      raise exception 'An opted-out number needs new explicit consent to subscribe again.' using errcode = '23514';
+    end if;
+    new.reconsent_requested_at := null;
   end if;
   return new;
 end;
@@ -382,7 +424,10 @@ to authenticated
 using (is_admin())
 with check (is_admin());
 
--- Submitting the form is the explicit consent; it records a new time and version.
+-- New number: the form submit is the explicit consent (time and version stored).
+-- Active number: no-op, the original consent is kept (replays change nothing).
+-- Opted-out number: stays opted out; only reconsent_requested_at is set.
+-- The response is the same in every case.
 create or replace function subscribe_whatsapp_updates(
   p_phone text,
   p_consent_version text,
@@ -417,9 +462,8 @@ begin
   insert into whatsapp_subscribers (phone, consent_at, consent_version)
   values (v_phone, clock_timestamp(), p_consent_version)
   on conflict (phone) do update
-    set consent_at = clock_timestamp(),
-        consent_version = excluded.consent_version,
-        opted_out_at = null;
+    set reconsent_requested_at = clock_timestamp()
+    where whatsapp_subscribers.opted_out_at is not null;
 end;
 $$;
 
@@ -755,6 +799,7 @@ revoke all on function create_checkout_order_internal(text, text, text, text, te
 revoke all on function enforce_category_hierarchy() from public, anon, authenticated;
 revoke all on function track_product_stock_state() from public, anon, authenticated;
 revoke all on function guard_whatsapp_resubscribe() from public, anon, authenticated;
+revoke all on function guard_coming_soon_stock() from public, anon, authenticated;
 
 revoke all on function storefront_state(boolean, text, integer, timestamptz) from public;
 grant execute on function storefront_state(boolean, text, integer, timestamptz) to anon, authenticated, service_role;

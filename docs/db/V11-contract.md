@@ -2,7 +2,11 @@
 
 ফাইল: [`db/migration/V11__redesign_catalog_schema.sql`](../../db/migration/V11__redesign_catalog_schema.sql) · টেস্ট: [`tests/db/v11-catalog-states.test.mjs`](../../tests/db/v11-catalog-states.test.mjs) · পরিকল্পনা: [website-redesign-plan.md](../website-redesign-plan.md) R1.1–R1.6, R1.9
 
-**অবস্থা:** খসড়া। প্রোডাকশনে চালানো হয়নি। আগে Codex review, তারপর মালিক নিজে Supabase SQL editor-এ চালাবেন (R1.7)।
+**অবস্থা:** খসড়া, Codex-এর প্রথম review-এর ৪টা সংশোধনসহ (২০২৬-১১-০২)। প্রোডাকশনে চালানো হয়নি। দ্বিতীয় review-এর পরে মালিক নিজে Supabase SQL editor-এ চালাবেন (R1.7)।
+
+**চালানোর নিয়ম (R1.7):** আগে ব্যাকআপ (`scripts/backup-production.ps1`), তারপর পুরো V11 একটাই script হিসেবে `begin;` … `commit;`-এর ভেতরে চালান, যাতে কোথাও ভুল হলে সব ফিরে যায়। চালানোর পরে একবার যাচাই করুন যে `anon`/`authenticated` নতুন টেবিল পড়তে পারে না আর service-only RPC চালাতে পারে না (অংশ ৭)।
+
+Production facts checked read-only on 2026-11-02: existing categories are electronics, fashion, home-living, beauty, accessories (no seed slug collision); `interest_requests` and `whatsapp_subscribers` do not exist yet.
 
 এই migration শুধু নতুন জিনিস যোগ করে। গ্রাহক কিছু বদল দেখবেন না: নতুন ক্যাটাগরি বন্ধ অবস্থায় যোগ হয়, পুরনো সব পণ্য `available` আর `first_stocked_at = NULL` পায়, আর checkout-এর প্রকাশ্য signature, ফেরতের আকার আর grant একই থাকে। কিছু লুকানো, সরানো বা মোছা হয় না (সেটা V12, R1.8)।
 
@@ -15,7 +19,7 @@ The tables below are the reviewable contract. Conventions follow V1–V10: `uuid
 | `parent_id` | uuid | yes | — | FK `categories(id)` **on delete restrict**; `categories_not_own_parent` | Two levels max, enforced by trigger `enforce_category_hierarchy` |
 | `section` | text | yes | — | `categories_section_valid`: `kids` / `home`; `categories_child_has_section`: a child needs a section | Legacy 5 categories stay NULL |
 
-Trigger `enforce_category_hierarchy` (before insert, update of `parent_id, section`): parent must exist and be a root; child section = parent section; a category with children cannot become a child; a root's section cannot change while children have another section.
+Trigger `enforce_category_hierarchy` (before insert, update of `parent_id, section`): first takes `lock table categories in share row exclusive mode` so concurrent hierarchy edits are serialised; then: parent must exist and be a root; child section = parent section; a category with children cannot become a child; a root's section cannot change while children have another section.
 
 Seeded rows (all `is_active = false`, `on conflict (slug) do nothing`):
 
@@ -44,10 +48,12 @@ Indexes: `idx_categories_parent_id`, partial `idx_categories_section`. Policies 
 
 Hidden has one source: `is_active = false`. No stored state column.
 
-Trigger `track_product_stock_state` (before insert or update, every row):
-- `first_stocked_at` is set to `now()` only when it is NULL and stock goes from 0/NULL to > 0 (INSERT with stock > 0 counts). Once set it is never changed or cleared, including by direct updates.
-- Legacy rows (existing before V11) keep NULL even if they have stock; nothing is inferred.
-- If a `coming_soon` product with stock 0 gets stock back without an explicit availability change (the V9 cancellation restock), it becomes `available` instead of breaking the constraint. An explicit save of `coming_soon` with stock > 0 is still rejected.
+Triggers on `products` (Postgres fires same-event BEFORE triggers in name order, so the guard runs first):
+1. `guard_coming_soon_stock` (before update **of availability**): if the caller's row has `availability = 'coming_soon'` and stock > 0, it raises *"A coming-soon product cannot have stock…"*. It fires whenever `availability` is in the SET list, even with an unchanged value. **Admin form rule (R10.1):** send `availability` only when it changes, or set stock to 0 when choosing coming_soon.
+2. `track_product_stock_state` (before insert or update, every row):
+   - `first_stocked_at` is owned by the trigger. A caller-supplied value is always ignored: on INSERT it is reset to NULL, on UPDATE to the old value. Then the single rule applies: set to `now()` when NULL and (INSERT with stock > 0, or stock 0/NULL → > 0). Once set it is never changed or cleared. A legacy correction, if ever needed, must be a separate admin-only function (none exists; all 9 legacy rows are dummy).
+   - Legacy rows (existing before V11) keep NULL even if they have stock; nothing is inferred.
+   - A **stock-only** update that restocks a `coming_soon` product (the V9 cancellation restock, where `availability` is not in the SET list) turns it into `available` instead of breaking the constraint.
 
 Function `storefront_state(is_active, availability, stock_quantity, first_stocked_at) → text` (immutable; execute: anon, authenticated, service_role):
 
@@ -94,13 +100,19 @@ RPC `submit_product_interest(p_product_id uuid, p_phone text, p_customer_name te
 | `consent_version` | text | no | — | `^[A-Za-z0-9._-]{1,40}$` |
 | `last_response_at` | timestamptz | yes | — | set by an admin when the person replies to a broadcast |
 | `opted_out_at` | timestamptz | yes | — | NULL = subscribed |
+| `reconsent_requested_at` | timestamptz | yes | — | `whatsapp_subscribers_reconsent_only_when_opted_out`; set when an opted-out number is submitted again on the web form |
 | `created_at`, `updated_at` | timestamptz | no | `now()` | `set_updated_at` trigger |
 
-Partial index on `consent_at where opted_out_at is null`.
-Trigger `guard_whatsapp_resubscribe`: clearing `opted_out_at` requires a `consent_at` later than the opt-out, so an admin edit or import cannot silently re-subscribe a number.
+Partial indexes on `consent_at where opted_out_at is null` and on `reconsent_requested_at where … is not null`.
+Trigger `guard_whatsapp_resubscribe`: clearing `opted_out_at` is allowed only for an admin (`is_admin()`), with a `consent_at` later than the opt-out and a new `consent_version`; it also clears `reconsent_requested_at`. The owner does this only after the person messages the shop on WhatsApp (Q7 manual flow), for example with `consent_version = 'whatsapp-msg-2026-11-10'`.
 RLS and grants as `interest_requests`.
 
-RPC `subscribe_whatsapp_updates(p_phone text, p_consent_version text, p_request_key text = null) → void`, security definer, execute: `service_role` only. Submitting the form is the explicit consent: it upserts with a new `consent_at` and `consent_version` and clears `opted_out_at`. Rate limits: 5 per phone per hour, 30 per request key per hour.
+RPC `subscribe_whatsapp_updates(p_phone text, p_consent_version text, p_request_key text = null) → void`, security definer, execute: `service_role` only. Same response in every case:
+- new number → insert with `consent_at` and `consent_version` (the form submit is the consent);
+- active number → no-op, original consent kept (replays change nothing);
+- opted-out number → stays opted out; only `reconsent_requested_at` is set. The web form can never reactivate a number, because anyone can type someone else's number.
+
+Rate limits: 5 per phone per hour, 30 per request key per hour.
 
 ## 5. `get_unavailable_product(p_slug text)` (new, R1.9)
 
@@ -118,16 +130,16 @@ Body is V8's unchanged, plus one check after the existing `select … for update
 | `interest_requests`, `whatsapp_subscribers` | — | — | select/update/delete (admin policy) | bypasses RLS |
 | `storefront_state`, `is_valid_tag_list`, `get_unavailable_product` | — | execute | execute | execute |
 | `normalize_bd_mobile`, `submit_product_interest`, `subscribe_whatsapp_updates` | — | — | — | execute |
-| trigger functions | — | — | — | (trigger use only) |
+| trigger functions (`enforce_category_hierarchy`, `guard_coming_soon_stock`, `track_product_stock_state`, `guard_whatsapp_resubscribe`) | — | — | — | (trigger use only) |
 | `create_checkout_order_internal` | — | — | — | — |
 
 Supabase gives new tables and functions default privileges for `anon`/`authenticated`; V11 revokes them explicitly.
 
 ## 8. Tests (PGlite, `npm run test:db`)
 
-`tests/db/v11-catalog-states.test.mjs` covers: seeded categories inactive and two-level; hierarchy rejections; legacy seed rows `available` with NULL `first_stocked_at`; `coming_soon` + stock rejected; `first_stocked_at` set once and never overwritten or cleared; legacy stock not inferred; all five `storefront_state` cases; cancellation restock of a `coming_soon` product; checkout rejects `coming_soon` and stock-ended; replay still returns the original order; internal checkout closed to all API roles; tags, age and video validation; interest de-duplication, trusted fields, product eligibility, input checks and rate limits; RLS/grants for anon, non-admin and admin; WhatsApp opt-out and re-consent; lookup returns only inactive real products by exact slug. The existing V1–V10 suite (`order-integrity.test.mjs`) still passes with V11 applied.
+`tests/db/v11-catalog-states.test.mjs` and `tests/db/v11-upgrade.test.mjs` (41 DB tests in total with the existing suite) cover: seeded categories inactive and two-level; hierarchy rejections; legacy seed rows `available` with NULL `first_stocked_at`; `coming_soon` + stock rejected; `first_stocked_at` set once and never overwritten or cleared; legacy stock not inferred; all five `storefront_state` cases; cancellation restock of a `coming_soon` product; checkout rejects `coming_soon` and stock-ended; replay still returns the original order; internal checkout closed to all API roles; tags, age and video validation; interest de-duplication, trusted fields, product eligibility, input checks and rate limits; RLS/grants for anon, non-admin and admin; WhatsApp opt-out and re-consent; lookup returns only inactive real products by exact slug. After the first Codex review: caller-supplied `first_stocked_at` ignored on insert and update; explicit `coming_soon` + stock rejected while a stock-only restock still flips; WhatsApp repeat submit keeps the original consent, an opted-out number is only marked pending re-consent, only an admin with new consent can reactivate; a non-admin authenticated user cannot read, update or delete either table; EXECUTE matrix (anon/authenticated denied on service-only RPCs, allowed on read helpers; service_role allowed); upgrade test (order placed on V10, V11 applied, replay returns the original order with no stock change, new orders rejected). These new bug tests fail on the earlier draft `e5bb0d1` (6 failures) and pass now. The existing V1–V10 suite (`order-integrity.test.mjs`) still passes with V11 applied.
 
-PGlite limits (same as before): no pgcrypto entropy, no Supabase default privileges, no concurrent sessions. Production behaviour of the `anon`/`authenticated` default grants must be checked once in Supabase after R1.7.
+PGlite limits (same as before): no pgcrypto entropy, no Supabase default privileges, no concurrent sessions. **Residual risk:** multi-session races (two admins editing categories at once, concurrent first stock) cannot be proven in PGlite; the category lock and row-level triggers are designed for them but are verified only by reasoning. Production behaviour of the `anon`/`authenticated` default grants must be checked once in Supabase after R1.7.
 
 ## 9. Not in V11
 

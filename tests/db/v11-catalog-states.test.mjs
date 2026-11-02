@@ -70,7 +70,7 @@ test("existing rows default to available; coming_soon with stock is rejected", a
   assert.ok(seeded.some((p) => p.stock_quantity > 0));
   await assert.rejects(product({ stock: 3, availability: "coming_soon" }), /products_coming_soon_has_no_stock/);
   const available = await product({ stock: 5 });
-  await assert.rejects(db.query("update products set availability='coming_soon' where id=$1", [available]), /products_coming_soon_has_no_stock/);
+  await assert.rejects(db.query("update products set availability='coming_soon' where id=$1", [available]), /cannot have stock/);
   const soon = await product({ stock: 0, availability: "coming_soon" });
   await assert.rejects(db.query("update products set availability='sold_out' where id=$1", [soon]), /products_availability_valid/);
 });
@@ -240,16 +240,116 @@ test("interest and WhatsApp tables are invisible to anon and non-admin users", a
 
 // --- R1.6 WhatsApp ------------------------------------------------------------------
 
-test("WhatsApp: opt-out is kept; only a new explicit consent re-subscribes", async () => {
+const wa = () => db.query("select * from whatsapp_subscribers").then((r) => r.rows);
+
+test("WhatsApp: a repeat submit for an active number keeps the original consent", async () => {
   await db.query("select subscribe_whatsapp_updates('+8801711111111','form-v1')");
-  await db.query("update whatsapp_subscribers set opted_out_at=now()");
-  await assert.rejects(db.query("update whatsapp_subscribers set opted_out_at=null"), /new explicit consent/);
+  const [first] = await wa();
   await db.query("select subscribe_whatsapp_updates('01711111111','form-v2')");
-  const row = (await db.query("select * from whatsapp_subscribers")).rows[0];
-  assert.equal(row.opted_out_at, null);
-  assert.equal(row.consent_version, "form-v2");
-  assert.equal((await db.query("select count(*)::int as n from whatsapp_subscribers")).rows[0].n, 1);
+  const rows = await wa();
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].consent_version, "form-v1");
+  assert.equal(rows[0].consent_at.getTime(), first.consent_at.getTime());
   await assert.rejects(db.query("select subscribe_whatsapp_updates('01711111111','bad version!')"), /Invalid consent version/);
+});
+
+test("WhatsApp: the web form never reactivates an opted-out number, it only marks pending re-consent", async () => {
+  // Bug in e5bb0d1: a replay or anyone knowing the number cleared opted_out_at.
+  await db.query("select subscribe_whatsapp_updates('01711111111','form-v1')");
+  await db.query("update whatsapp_subscribers set opted_out_at=now()");
+  await db.query("select subscribe_whatsapp_updates('01711111111','form-v2')");
+  const [row] = await wa();
+  assert.ok(row.opted_out_at, "still opted out");
+  assert.equal(row.consent_version, "form-v1");
+  assert.ok(row.reconsent_requested_at, "pending re-consent recorded");
+});
+
+test("WhatsApp: only an admin, with new consent, can reactivate; reactivation clears the pending flag", async () => {
+  await db.query("select subscribe_whatsapp_updates('01711111111','form-v1')");
+  await db.query("update whatsapp_subscribers set opted_out_at=now()");
+  await db.query("select subscribe_whatsapp_updates('01711111111','form-v1')");
+  await assert.rejects(db.query("update whatsapp_subscribers set opted_out_at=null"), /new explicit consent/);
+  await db.query("select set_config('request.jwt.claim.sub','',false)");
+  await assert.rejects(
+    db.query("update whatsapp_subscribers set opted_out_at=null, consent_at=clock_timestamp(), consent_version='whatsapp-msg-1'"),
+    /Only an admin/,
+  );
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)", [adminId]);
+  await db.query("update whatsapp_subscribers set opted_out_at=null, consent_at=clock_timestamp(), consent_version='whatsapp-msg-1'");
+  const [row] = await wa();
+  assert.equal(row.opted_out_at, null);
+  assert.equal(row.reconsent_requested_at, null);
+  assert.equal(row.consent_version, "whatsapp-msg-1");
+});
+
+// --- Codex review fixes: caller-supplied first_stocked_at, explicit coming_soon ------
+
+test("a caller-supplied first_stocked_at is ignored on insert and update", async () => {
+  // Bug in e5bb0d1: a never-stocked product could be given a date and show "স্টক শেষ".
+  const id = randomUUID();
+  await db.query("insert into products(id,name,slug,price,stock_quantity,first_stocked_at) values($1::uuid,'Fake',$2,100,0,'2025-01-01')", [id, id]);
+  assert.equal((await row(id)).first_stocked_at, null);
+  await db.query("update products set first_stocked_at='2025-01-01' where id=$1", [id]);
+  assert.equal((await row(id)).first_stocked_at, null);
+  const state = (await db.query("select storefront_state(is_active,availability,stock_quantity,first_stocked_at) as s from products where id=$1", [id])).rows[0].s;
+  assert.equal(state, "hidden");
+  const withStock = randomUUID();
+  await db.query("insert into products(id,name,slug,price,stock_quantity,first_stocked_at) values($1::uuid,'Real',$2,100,3,'2020-01-01')", [withStock, withStock]);
+  assert.ok((await row(withStock)).first_stocked_at.getFullYear() >= 2026, "trigger time, not caller value");
+});
+
+test("an explicit coming_soon save with stock is rejected, not silently flipped", async () => {
+  // Bug in e5bb0d1: availability='coming_soon' with stock > 0 became 'available'.
+  const id = await product({ stock: 0, availability: "coming_soon" });
+  await assert.rejects(db.query("update products set availability='coming_soon', stock_quantity=5 where id=$1", [id]), /cannot have stock/);
+  const p = await row(id);
+  assert.equal(p.availability, "coming_soon");
+  assert.equal(p.stock_quantity, 0);
+  // A stock-only update (the V9 cancellation restock path) still turns it available.
+  await db.query("update products set stock_quantity=4 where id=$1", [id]);
+  assert.equal((await row(id)).availability, "available");
+});
+
+// --- Grants: non-admin and EXECUTE matrix -------------------------------------------
+
+test("a non-admin authenticated user cannot read, change or delete interest or WhatsApp rows", async () => {
+  const soon = await product({ stock: 0, availability: "coming_soon" });
+  await interest(soon);
+  await db.query("select subscribe_whatsapp_updates('01711111111','v1')");
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)", [randomUUID()]);
+  await asRole("authenticated", async () => {
+    for (const table of ["interest_requests", "whatsapp_subscribers"]) {
+      assert.equal((await db.query(`select * from ${table}`)).rows.length, 0);
+      assert.equal((await db.query(`update ${table} set updated_at=now()`)).affectedRows ?? 0, 0);
+      assert.equal((await db.query(`delete from ${table}`)).affectedRows ?? 0, 0);
+    }
+  });
+  await db.exec("reset role");
+  assert.equal((await db.query("select count(*)::int as n from interest_requests")).rows[0].n, 1);
+  assert.equal((await db.query("select count(*)::int as n from whatsapp_subscribers")).rows[0].n, 1);
+});
+
+test("EXECUTE matrix: service-only RPCs are closed to anon and authenticated", async () => {
+  const soon = await product({ stock: 0, availability: "coming_soon" });
+  const serviceOnly = [
+    ["select submit_product_interest($1::uuid,'01711111111')", [soon]],
+    ["select subscribe_whatsapp_updates('01711111111','v1')", []],
+    ["select normalize_bd_mobile('01711111111')", []],
+  ];
+  const open = [
+    ["select storefront_state(true,'available',1,null)", []],
+    ["select * from get_unavailable_product('x')", []],
+    ["select is_valid_tag_list('{a}')", []],
+  ];
+  for (const role of ["anon", "authenticated"]) {
+    await asRole(role, async () => {
+      for (const [sql, args] of serviceOnly) await assert.rejects(db.query(sql, args), /permission denied/, `${role}: ${sql}`);
+      for (const [sql, args] of open) await db.query(sql, args);
+    });
+  }
+  await asRole("service_role", async () => {
+    for (const [sql, args] of serviceOnly) await db.query(sql, args);
+  });
 });
 
 // --- R1.9 unavailable-product lookup ------------------------------------------------
