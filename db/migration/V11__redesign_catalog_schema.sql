@@ -37,9 +37,12 @@ as $$
 declare
   v_parent categories%rowtype;
 begin
-  -- Serialise hierarchy edits so two concurrent saves cannot together build a
-  -- third level or a mixed-section tree. The table is tiny and rarely written.
-  lock table categories in share row exclusive mode;
+  -- Serialise hierarchy checks so two concurrent saves cannot together build a
+  -- third level or a mixed-section tree. A transaction-scoped advisory lock is
+  -- used instead of LOCK TABLE: upgrading the row-exclusive lock the write
+  -- already holds could deadlock two writers. Under READ COMMITTED the SELECTs
+  -- below then see rows the other transaction committed before releasing it.
+  perform pg_advisory_xact_lock(hashtext('kena_sathi.categories.hierarchy'));
   if new.parent_id is not null then
     select * into v_parent from categories where id = new.parent_id;
     if not found then
@@ -398,7 +401,9 @@ begin
     if not is_admin() then
       raise exception 'Only an admin can reactivate an opted-out number.' using errcode = '42501';
     end if;
-    if new.consent_at <= old.opted_out_at or new.consent_version is not distinct from old.consent_version then
+    -- A new consent time is required; the consent text version may stay the same
+    -- (format and NOT NULL are enforced by the table constraints).
+    if new.consent_at <= old.opted_out_at then
       raise exception 'An opted-out number needs new explicit consent to subscribe again.' using errcode = '23514';
     end if;
     new.reconsent_requested_at := null;

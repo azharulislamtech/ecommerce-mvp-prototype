@@ -274,12 +274,36 @@ test("WhatsApp: only an admin, with new consent, can reactivate; reactivation cl
     db.query("update whatsapp_subscribers set opted_out_at=null, consent_at=clock_timestamp(), consent_version='whatsapp-msg-1'"),
     /Only an admin/,
   );
+  // The real path: the admin panel updates as the authenticated role with an admin JWT.
   await db.query("select set_config('request.jwt.claim.sub',$1,false)", [adminId]);
-  await db.query("update whatsapp_subscribers set opted_out_at=null, consent_at=clock_timestamp(), consent_version='whatsapp-msg-1'");
+  await asRole("authenticated", () =>
+    db.query("update whatsapp_subscribers set opted_out_at=null, consent_at=clock_timestamp(), consent_version='whatsapp-msg-1'"));
   const [row] = await wa();
   assert.equal(row.opted_out_at, null);
   assert.equal(row.reconsent_requested_at, null);
   assert.equal(row.consent_version, "whatsapp-msg-1");
+});
+
+test("WhatsApp: an admin re-consent with the same consent text version succeeds", async () => {
+  await db.query("select subscribe_whatsapp_updates('01711111111','form-v1')");
+  await db.query("update whatsapp_subscribers set opted_out_at=now()");
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)", [adminId]);
+  await asRole("authenticated", async () => {
+    await assert.rejects(db.query("update whatsapp_subscribers set opted_out_at=null"), /new explicit consent/);
+    await db.query("update whatsapp_subscribers set opted_out_at=null, consent_at=clock_timestamp()");
+  });
+  const [row] = await wa();
+  assert.equal(row.opted_out_at, null);
+  assert.equal(row.consent_version, "form-v1");
+});
+
+test("category hierarchy checks use an advisory lock, not a table lock upgrade", async () => {
+  const fn = (await db.query("select prosrc from pg_proc where proname='enforce_category_hierarchy'")).rows[0].prosrc;
+  assert.match(fn, /pg_advisory_xact_lock\(hashtext\('kena_sathi\.categories\.hierarchy'\)\)/);
+  assert.doesNotMatch(fn, /lock table categories in/i);
+  const root = (await db.query("select id from categories where slug='home-solutions'")).rows[0].id;
+  await db.query("insert into categories(name,slug,section,parent_id,is_active) values('Laundry','home-laundry','home',$1,false)", [root]);
+  await db.query("delete from categories where slug='home-laundry'");
 });
 
 // --- Codex review fixes: caller-supplied first_stocked_at, explicit coming_soon ------
