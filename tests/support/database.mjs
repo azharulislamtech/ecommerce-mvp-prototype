@@ -1,6 +1,11 @@
 import { PGlite } from "@electric-sql/pglite";
 import { readFile, readdir } from "node:fs/promises";
-export async function createTestDatabase() {
+export async function applyMigrationFile(db, name) {
+  const sql = (await readFile(`db/migration/${name}`,'utf8')).replace(/^﻿/,'').replace('create extension if not exists pgcrypto;','');
+  try { await db.exec(sql); } catch (error) { throw new Error(`Migration ${name}: ${error.message}`); }
+}
+// maxVersion lets an upgrade test stop at an older schema and apply later files itself.
+export async function createTestDatabase({ maxVersion = Infinity } = {}) {
   const db = new PGlite();
   // Supabase platform schemas are stubbed locally; business migrations run as SQL.
   // PGlite has no pgcrypto: this test-only shim exercises token plumbing, not entropy.
@@ -16,11 +21,10 @@ export async function createTestDatabase() {
     create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
     create table storage.objects(id uuid primary key,bucket_id text,name text);
   `);
+  const version = (name) => Number(name.match(/^V(\d+)/)[1]);
   const migrations = (await readdir('db/migration')).filter((name) => name.endsWith('.sql'))
-    .sort((a,b) => Number(a.match(/^V(\d+)/)[1])-Number(b.match(/^V(\d+)/)[1]));
-  for (const name of migrations) {
-    const sql = (await readFile(`db/migration/${name}`,'utf8')).replace(/^\uFEFF/,'').replace('create extension if not exists pgcrypto;','');
-    try { await db.exec(sql); } catch (error) { throw new Error(`Migration ${name}: ${error.message}`); }
-  }
+    .filter((name) => version(name) <= maxVersion)
+    .sort((a,b) => version(a)-version(b));
+  for (const name of migrations) await applyMigrationFile(db, name);
   return db;
 }
