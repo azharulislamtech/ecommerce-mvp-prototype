@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 async function placeTestOrder(page: import("@playwright/test").Page) {
-  await page.goto('/products');await page.getByTestId('add-to-cart-button').first().click();
+  await page.goto('/products');await page.locator('[data-testid="add-to-cart-button"]:enabled').first().click();
   await expect(page.getByTestId('cart-count')).toHaveText('1');await page.goto('/checkout');
   await page.locator('[name="customer_name"]').fill('Browser Test');
   await page.locator('[name="customer_phone"]').fill('01712345678');
@@ -41,7 +41,7 @@ test('private utility pages are noindex and absent from sitemap',async({request}
 
 test('mobile product and cart flows fit the viewport',async({page})=>{
   await page.setViewportSize({width:390,height:844});await page.goto('/products');
-  await page.getByTestId('add-to-cart-button').first().click();
+  await page.locator('[data-testid="add-to-cart-button"]:enabled').first().click();
   await expect(page.getByTestId('cart-count')).toHaveText('1');await page.goto('/cart');
   await expect(page.getByTestId('cart-line')).toHaveCount(1);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
