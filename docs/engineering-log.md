@@ -2,6 +2,13 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-02: Next.js 16.4.3 Security Patch Deployment
+
+- Upgraded `next`/`eslint-config-next` 16.3.8 → 16.4.3 and ran `npm audit fix` (`zod` 4.6.7, `source-map-js` 1.2.2, `postcss-selector-parser` 6.1.5) to clear a critical Next.js advisory range (16.0.0-16.4.0) and two high transitive advisories. No application code changed. Local lint/typecheck, 3 unit, 17 database, 9 isolated production-browser tests, build and `npm audit --audit-level=high` passed.
+- On owner request, deployed source `67a9b59` (branch `claude/fix-npm-audit`, before PR merge) as `dpl_4LTNkAHWpVdR152ErKYhoZNJJsJw` with `--skip-domain`. The staged URL https://ecommerce-mvp-prototype-3hfa9gwu3-azadbasis-4964s-projects.vercel.app passed all 13 release checks and a `/_next/image` Supabase image request (200, image/png) before promotion. After promotion, all 13 checks passed on https://kenasathi.com.
+- Live Playwright: 5 passed, 3 intentionally skipped, 1 failed. The failing mobile cart test clicks the first product, which is currently sold out in live data. The same test fails the same way on the previous deployment, so the upgrade did not cause it. A one-off check using the first in-stock product passed the mobile add-to-cart, cart and checkout flow on the live site.
+- Rollback target: `dpl_C2qv3XQa3UhMRHvvfpNU8BftpfRp` (https://ecommerce-mvp-prototype-muq7dv1ir-azadbasis-4964s-projects.vercel.app). No database changes.
+
 ## 2026-10-02: Consistent Brand Logo And Browser Icons
 
 - Published and promoted as `dpl_C2qv3XQa3UhMRHvvfpNU8BftpfRp`, source `df1175e`; [PR #2](https://github.com/azharulislamtech/ecommerce-mvp-prototype/pull/2) merged into main as `d044060`. [GitHub CI](https://github.com/azharulislamtech/ecommerce-mvp-prototype/actions/runs/37019691713) passed. All 13 staged/live release checks, six live icon asset checks and the live manifest passed; browser confirmed the live header SVG loaded at 36px. Previous hardening deployment `dpl_6x7VyDCPSkxivzgZBno8FHcVCUNf` remains the immediate application rollback target.
