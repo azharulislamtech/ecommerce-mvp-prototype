@@ -2,6 +2,14 @@
 
 Use this file for architectural, security, database, and product decisions. Keep entries short but explicit.
 
+## 2026-11-02: Apply V11 Redesign Catalog Schema (Additive Only)
+
+Decision: Apply `db/migration/V11__redesign_catalog_schema.sql` to production after two Codex reviews, as one transaction (`begin; set local lock_timeout = '5s'; ... commit;`), bracketed by the read-only `db/checks/V11-precheck.sql` (16/16 ok) and `V11-postcheck.sql` (15/15 ok), with an encrypted backup first (`.private-backups/20261102-223350`). V11 adds a two-level category hierarchy (new categories seeded inactive), `products.availability` (`available`/`coming_soon`, coming_soon requires zero stock), a trigger-owned `first_stocked_at`, `storefront_state()` as the single derivation of the customer-facing state, tags/age/video fields, admin-only `interest_requests` and `whatsapp_subscribers` written only through service-role RPCs, a slug-only `get_unavailable_product()` lookup, and an in-stock check inside `create_checkout_order_internal` after the row lock (V9 replay wrapper untouched).
+
+Reason: The redesign (docs/website-redesign-plan.md) needs these structures, and splitting the schema (V11) from the data cutover (V12) lets the schema ship without any customer-visible change or broken URLs.
+
+Consequence: Exit 0 in 6.8 s; live pages, health and the old categories are unchanged; new categories stay hidden until V12/R1.8 ships with the new UI and R2.8 redirects. All 10 legacy products remain inactive dummies with NULL `first_stocked_at`. A real checkout after V11 is not yet verified because no product is active; the first real listing needs a controlled COD order test (R11.3). Multi-session races (category edits, first stock) are designed for but not provable in PGlite. Contract: `docs/db/V11-contract.md`.
+
 ## 2026-11-02: Patch Next.js And Transitive Advisories Within Current Majors
 
 Decision: Upgrade `next` and `eslint-config-next` from 16.3.8 to 16.4.3 and run `npm audit fix` (no `--force`), which moves `zod` to 4.6.7, `source-map-js` to 1.2.2 and `postcss-selector-parser` to 6.1.5.

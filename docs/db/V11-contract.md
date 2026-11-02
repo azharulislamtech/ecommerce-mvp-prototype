@@ -2,7 +2,7 @@
 
 ফাইল: [`db/migration/V11__redesign_catalog_schema.sql`](../../db/migration/V11__redesign_catalog_schema.sql) · টেস্ট: [`tests/db/v11-catalog-states.test.mjs`](../../tests/db/v11-catalog-states.test.mjs) · পরিকল্পনা: [website-redesign-plan.md](../website-redesign-plan.md) R1.1–R1.6, R1.9
 
-**অবস্থা:** Codex-এর দ্বিতীয় review: "শর্তসাপেক্ষে নিরাপদ"; তার দুটো সংশোধন করা হয়েছে (২০২৬-১১-০২)। প্রোডাকশনে চালানো হয়নি। মালিক নিজে Supabase SQL editor-এ চালাবেন (R1.7), নিচের নিয়ম মেনে।
+**অবস্থা:** **প্রোডাকশনে চালানো হয়েছে** (২০২৬-১১-০২, precheck ১৬/১৬, postcheck ১৫/১৫; decision-log দেখুন)। নিচের নিয়ম পরের migration-এর জন্যও একই।
 
 **চালানোর নিয়ম (R1.7), এই ক্রমে:**
 1. ব্যাকআপ নিন: `scripts/backup-production.ps1`।
