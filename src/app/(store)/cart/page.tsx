@@ -1,10 +1,10 @@
 ﻿import { CartPageClient } from "@/components/cart/cart-page-client";
-import { getStoreProducts } from "@/lib/catalog";
+import { getStorePurchasableProducts } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
 export default async function CartPage() {
-  const products = await getStoreProducts();
+  const products = await getStorePurchasableProducts();
 
   return <CartPageClient products={products} />;
 }

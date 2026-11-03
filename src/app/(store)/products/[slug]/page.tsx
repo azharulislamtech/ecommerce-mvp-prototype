@@ -7,13 +7,20 @@ import { ProductCard } from "@/components/modules/product-card";
 import { ProductGallery } from "@/components/modules/product-gallery";
 import { ProductReviewForm } from "@/components/modules/product-review-form";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { ProductPrice, ProductStateBadges, ProductUnavailableNote } from "@/components/modules/product-state";
 import { formatMoney } from "@/lib/data";
 import { DHAKA_DELIVERY_CHARGE, OUTSIDE_DHAKA_DELIVERY_CHARGE } from "@/lib/delivery";
 import { RETURN_POLICY_PATH, RETURN_WINDOW_LINE } from "@/lib/order-copy";
-import { getStoreProductBySlug, getStoreProducts, getStoreRelatedProducts } from "@/lib/catalog";
+import {
+  getStoreProductBySlug,
+  getStoreProducts,
+  getStorePurchasableProducts,
+  getStoreRelatedProducts,
+  getStoreUnavailableProduct
+} from "@/lib/catalog";
 import { getProductReviewData } from "@/lib/supabase/reviews";
 import { StructuredData } from "@/components/modules/structured-data";
-import { breadcrumbStructuredData, productStructuredData } from "@/lib/seo";
+import { breadcrumbStructuredData, privatePageMetadata, productStructuredData } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/site";
 
 export const revalidate = 60;
@@ -34,7 +41,11 @@ export async function generateMetadata({ params }: ProductDetailsPageProps): Pro
   const product = await getStoreProductBySlug(resolvedParams.slug);
 
   if (!product) {
-    return { title: "Product Not Found" };
+    // R2.3: a real product that is now hidden gets a noindex page; anything else is 404.
+    const hidden = await getStoreUnavailableProduct(resolvedParams.slug);
+    return hidden
+      ? { title: `${hidden.name} — এখন পাওয়া যাচ্ছে না`, ...privatePageMetadata }
+      : { title: "Product Not Found" };
   }
 
   const path = "/products/" + product.slug;
@@ -58,18 +69,47 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
   const product = await getStoreProductBySlug(resolvedParams.slug);
 
   if (!product) {
-    notFound();
+    const hidden = await getStoreUnavailableProduct(resolvedParams.slug);
+    if (!hidden) notFound();
+    const alternatives = (await getStorePurchasableProducts()).slice(0, 3);
+    return (
+      <section className="py-10" data-testid="product-unavailable-page">
+        <div className="container-page">
+          <div className="max-w-2xl rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <h1 className="text-2xl font-bold text-slate-950">{hidden.name}</h1>
+            <p className="mt-3 text-base font-semibold text-slate-700">এই পণ্যটা এখন পাওয়া যাচ্ছে না।</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              নিচে স্টকে থাকা অন্য পণ্য দেখুন, অথবা{" "}
+              <Link className="font-semibold text-blue-700 hover:text-blue-900" href="/products">সব পণ্য</Link>{" "}
+              দেখুন।
+            </p>
+          </div>
+          {alternatives.length ? (
+            <>
+              <h2 className="mb-5 mt-8 text-2xl font-bold text-slate-950">স্টকে থাকা বিকল্প পণ্য</h2>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {alternatives.map((item) => (
+                  <ProductCard key={item.id} product={item} />
+                ))}
+              </div>
+            </>
+          ) : null}
+        </div>
+      </section>
+    );
   }
 
+  const canBuyNow = product.state === "in_stock";
   const [related, reviewData] = await Promise.all([
     getStoreRelatedProducts(product, 3),
     getProductReviewData(product.id)
   ]);
   const { summary, reviews } = reviewData;
+  const structuredData = productStructuredData(product, getSiteUrl(), summary);
 
   return (
     <>
-      <StructuredData data={productStructuredData(product, getSiteUrl(), summary)} />
+      {structuredData ? <StructuredData data={structuredData} /> : null}
       <StructuredData data={breadcrumbStructuredData([
         { name: "Home", url: getSiteUrl() },
         { name: "Products", url: `${getSiteUrl()}/products` },
@@ -88,11 +128,9 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
           </div>
 
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" data-testid="product-purchase-panel">
               <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge tone={product.stock > 0 ? "green" : "red"}>
-                  {product.stock > 0 ? `${product.stock} in stock` : "Sold out"}
-                </StatusBadge>
+                <ProductStateBadges product={product} />
                 <StatusBadge tone="blue">{product.category}</StatusBadge>
                 {summary.reviewCount > 0 && summary.averageRating !== null ? (
                   <a className="text-sm font-semibold text-amber-600 hover:underline" href="#reviews">
@@ -103,14 +141,17 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
               <h1 className="mt-4 text-3xl font-bold text-slate-950">{product.name}</h1>
               <p className="mt-3 text-base leading-7 text-slate-600">{product.shortDescription}</p>
 
-              <div className="mt-5 flex flex-wrap items-end gap-3">
-                <span className="text-3xl font-bold text-slate-950">{formatMoney(product.price)}</span>
-                {product.oldPrice ? (
-                  <span className="text-base text-slate-400 line-through">{formatMoney(product.oldPrice)}</span>
-                ) : null}
+              <div className="mt-5">
+                <ProductPrice product={product} size="page" />
               </div>
 
-              <ProductPurchaseActions productId={product.id} stock={product.stock} />
+              {canBuyNow ? (
+                <ProductPurchaseActions productId={product.id} stock={product.stock} />
+              ) : (
+                <div className="mt-5">
+                  <ProductUnavailableNote product={product} />
+                </div>
+              )}
 
               <div className="mt-6 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
                 <span className="inline-flex items-center gap-2">
@@ -203,7 +244,7 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
       {related.length ? (
         <section className="bg-white py-10">
           <div className="container-page">
-            <h2 className="mb-5 text-2xl font-bold text-slate-950">Related Products</h2>
+            <h2 className="mb-5 text-2xl font-bold text-slate-950">{canBuyNow ? "আরও পণ্য" : "স্টকে থাকা বিকল্প পণ্য"}</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((item) => (
                 <ProductCard key={item.id} product={item} />

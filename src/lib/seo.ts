@@ -19,11 +19,16 @@ export function productStructuredData(product: Product, siteUrl: string, review?
     url,
     sku: product.id,
     image: product.images?.length ? product.images.map((item) => item.url) : product.imageUrl ? [product.imageUrl] : undefined,
-    offers: {
-      "@type": "Offer", url, priceCurrency: "BDT", price: product.price.toFixed(2),
-      availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      seller: { "@type": "Organization", name: "Kena Sathi", url: siteUrl }
-    },
+    // R2.4: in stock → the shown price + InStock; stock ended → the shown price + OutOfStock
+    // (no "last sold price" claim); coming soon → no offer and no price at all. Hidden
+    // products never reach this function (their page is noindex with no Product data).
+    ...(product.state === "coming_soon" ? {} : {
+      offers: {
+        "@type": "Offer", url, priceCurrency: "BDT", price: product.price.toFixed(2),
+        availability: product.state === "in_stock" ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+        seller: { "@type": "Organization", name: "Kena Sathi", url: siteUrl }
+      }
+    }),
     ...(review && review.reviewCount > 0 && review.averageRating !== null ? {
       aggregateRating: { "@type": "AggregateRating", ratingValue: review.averageRating, reviewCount: review.reviewCount }
     } : {})

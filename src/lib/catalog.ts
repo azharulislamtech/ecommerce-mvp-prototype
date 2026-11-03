@@ -15,6 +15,8 @@ import {
   type CatalogProduct
 } from "@/lib/supabase/catalog";
 import { hasSupabasePublicConfig } from "@/lib/supabase/server";
+import { getUnavailableProduct as getSupabaseUnavailableProduct } from "@/lib/supabase/catalog";
+import { STATE_RANK, storefrontState } from "@/lib/storefront-state";
 import type { CategoryRow } from "@/lib/supabase/database.types";
 
 export type StoreCategory = (typeof mockCategories)[number];
@@ -61,7 +63,15 @@ function mapCategory(row: CategoryRow): StoreCategory {
   };
 }
 
-function mapProduct(row: CatalogProduct): Product {
+function mapProduct(row: CatalogProduct): Product | null {
+  const state = storefrontState({
+    isActive: row.is_active,
+    availability: row.availability,
+    stock: row.stock_quantity,
+    firstStockedAt: row.first_stocked_at
+  });
+  if (state === "hidden") return null;
+
   const fallback = mockProducts.find((product) => product.slug === row.slug);
   const categoryName = row.category?.name ?? fallback?.category ?? "General";
   const categorySlug = row.category?.slug ?? fallback?.category.toLowerCase().replace(/\s+/g, "-");
@@ -88,6 +98,10 @@ function mapProduct(row: CatalogProduct): Product {
     price: hasDiscount ? row.discount_price! : row.price,
     oldPrice: hasDiscount ? row.price : undefined,
     stock: row.stock_quantity,
+    state,
+    estimatedPrice: row.estimated_price ?? undefined,
+    ageMinMonths: row.age_min_months ?? undefined,
+    ageMaxMonths: row.age_max_months ?? undefined,
     featured: row.is_featured,
     imageAlt: primaryImage?.alt,
     imageUrl: primaryImage?.url,
@@ -120,6 +134,11 @@ function applyFilters(products: Product[], filters: CatalogFilters = {}) {
     result = result.filter((product) => product.categorySlug === category || product.category.toLowerCase().replace(/\s+/g, "-").replace("&", "").replace(/--+/g, "-") === category || product.category.toLowerCase() === category);
   }
 
+  // A coming-soon product has no confirmed price, so price filters and price sorting skip it.
+  if (price) {
+    result = result.filter((product) => product.state !== "coming_soon");
+  }
+
   if (price === "under-1500") {
     result = result.filter((product) => product.price < 1500);
   } else if (price === "1500-3000") {
@@ -128,12 +147,18 @@ function applyFilters(products: Product[], filters: CatalogFilters = {}) {
     result = result.filter((product) => product.price > 3000);
   }
 
+  const comingSoonLast = (left: Product, right: Product) =>
+    Number(left.state === "coming_soon") - Number(right.state === "coming_soon");
+
   if (sort === "price-asc") {
-    result.sort((left, right) => left.price - right.price);
+    result.sort((left, right) => comingSoonLast(left, right) || left.price - right.price);
   } else if (sort === "price-desc") {
-    result.sort((left, right) => right.price - left.price);
+    result.sort((left, right) => comingSoonLast(left, right) || right.price - left.price);
   } else if (sort === "offers") {
     result.sort((left, right) => Number(Boolean(right.oldPrice)) - Number(Boolean(left.oldPrice)));
+  } else {
+    // Default: what can be bought first, then coming soon, then stock ended (stable).
+    result.sort((left, right) => STATE_RANK[left.state] - STATE_RANK[right.state]);
   }
 
   return result;
@@ -162,12 +187,25 @@ export async function getStoreProducts(filters: CatalogFilters = {}) {
   }
 
   const products = await getSupabaseProducts();
-  return applyFilters(products.map(mapProduct), filters);
+  return applyFilters(products.map(mapProduct).filter((product): product is Product => product !== null), filters);
+}
+
+// Only in-stock products can go in the cart or checkout (R2.3).
+export async function getStorePurchasableProducts() {
+  const products = await getStoreProducts();
+  return products.filter((product) => product.state === "in_stock");
+}
+
+// R2.3 / R1.9: name of a real product that is now hidden, for the "এখন পাওয়া যাচ্ছে না" page.
+// Dummy or never-stocked rows return null, so their links stay 404.
+export async function getStoreUnavailableProduct(slug: string) {
+  if (!hasSupabasePublicConfig()) return null;
+  return getSupabaseUnavailableProduct(slug);
 }
 
 export async function getStoreFeaturedProducts(limit = 8) {
   const products = await getStoreProducts();
-  return products.filter((product) => product.featured).slice(0, limit);
+  return products.filter((product) => product.featured && product.state === "in_stock").slice(0, limit);
 }
 
 export async function getStoreProductBySlug(slug: string) {
@@ -181,7 +219,8 @@ export async function getStoreProductBySlug(slug: string) {
 }
 
 export async function getStoreRelatedProducts(product: Product, limit = 3) {
-  const products = await getStoreProducts();
+  // Alternatives are always something the customer can buy now.
+  const products = await getStorePurchasableProducts();
   const sameCategory = products.filter((item) => item.id !== product.id && item.category === product.category);
   const otherProducts = products.filter((item) => item.id !== product.id && item.category !== product.category);
 

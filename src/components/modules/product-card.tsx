@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
-import { formatMoney, type Product } from "@/lib/data";
+import type { Product } from "@/lib/data";
 import { ProductVisual } from "@/components/modules/product-visual";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { ProductPrice, ProductStateBadges, ProductUnavailableNote } from "@/components/modules/product-state";
 
 type ProductCardProps = {
   product: Product;
 };
 
 export function ProductCard({ product }: ProductCardProps) {
-  const inStock = product.stock > 0;
+  const inStock = product.state === "in_stock";
 
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm" data-product-id={product.id} data-testid="product-card">
+    <article className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm" data-product-id={product.id} data-product-state={product.state} data-testid="product-card">
       <Link className="block" href={`/products/${product.slug}`}>
         <ProductVisual imageAlt={product.imageAlt} imageUrl={product.imageUrl} label={product.name} visual={product.visual} />
       </Link>
@@ -27,16 +27,16 @@ export function ProductCard({ product }: ProductCardProps) {
             </Link>
             <p className="mt-1 line-clamp-2 text-sm text-slate-600">{product.shortDescription}</p>
           </div>
-          <StatusBadge tone={inStock ? "green" : "red"}>{inStock ? "In stock" : "Sold out"}</StatusBadge>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <ProductStateBadges product={product} />
         </div>
 
-        <div className="mt-auto flex flex-wrap items-end gap-2">
-          <span className="text-xl font-bold text-slate-950">{formatMoney(product.price)}</span>
-          {product.oldPrice ? (
-            <span className="text-sm text-slate-400 line-through">{formatMoney(product.oldPrice)}</span>
-          ) : null}
+        <div className="mt-auto">
+          <ProductPrice product={product} size="card" />
         </div>
 
+        {inStock ? (
         <div className="grid grid-cols-2 gap-2 pt-1">
           <AddToCartButton
             checkout
@@ -52,6 +52,9 @@ export function ProductCard({ product }: ProductCardProps) {
             stock={product.stock}
           />
         </div>
+        ) : (
+          <ProductUnavailableNote product={product} />
+        )}
       </div>
     </article>
   );
