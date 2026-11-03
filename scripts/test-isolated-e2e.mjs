@@ -31,7 +31,7 @@ try {
     await new Promise(resolve=>setTimeout(resolve,500));
   }
   if(!ready) throw new Error('Isolated app did not start');
-  const runner=spawn(process.execPath,['node_modules/@playwright/test/cli.js','test'],{env,stdio:'inherit',windowsHide:true});
+  const runner=spawn(process.execPath,['node_modules/@playwright/test/cli.js','test',...process.argv.slice(2).filter(arg=>arg!=='--production')],{env,stdio:'inherit',windowsHide:true});
   const [code]=await once(runner,'exit');process.exitCode=code??1;
 } finally {
   if(app) {

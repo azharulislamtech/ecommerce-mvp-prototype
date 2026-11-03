@@ -12,6 +12,7 @@ import {
 import type { AdminProduct } from "@/lib/supabase/admin-catalog";
 import type { CategoryRow } from "@/lib/supabase/database.types";
 import { catalogReadiness } from "@/lib/catalog-readiness";
+import { groupCategoryOptions } from "@/lib/admin/product-fields";
 
 const initialState: ProductFormState = {
   status: "idle",
@@ -83,6 +84,11 @@ export function ProductForm({ categories, error, mode, notice, product }: Produc
   const cannotSave = categories.length === 0;
   const currentStatus = product?.is_active === false ? "inactive" : "active";
   const contentIssues = product ? catalogReadiness(product) : [];
+  const categoryGroups = groupCategoryOptions(categories);
+  // After an error, show what the admin typed; otherwise the saved product.
+  const value = (name: string, saved: string | number | null | undefined) =>
+    state.values ? state.values[name] ?? "" : saved ?? "";
+  const savedAvailability = product?.availability ?? "available";
 
   return (
     <div className="space-y-5">
@@ -111,13 +117,13 @@ export function ProductForm({ categories, error, mode, notice, product }: Produc
         </div>
       ) : null}
 
-      <form action={formAction} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <form action={formAction} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" key={state.values ? JSON.stringify(state.values) : "saved"}>
         <div className="grid gap-4 lg:grid-cols-2">
           <label className="block">
             <span className="text-sm font-semibold text-slate-950">Product Name</span>
             <input
               className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 px-3 text-sm"
-              defaultValue={product?.name}
+              defaultValue={value("name", product?.name)}
               name="name"
               required
             />
@@ -127,7 +133,7 @@ export function ProductForm({ categories, error, mode, notice, product }: Produc
             <span className="text-sm font-semibold text-slate-950">Slug</span>
             <input
               className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 px-3 text-sm"
-              defaultValue={product?.slug}
+              defaultValue={value("slug", product?.slug)}
               name="slug"
               placeholder="auto-generated-from-name"
             />
@@ -137,15 +143,19 @@ export function ProductForm({ categories, error, mode, notice, product }: Produc
             <span className="text-sm font-semibold text-slate-950">Category</span>
             <select
               className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
-              defaultValue={product?.category_id ?? ""}
+              defaultValue={value("category_id", product?.category_id)}
               name="category_id"
               required
             >
               <option value="">Choose category</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}{category.is_active ? "" : " (inactive)"}
-                </option>
+              {categoryGroups.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.options.map((option) => (
+                    <option disabled={option.disabled} key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
             <FieldError message={state.fieldErrors.category_id} />
@@ -154,7 +164,7 @@ export function ProductForm({ categories, error, mode, notice, product }: Produc
             <span className="text-sm font-semibold text-slate-950">Status</span>
             <select
               className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
-              defaultValue={currentStatus}
+              defaultValue={value("status", currentStatus)}
               name="status"
             >
               <option value="active">Active</option>
@@ -165,7 +175,7 @@ export function ProductForm({ categories, error, mode, notice, product }: Produc
             <span className="text-sm font-semibold text-slate-950">Price</span>
             <input
               className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 px-3 text-sm"
-              defaultValue={product?.price}
+              defaultValue={value("price", product?.price)}
               min="0"
               name="price"
               required
@@ -178,7 +188,7 @@ export function ProductForm({ categories, error, mode, notice, product }: Produc
             <span className="text-sm font-semibold text-slate-950">Discount Price</span>
             <input
               className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 px-3 text-sm"
-              defaultValue={product?.discount_price ?? ""}
+              defaultValue={value("discount_price", product?.discount_price)}
               min="0"
               name="discount_price"
               step="0.01"
@@ -190,7 +200,7 @@ export function ProductForm({ categories, error, mode, notice, product }: Produc
             <span className="text-sm font-semibold text-slate-950">Stock Quantity</span>
             <input
               className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 px-3 text-sm"
-              defaultValue={product?.stock_quantity ?? 0}
+              defaultValue={value("stock_quantity", product?.stock_quantity ?? 0)}
               min="0"
               name="stock_quantity"
               required
@@ -202,17 +212,134 @@ export function ProductForm({ categories, error, mode, notice, product }: Produc
           <label className="flex min-h-12 items-center gap-3 self-end rounded-md border border-slate-200 px-3 text-sm font-semibold text-slate-950">
             <input
               className="h-4 w-4 rounded border-slate-300 text-blue-700"
-              defaultChecked={product?.is_featured ?? false}
+              defaultChecked={state.values ? state.values.is_featured === "on" : product?.is_featured ?? false}
               name="is_featured"
               type="checkbox"
             />
             Featured product
           </label>
+          <fieldset className="rounded-md border border-slate-200 p-4 lg:col-span-2" data-testid="storefront-fields">
+            <legend className="px-1 text-sm font-bold text-slate-950">Storefront details</legend>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="block">
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-950">Availability</span>
+                  <select
+                    className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+                    defaultValue={value("availability", savedAvailability)}
+                    aria-describedby="availability-help"
+                    name="availability"
+                  >
+                    <option value="available">Available (sell when stock is above 0)</option>
+                    <option value="coming_soon">Coming soon (stock must be 0)</option>
+                  </select>
+                </label>
+                <p id="availability-help" className="mt-2 text-xs leading-5 text-slate-500">
+                  Choose Coming soon only for goods you will stock. No orders or payment are taken. When the goods arrive, add stock and
+                  the product goes on sale by itself.
+                </p>
+                <FieldError message={state.fieldErrors.availability} />
+              </div>
+              <div className="block">
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-950">Estimated price (coming soon only)</span>
+                  <input
+                    className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 px-3 text-sm"
+                    defaultValue={value("estimated_price", product?.estimated_price)}
+                    min="0"
+                    aria-describedby="estimated_price-help"
+                    name="estimated_price"
+                    step="0.01"
+                    type="number"
+                  />
+                </label>
+                <p id="estimated_price-help" className="mt-2 text-xs leading-5 text-slate-500">Shown as &ldquo;আনুমানিক দাম&rdquo;. Leave empty if you do not know it yet.</p>
+                <FieldError message={state.fieldErrors.estimated_price} />
+              </div>
+              <div className="block">
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-950">Minimum age (months)</span>
+                  <input
+                    className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 px-3 text-sm"
+                    defaultValue={value("age_min_months", product?.age_min_months)}
+                    max="216"
+                    min="0"
+                    name="age_min_months"
+                    step="1"
+                    type="number"
+                  />
+                </label>
+                <FieldError message={state.fieldErrors.age_min_months} />
+              </div>
+              <div className="block">
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-950">Maximum age (months)</span>
+                  <input
+                    className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 px-3 text-sm"
+                    defaultValue={value("age_max_months", product?.age_max_months)}
+                    max="216"
+                    min="0"
+                    aria-describedby="age_max_months-help"
+                    name="age_max_months"
+                    step="1"
+                    type="number"
+                  />
+                </label>
+                <p id="age_max_months-help" className="mt-2 text-xs leading-5 text-slate-500">For Kids products, such as 36 to 72 for 3–6 years. Leave both empty otherwise.</p>
+                <FieldError message={state.fieldErrors.age_max_months} />
+              </div>
+              <div className="block">
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-950">Problem tags</span>
+                  <input
+                    className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 px-3 text-sm"
+                    defaultValue={value("problem_tags", product?.problem_tags.join(", "))}
+                    aria-describedby="problem_tags-help"
+                    name="problem_tags"
+                    placeholder="kitchen-storage, small-space"
+                  />
+                </label>
+                <p id="problem_tags-help" className="mt-2 text-xs leading-5 text-slate-500">Comma separated, lowercase English with hyphens, up to 10.</p>
+                <FieldError message={state.fieldErrors.problem_tags} />
+              </div>
+              <div className="block">
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-950">Learning goals</span>
+                  <input
+                    className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 px-3 text-sm"
+                    defaultValue={value("learning_goals", product?.learning_goals.join(", "))}
+                    aria-describedby="learning_goals-help"
+                    name="learning_goals"
+                    placeholder="bangla-letters, counting"
+                  />
+                </label>
+                <p id="learning_goals-help" className="mt-2 text-xs leading-5 text-slate-500">Kids products only. Same format as problem tags.</p>
+                <FieldError message={state.fieldErrors.learning_goals} />
+              </div>
+              <div className="block lg:col-span-2">
+                <label className="block">
+                  <span className="text-sm font-semibold text-slate-950">Video link</span>
+                  <input
+                    className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 px-3 text-sm"
+                    defaultValue={value("video_url", product?.video_url)}
+                    aria-describedby="video_url-help"
+                    name="video_url"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    type="url"
+                  />
+                </label>
+                <p id="video_url-help" className="mt-2 text-xs leading-5 text-slate-500">
+                  Your own https YouTube or Facebook video of the real product. Do not upload video to the site.
+                </p>
+                <FieldError message={state.fieldErrors.video_url} />
+              </div>
+            </div>
+          </fieldset>
           <label className="block lg:col-span-2">
             <span className="text-sm font-semibold text-slate-950">Short Description</span>
             <input
               className="focus-ring mt-2 h-12 w-full rounded-md border border-slate-200 px-3 text-sm"
-              defaultValue={product?.short_description ?? ""}
+              defaultValue={value("short_description", product?.short_description ?? "")}
               name="short_description"
               required
             />
@@ -222,7 +349,7 @@ export function ProductForm({ categories, error, mode, notice, product }: Produc
             <span className="text-sm font-semibold text-slate-950">Full Description</span>
             <textarea
               className="focus-ring mt-2 min-h-32 w-full rounded-md border border-slate-200 px-3 py-3 text-sm"
-              defaultValue={product?.description ?? ""}
+              defaultValue={value("description", product?.description ?? "")}
               name="description"
               required
             />
