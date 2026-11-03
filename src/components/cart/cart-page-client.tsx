@@ -6,7 +6,7 @@ import { useCart } from "@/components/cart/cart-provider";
 import { OrderSummary } from "@/components/modules/order-summary";
 import { ProductVisual } from "@/components/modules/product-visual";
 import { TrashIcon } from "@/components/ui/icons";
-import { CART_DISCOUNT, DELIVERY_CHARGE, clampCartQuantity } from "@/lib/cart";
+import { CART_DISCOUNT, clampCartQuantity } from "@/lib/cart";
 import { formatMoney, type Product } from "@/lib/data";
 
 type CartPageClientProps = {
@@ -157,7 +157,7 @@ export function CartPageClient({ products }: CartPageClientProps) {
                     চেকআউটে যান
                   </Link>
                 }
-                deliveryCharge={DELIVERY_CHARGE}
+                deliveryCharge={null}
                 discount={CART_DISCOUNT}
                 itemCount={itemCount}
                 subtotal={subtotal}

@@ -60,3 +60,13 @@ test("a product that goes unavailable during checkout gets a Bangla stock messag
     await request.post(`${fixture}/test/product-active?slug=${encodeURIComponent(inCart.slug)}&active=true`);
   }
 });
+
+test("an empty cart shows no delivery charge or total", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.goto("/checkout");
+  await expect(page.getByText("আপনার কার্ট খালি। চেকআউটের আগে পণ্য যোগ করুন।")).toBeVisible();
+  await expect(page.getByTestId("order-delivery-charge")).toHaveText("—");
+  await expect(page.getByTestId("order-total")).toHaveText("—");
+  await expect(page.locator("body")).not.toContainText("BDT");
+});

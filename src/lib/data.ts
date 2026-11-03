@@ -222,12 +222,11 @@ export const orders: Order[] = [
 export { districts };
 
 
+// Shown as ৳1,500 (taka sign, Latin digits, South Asian grouping) to fit the Bangla UI.
+// Structured data (JSON-LD) keeps numeric prices with priceCurrency "BDT".
 export function formatMoney(amount: number) {
-  return new Intl.NumberFormat("en-BD", {
-    style: "currency",
-    currency: "BDT",
-    maximumFractionDigits: 0
-  }).format(amount);
+  const value = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(Math.abs(amount));
+  return `${amount < 0 ? "-" : ""}৳${value}`;
 }
 
 export function getProductBySlug(slug: string) {

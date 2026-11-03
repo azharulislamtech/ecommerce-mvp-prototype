@@ -41,12 +41,15 @@ test.describe("storefront cart smoke", () => {
     await expect(page.getByRole("heading", { name: "অর্ডার সম্পন্ন করুন" })).toBeVisible();
     await expect(page.locator('select[name="customer_district"] option')).toHaveCount(65);
 
+    // Before a district is chosen, the delivery charge is not guessed.
+    await expect(page.getByTestId("order-delivery-charge")).toContainText("ঢাকায়");
+    await expect(page.locator('select[name="customer_district"] option[value="Dhaka"]')).toHaveText("ঢাকা");
     const districtSelect = page.locator('select[name="customer_district"]');
     await districtSelect.selectOption("Dhaka");
-    await expect(page.getByTestId("order-delivery-charge")).toContainText("60");
+    await expect(page.getByTestId("order-delivery-charge")).toHaveText("৳60");
 
     await districtSelect.selectOption("Chattogram");
-    await expect(page.getByTestId("order-delivery-charge")).toContainText("120");
+    await expect(page.getByTestId("order-delivery-charge")).toHaveText("৳120");
     await expect(page.getByRole("button", { name: "অর্ডার নিশ্চিত করুন" })).toBeEnabled();
   });
 });
