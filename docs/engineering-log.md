@@ -2,6 +2,19 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-04: R6.1 Product Page Deployment
+
+- #33 (R6.1) changes the product page:
+  - The video is a link-out card (no iframe, so no third-party cookies before a click).
+  - A problem line.
+  - On mobile the buy panel comes first, so the price and the COD button are on the first 390×844 screen.
+  - Bangla trust marks replace the English ones, including the unproven "Fast delivery".
+  - The header logo loads eagerly (fixes the blank slot noted in the R3.1 entry).
+- Verification: re-run in one full pass on the result merged with latest main (unit 39/39, db 45/45, e2e 29/29). On owner request it merged as `07888a0` after green CI.
+- Deployed `07888a0` with `--skip-domain` as `dpl_Go1biSUukrDDCXfcXkMMVG32GbpX` (https://ecommerce-mvp-prototype-97txhn3xr-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 16 checks on the staged URL and again on https://kenasathi.com after promotion. The logo `<img>` has `loading="eager"`.
+- Still English on the product page (R6.2): Specification, Payment Info and the reviews section and form. The product page itself is not checkable live yet because no products are active.
+- Rollback target: `dpl_DRkQXeZjdhSVEMKYAZxZ4Rhjd11M`. No database changes.
+
 ## 2026-11-04: R3.1 Honest Bangla Homepage Deployment
 
 - #31 (R3.1) changes the homepage:
