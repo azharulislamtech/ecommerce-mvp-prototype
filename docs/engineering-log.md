@@ -2,6 +2,21 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-03: R2.3/R2.4 Storefront States Deployment
+
+- #27 (R2.3, R2.4) adds the four storefront states (in stock, stock ended, coming soon, hidden):
+  - The TS logic mirrors the DB `storefront_state()`.
+  - Bangla state and age badges.
+  - Coming soon never shows the stored price.
+  - Real hidden products get a noindex unavailable page via `get_unavailable_product`; never-stocked ones return 404.
+  - JSON-LD is state-aware: no offer for coming soon, OutOfStock for stock ended.
+- Verification: re-run on the result merged with latest main (unit 36/36, db 45/45, e2e 23/23). On owner request it merged as `9b719d4` after green CI.
+- Deployed `9b719d4` with `--skip-domain` as `dpl_DnY8qKCg1RZzCnEyQRMeMysy4MUN` (https://ecommerce-mvp-prototype-qxvhj7srj-azadbasis-4964s-projects.vercel.app).
+  - Staged: verify-live-release (empty mode) passed 16 checks. The dummy product URLs (`apple-watch`, `cold-pressed-coconut-oil-500ml`, `aurora-wireless-earbuds`) return 404, and /products has no "Sold out" text.
+  - Live: after promotion the 16 checks passed on https://kenasathi.com.
+- No visible storefront change today, because all 10 products are inactive dummies. The guideline §৩.১ → §৩.২ switch stays with R7.3.
+- Rollback target: `dpl_DwHgCQcPgg4ZL8h7nJ2YX92yYW6U`. No database changes.
+
 ## 2026-11-03: R10.2 Admin Listing Guideline Panel Deployment
 
 - #25 (R10.2) adds a guideline checklist and live warnings beside the admin product form: unproven claims, discount reminders, coming-soon pricing rules and Home problem tags. Warnings never block a save. The checklist text is pinned to the guideline files by a unit test. No server or DB change. Re-run on the result merged with latest main: unit 32/32, db 45/45, e2e 22/22. On owner request it merged as `7f9222c` after green CI.
