@@ -22,6 +22,8 @@ export type Product = {
   price: number;
   oldPrice?: number;
   stock: number;
+  // R2.1: the category's section, used by the header menu and section filter.
+  section?: "kids" | "home";
   // R2.3: never "hidden" here; hidden products are left out of the catalog.
   state: Exclude<StorefrontState, "hidden">;
   estimatedPrice?: number;

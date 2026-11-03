@@ -7,14 +7,14 @@ import {
 import type { CategoryRow, ProductImageRow, ProductRow } from "./database.types";
 
 export type CatalogProduct = ProductRow & {
-  category: Pick<CategoryRow, "id" | "name" | "slug"> | null;
+  category: Pick<CategoryRow, "id" | "name" | "slug" | "section"> | null;
   images: ProductImageRow[];
 };
 
 type ProductImageSelection = Pick<ProductImageRow, "id" | "image_url" | "alt_text" | "sort_order" | "created_at">;
 
 type ProductSelection = ProductRow & {
-  categories: Pick<CategoryRow, "id" | "name" | "slug"> | null;
+  categories: Pick<CategoryRow, "id" | "name" | "slug" | "section"> | null;
   product_images: ProductImageSelection[] | null;
 };
 
@@ -64,7 +64,8 @@ export async function getActiveProducts() {
       categories:category_id (
         id,
         name,
-        slug
+        slug,
+        section
       ),
       product_images (
         id,
@@ -105,7 +106,8 @@ export async function getProductBySlug(slug: string) {
       categories:category_id (
         id,
         name,
-        slug
+        slug,
+        section
       ),
       product_images (
         id,

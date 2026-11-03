@@ -13,6 +13,6 @@ test("privacy policy is Bangla, states retention rules and fits a 390px phone", 
   for (const rule of ["২ বছর", "৬ বছর", "৩০ দিন", "৬ মাস", "১২ মাস", "broadcast list"]) {
     await expect(body).toContainText(rule);
   }
-  await expect(page.getByRole("link", { name: "০১৭১৭-১২১৮৩৯" })).toHaveAttribute("href", "tel:+8801717121839");
+  await expect(page.locator("main").getByRole("link", { name: "০১৭১৭-১২১৮৩৯" })).toHaveAttribute("href", "tel:+8801717121839");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

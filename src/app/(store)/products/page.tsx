@@ -2,7 +2,7 @@ import Link from "next/link";
 import { FilterIcon, SearchIcon } from "@/components/ui/icons";
 import { ProductCard } from "@/components/modules/product-card";
 import { SectionHeading } from "@/components/modules/section-heading";
-import { getStoreCategories, getStoreProducts, type CatalogFilters, type StoreCategory } from "@/lib/catalog";
+import { getStoreCategories, getStoreNav, getStoreProducts, type CatalogFilters, type StoreCategory } from "@/lib/catalog";
 
 export const revalidate = 60;
 
@@ -16,7 +16,7 @@ const listingMetadata = {
 export async function generateMetadata({ searchParams }: ProductListingPageProps) {
   const filters = await searchParams;
   const category = firstValue(filters?.category);
-  const hasFilters = Boolean(filters?.q || filters?.price || filters?.sort);
+  const hasFilters = Boolean(filters?.q || filters?.price || filters?.sort || filters?.section || filters?.availability);
   const knownCategory = category && (await getStoreCategories()).some((item) => item.slug === category);
   return { ...listingMetadata,
     alternates: { canonical: knownCategory && !hasFilters ? `/categories/${category}` : "/products" },
@@ -41,6 +41,8 @@ function FilterPanel({ categories, filters }: FilterPanelProps) {
   return (
     <div className="space-y-5">
       {filters.q ? <input name="q" type="hidden" value={filters.q} /> : null}
+      {filters.section ? <input name="section" type="hidden" value={filters.section} /> : null}
+      {filters.availability ? <input name="availability" type="hidden" value={filters.availability} /> : null}
       <div>
         <label className="text-sm font-semibold text-slate-950" htmlFor="category">
           Category
@@ -104,12 +106,20 @@ export default async function ProductListingPage({ searchParams }: ProductListin
     q: firstValue(resolvedSearchParams?.q),
     category: firstValue(resolvedSearchParams?.category),
     price: firstValue(resolvedSearchParams?.price),
-    sort: firstValue(resolvedSearchParams?.sort)
+    sort: firstValue(resolvedSearchParams?.sort),
+    section: firstValue(resolvedSearchParams?.section),
+    availability: firstValue(resolvedSearchParams?.availability)
   };
+  // R2.1: the header menu lands here with a section or "শীঘ্রই আসছে" filter.
+  const menuTitle =
+    filters.section === "kids" ? "Kids & Baby"
+      : filters.section === "home" ? "সংসারের সমাধান"
+        : filters.availability === "coming_soon" ? "শীঘ্রই আসছে" : null;
 
-  const [categories, products] = await Promise.all([
+  const [categories, products, nav] = await Promise.all([
     getStoreCategories(),
-    getStoreProducts(filters)
+    getStoreProducts(filters),
+    getStoreNav()
   ]);
 
   return (
@@ -120,6 +130,25 @@ export default async function ProductListingPage({ searchParams }: ProductListin
           eyebrow="Products"
           title="Shop All Products"
         />
+
+        {menuTitle ? (
+          <div className="mb-5" lang="bn">
+            <h2 className="text-2xl font-bold text-slate-950" data-testid="menu-section-title">{menuTitle}</h2>
+            {filters.section === "kids" && nav.kidsCategories.length ? (
+              <nav aria-label="Kids & Baby ক্যাটাগরি" className="mt-3 flex flex-wrap gap-2 rounded-lg bg-sky-50 p-2" data-testid="kids-category-menu">
+                {nav.kidsCategories.map((item) => (
+                  <Link
+                    className={`rounded-full px-3 py-2 text-sm font-semibold ${filters.category === item.slug ? "bg-sky-600 text-white" : "bg-white text-sky-800 hover:bg-sky-100"}`}
+                    href={`/products?section=kids&category=${encodeURIComponent(item.slug)}`}
+                    key={item.slug}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </nav>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mb-5 grid gap-3 lg:grid-cols-[1fr_auto]">
           <form action="/products" className="relative">
