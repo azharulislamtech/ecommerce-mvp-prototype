@@ -29,9 +29,10 @@ export async function startDatabaseFixture(port=54329) {
       // update at a time, in the order given, so the first_stocked_at trigger sees each step.
       if(url.pathname==='/test/product-update'&&req.method==='POST') {
         const slug=url.searchParams.get('slug');
-        const allowed={stock:'stock_quantity',availability:'availability',active:'is_active',estimated:'estimated_price',age_min:'age_min_months',age_max:'age_max_months'};
+        const allowed={stock:'stock_quantity',availability:'availability',active:'is_active',estimated:'estimated_price',age_min:'age_min_months',age_max:'age_max_months',video:'video_url',featured:'is_featured'};
         for(const [key,value] of url.searchParams) {
           if(key==='slug') continue;
+          if(key==='tags') {await db.query('update products set problem_tags=$2::text[] where slug=$1',[slug,value?value.split(','):[]]);continue;}
           if(key==='category') {await db.query('update products set category_id=(select id from categories where slug=$2) where slug=$1',[slug,value]);continue;}
           const column=allowed[key];
           if(!column) return send({message:'Unsupported field'},400);

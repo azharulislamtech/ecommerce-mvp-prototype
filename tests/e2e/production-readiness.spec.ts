@@ -19,7 +19,9 @@ test('product metadata and category links expose crawlable commerce content',asy
   const response=await request.get(href!);expect(response.status()).toBe(200);
   const html=await response.text();expect(html).toContain('application/ld+json');expect(html).toContain('"@type":"Product"');
   expect(html).toContain('"priceCurrency":"BDT"');expect(html).toContain('rel="canonical"');
-  await page.goto('/');await page.locator('a[href^="/categories/"]').first().click();
+  // The homepage no longer lists old categories (R3.1); take a category from the product filter.
+  const categorySlug=await page.locator('select#category option[value]:not([value=""])').first().getAttribute('value');
+  expect(categorySlug).toBeTruthy();await page.goto(`/categories/${categorySlug}`);
   await expect(page.locator('h1')).toBeVisible();await expect(page.locator('a[href^="/products/"]').first()).toBeVisible();
 });
 

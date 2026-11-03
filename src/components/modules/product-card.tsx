@@ -1,20 +1,29 @@
 import Link from "next/link";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 import type { Product } from "@/lib/data";
+import { problemLine } from "@/lib/problems";
 import { ProductVisual } from "@/components/modules/product-visual";
 import { ProductPrice, ProductStateBadges, ProductUnavailableNote } from "@/components/modules/product-state";
 
 type ProductCardProps = {
   product: Product;
+  // R3.1: Home Solutions cards show the problem the product solves.
+  showProblem?: boolean;
 };
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, showProblem = false }: ProductCardProps) {
+  const problem = showProblem ? problemLine(product.problemTags) : null;
   const inStock = product.state === "in_stock";
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm" data-product-id={product.id} data-product-state={product.state} data-testid="product-card">
-      <Link className="block" href={`/products/${product.slug}`}>
+      <Link className="relative block" href={`/products/${product.slug}`}>
         <ProductVisual imageAlt={product.imageAlt} imageUrl={product.imageUrl} label={product.name} visual={product.visual} />
+        {product.videoUrl ? (
+          <span className="absolute left-2 top-2 rounded-full bg-slate-950/80 px-2.5 py-1 text-xs font-semibold text-white" data-testid="product-video-mark">
+            ▶ ভিডিও আছে
+          </span>
+        ) : null}
       </Link>
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-3">
@@ -25,6 +34,7 @@ export function ProductCard({ product }: ProductCardProps) {
             >
               {product.name}
             </Link>
+            {problem ? <p className="mt-1 text-sm font-semibold text-emerald-700" data-testid="product-problem-line">সমস্যা: {problem}</p> : null}
             <p className="mt-1 line-clamp-2 text-sm text-slate-600">{product.shortDescription}</p>
           </div>
         </div>
