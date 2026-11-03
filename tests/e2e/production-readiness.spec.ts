@@ -7,7 +7,7 @@ async function placeTestOrder(page: import("@playwright/test").Page) {
   await page.locator('[name="customer_phone"]').fill('01712345678');
   await page.locator('[name="customer_district"]').selectOption('Dhaka');
   await page.locator('[name="customer_address"]').fill('Disposable test address Dhaka');
-  await page.getByRole('button',{name:'Place Order'}).click();
+  await page.getByRole('button',{name:'অর্ডার নিশ্চিত করুন'}).click();
   await expect(page).toHaveURL(/\/payment\/success\?t=[0-9a-f]{32}/,{timeout:30000});
   return new URL(page.url()).searchParams.get('t');
 }
@@ -71,7 +71,7 @@ test('real server action creates a COD order in the isolated database and tracki
   test.skip(process.env.E2E_ISOLATED!=='1','Order creation runs only against the disposable local database.');
   const token=await placeTestOrder(page);
   await expect(page.getByTestId('cart-count')).toHaveText('0');
-  await page.goto(`/track-order?t=${token}`);await expect(page.getByText('Order Not Found',{exact:true})).toHaveCount(0);
+  await page.goto(`/track-order?t=${token}`);await expect(page.getByText('অর্ডার পাওয়া যায়নি',{exact:true})).toHaveCount(0);
   const orders=await (await request.get(`http://127.0.0.1:${process.env.E2E_FIXTURE_PORT}/test/orders`)).json();
   const matching=orders.filter((order: { tracking_token: string })=>order.tracking_token===token);
   expect(matching).toHaveLength(1);

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CloseIcon } from "@/components/ui/icons";
 import { forgetRecentOrder, readRecentOrders, type RecentOrder } from "@/lib/recent-orders";
+import { formatBanglaDate } from "@/lib/order-copy";
 
 function formatSavedAt(value: string) {
   const savedAt = new Date(value);
@@ -12,7 +13,7 @@ function formatSavedAt(value: string) {
     return null;
   }
 
-  return new Intl.DateTimeFormat("en-BD", { dateStyle: "medium" }).format(savedAt);
+  return formatBanglaDate(value, false);
 }
 
 export function RecentOrdersPanel({ activeToken }: { activeToken?: string }) {
@@ -34,9 +35,9 @@ export function RecentOrdersPanel({ activeToken }: { activeToken?: string }) {
 
   return (
     <div className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-sm font-bold text-slate-950">Your Recent Orders</h2>
+      <h2 className="text-sm font-bold text-slate-950">আপনার সাম্প্রতিক অর্ডার</h2>
       <p className="mt-1 text-xs leading-5 text-slate-500">
-        Saved on this device only. Tap an order to see its status without typing anything.
+        শুধু এই ডিভাইসে সংরক্ষিত। কিছু না লিখেই অবস্থা দেখতে অর্ডারে চাপ দিন।
       </p>
       <ul className="mt-4 space-y-2">
         {orders.map((order) => {
@@ -58,7 +59,7 @@ export function RecentOrdersPanel({ activeToken }: { activeToken?: string }) {
                 {savedAt ? <span className="shrink-0 text-xs font-normal text-slate-500">{savedAt}</span> : null}
               </Link>
               <button
-                aria-label={`Remove ${order.orderNumber} from this device`}
+                aria-label={`${order.orderNumber} এই ডিভাইস থেকে সরান`}
                 className="focus-ring grid h-12 w-12 shrink-0 place-items-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-rose-700"
                 onClick={() => setOrders(forgetRecentOrder(order.orderNumber))}
                 type="button"

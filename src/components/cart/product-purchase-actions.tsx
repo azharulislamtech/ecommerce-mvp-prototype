@@ -18,11 +18,12 @@ export function ProductPurchaseActions({ productId, stock }: ProductPurchaseActi
     <>
       <div className="mt-5">
         <label className="text-sm font-semibold text-slate-950" htmlFor="quantity">
-          Quantity
+          পরিমাণ
         </label>
         <div className="mt-2 flex h-12 w-36 items-center justify-between rounded-md border border-slate-200 bg-white px-2">
           <button
             className="grid h-9 w-9 place-items-center rounded-md text-lg font-bold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
+            aria-label="পরিমাণ কমান"
             disabled={disabled || safeQuantity <= 1}
             onClick={() => setQuantity((current) => clampCartQuantity(current - 1, stock || 1))}
             type="button"
@@ -41,6 +42,7 @@ export function ProductPurchaseActions({ productId, stock }: ProductPurchaseActi
           />
           <button
             className="grid h-9 w-9 place-items-center rounded-md text-lg font-bold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
+            aria-label="পরিমাণ বাড়ান"
             disabled={disabled || safeQuantity >= stock}
             onClick={() => setQuantity((current) => clampCartQuantity(current + 1, stock || 1))}
             type="button"
@@ -54,19 +56,22 @@ export function ProductPurchaseActions({ productId, stock }: ProductPurchaseActi
         <AddToCartButton
           checkout
           className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-          label="Buy Now"
+          label="এখনই কিনুন"
           productId={productId}
           quantity={safeQuantity}
           stock={stock}
         />
         <AddToCartButton
           className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-950 transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:text-slate-400"
-          label="Add to Cart"
+          label="কার্টে যোগ করুন"
           productId={productId}
           quantity={safeQuantity}
           stock={stock}
         />
       </div>
+      <p className="mt-3 text-xs leading-5 text-slate-500">
+        “এখনই কিনুন” চাপলে পণ্যটা কার্টে যোগ হয়ে চেকআউটে যাবেন। কার্টে আগে থেকে পণ্য থাকলে সেগুলোও এই অর্ডারে থাকবে, চেকআউটে দেখে নিতে পারবেন।
+      </p>
     </>
   );
 }

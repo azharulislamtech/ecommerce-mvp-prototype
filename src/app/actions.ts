@@ -1,5 +1,6 @@
 "use server";
 
+import { CHECKOUT_MESSAGES, checkoutErrorMessage } from "@/lib/order-copy";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createHash } from "node:crypto";
@@ -51,6 +52,8 @@ export type CheckoutFormState = {
   status: "idle" | "error";
   message: string;
   fieldErrors: Partial<Record<CheckoutField, string>>;
+  // Echoed back on error so React's post-action form reset does not wipe what the customer typed.
+  values?: Partial<Record<"customer_name" | "customer_phone" | "customer_address" | "customer_note", string>>;
 };
 
 type ProductReviewField = "order_number" | "customer_phone" | "rating" | "title" | "body";
@@ -84,11 +87,16 @@ function loginRedirect(message: string): never {
   redirect(`/admin/login?error=${encodeURIComponent(message)}`);
 }
 
-function checkoutFormError(message: string, fieldErrors: CheckoutFormState["fieldErrors"] = {}): CheckoutFormState {
+function checkoutFormError(
+  message: string,
+  fieldErrors: CheckoutFormState["fieldErrors"] = {},
+  values?: CheckoutFormState["values"]
+): CheckoutFormState {
   return {
     status: "error",
     message,
-    fieldErrors
+    fieldErrors,
+    ...(values ? { values } : {})
   };
 }
 
@@ -416,38 +424,39 @@ export async function createOrderAction(
   const canonicalDistrict = getCanonicalDistrict(customerDistrict);
   const customerAddress = getText(formData, "customer_address");
   const customerNote = getText(formData, "customer_note");
-  if (customerNote.length > 1000) return checkoutFormError("Please keep the order note within 1,000 characters.");
+  const values = { customer_name: customerName, customer_phone: customerPhone, customer_address: customerAddress, customer_note: customerNote };
+  if (customerNote.length > 1000) return checkoutFormError(CHECKOUT_MESSAGES.noteTooLong, {}, values);
   const paymentMethod = normalizeCheckoutPaymentMethod(getText(formData, "payment_method"));
   const checkoutItems = parseCheckoutItems(getText(formData, "cart_items"));
   const fieldErrors: CheckoutFormState["fieldErrors"] = {};
   const idempotencyKey = getText(formData, "idempotency_key");
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
-    return checkoutFormError("Please refresh checkout and try again.");
+    return checkoutFormError(CHECKOUT_MESSAGES.refresh, {}, values);
   }
   let onlinePaymentBaseUrl: string | null = null;
 
   if (!checkoutItems) {
-    fieldErrors.cart_items = "Your cart is empty or invalid.";
+    fieldErrors.cart_items = CHECKOUT_MESSAGES.cartInvalid;
   }
 
   if (!paymentMethod) {
-    fieldErrors.payment_method = "Choose a supported payment method.";
+    fieldErrors.payment_method = CHECKOUT_MESSAGES.paymentMethod;
   }
 
   if (customerName.length < 2 || customerName.length > 120) {
-    fieldErrors.customer_name = "Customer name must be between 2 and 120 characters.";
+    fieldErrors.customer_name = CHECKOUT_MESSAGES.name;
   }
 
   if (!isValidBangladeshPhone(customerPhone)) {
-    fieldErrors.customer_phone = "Enter a valid Bangladesh mobile number.";
+    fieldErrors.customer_phone = CHECKOUT_MESSAGES.phone;
   }
 
   if (!canonicalDistrict) {
-    fieldErrors.customer_district = "Choose a valid Bangladesh district.";
+    fieldErrors.customer_district = CHECKOUT_MESSAGES.district;
   }
 
   if (customerAddress.length < 8 || customerAddress.length > 500) {
-    fieldErrors.customer_address = "Address must be between 8 and 500 characters.";
+    fieldErrors.customer_address = CHECKOUT_MESSAGES.address;
   }
 
   if (paymentMethod) {
@@ -468,7 +477,7 @@ export async function createOrderAction(
   }
 
   if (Object.keys(fieldErrors).length > 0 || !checkoutItems || !paymentMethod) {
-    return checkoutFormError("Please fix the highlighted checkout fields.", fieldErrors);
+    return checkoutFormError(CHECKOUT_MESSAGES.fixFields, fieldErrors, values);
   }
 
   const supabase = createSupabaseServiceClient();
@@ -490,17 +499,15 @@ export async function createOrderAction(
 
   if (error) {
     console.error("Checkout rejected", { code: error.code });
-    const safeMessage = error.message.startsWith("Too many orders.") || error.message.startsWith("Checkout details changed.")
-      ? error.message : "Could not create order. Please check product availability and try again.";
-    return checkoutFormError(safeMessage, {
-      cart_items: "Review cart stock and try again."
-    });
+    return checkoutFormError(checkoutErrorMessage(error.message), {
+      cart_items: CHECKOUT_MESSAGES.reviewCart
+    }, values);
   }
 
   const order = data?.[0];
 
   if (!order) {
-    return checkoutFormError("Order was not created. Please try again.");
+    return checkoutFormError(CHECKOUT_MESSAGES.notCreated, {}, values);
   }
 
   revalidatePath("/admin");

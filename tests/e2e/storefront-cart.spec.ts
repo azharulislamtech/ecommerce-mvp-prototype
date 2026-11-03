@@ -33,12 +33,12 @@ test.describe("storefront cart smoke", () => {
 
     await page.getByTestId("cart-link").click();
     await expect(page).toHaveURL(/\/cart$/);
-    await expect(page.getByRole("heading", { name: "Review Your Items" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "আপনার পণ্যগুলো দেখে নিন" })).toBeVisible();
     await expect(page.getByTestId("cart-line")).toHaveCount(1);
 
     await page.getByTestId("cart-checkout-link").click();
     await expect(page).toHaveURL(/\/checkout$/);
-    await expect(page.getByRole("heading", { name: "Complete Your Order" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "অর্ডার সম্পন্ন করুন" })).toBeVisible();
     await expect(page.locator('select[name="customer_district"] option')).toHaveCount(65);
 
     const districtSelect = page.locator('select[name="customer_district"]');
@@ -47,6 +47,6 @@ test.describe("storefront cart smoke", () => {
 
     await districtSelect.selectOption("Chattogram");
     await expect(page.getByTestId("order-delivery-charge")).toContainText("120");
-    await expect(page.getByRole("button", { name: "Place Order" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "অর্ডার নিশ্চিত করুন" })).toBeEnabled();
   });
 });
