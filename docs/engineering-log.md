@@ -2,6 +2,14 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-03: R10.1 Admin Product Fields and Telegram Alert Without Customer Data
+
+- #22 (R10.1) adds admin product form fields for the V11 columns: availability, estimated price, age, problem tags, learning goals and video URL, plus section-grouped categories. The checks mirror the V11 constraints, and stored availability is read from the DB. Main was merged in (`55958cb`) to keep both plan log rows. Re-run on the merged result: unit 24/24, db 45/45, e2e 21/21. On owner request it merged as `ee402a7` after green CI.
+- #23 (owner decision): the Telegram order alert now carries only the order number, ৳ total, payment method, item count, district, a yes/no gift flag and an admin link (`/admin/orders/<order_number>`). The customer name, phone, address and note are removed, and the privacy policy wording was updated to match. Main (with #22) was merged in (`0b56820`). Re-run on the merged result: unit 27/27, db 45/45, e2e 21/21. It merged as `d90637f` after green CI.
+- Deployed `d90637f` with `--skip-domain` as `dpl_8GjWTCUMk7zBbW5gTsrcPPBtZ9tg` (https://ecommerce-mvp-prototype-j17kfeawy-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 16 checks on the staged URL and again on https://kenasathi.com after promotion. /privacy-policy shows the new Telegram sentence, and /admin/products redirects when signed out (307).
+- Not verified live: a real Telegram alert, because no orders were placed. The builder is unit-tested. The owner may delete old alert messages, which still hold customer details, by hand.
+- Rollback target: `dpl_4dPcvqWj5F5uReLLDCLwWdfEuDBN`. No database changes.
+
 ## 2026-11-03: R8.1 Gift Checkbox Deployment
 
 - #20 (R8.1) adds a free "উপহার হিসেবে পাঠান" checkbox. It writes a fixed first line into `orders.customer_note` (no DB/RPC change), and the admin order page shows a gift warning. It was independently re-run in a clean checkout (lint, typecheck, unit 14/14, db 45/45, e2e 19/19, build, audit). On owner request it merged as `2144384` after green CI.
