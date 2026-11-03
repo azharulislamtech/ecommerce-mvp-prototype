@@ -1,6 +1,7 @@
 import { RecentOrdersPanel } from "@/components/orders/recent-orders-panel";
 import { SaveRecentOrder } from "@/components/orders/save-recent-order";
 import { formatMoney } from "@/lib/data";
+import { districtLabel } from "@/lib/delivery";
 import { SUPPORT_PHONE_DISPLAY, formatBanglaDate, orderStatusLabel, paymentStatusLabel } from "@/lib/order-copy";
 import { RATE_LIMIT_WINDOW_MINUTES } from "@/lib/rate-limit";
 import type { OrderStatus } from "@/lib/supabase/database.types";
@@ -181,7 +182,7 @@ export default async function TrackOrderPage({ searchParams }: TrackOrderPagePro
                 </div>
                 <div>
                   <dt className="text-slate-500">জেলা</dt>
-                  <dd className="mt-1 font-bold text-slate-950">{trackedOrder.customer_district}</dd>
+                  <dd className="mt-1 font-bold text-slate-950">{districtLabel(trackedOrder.customer_district)}</dd>
                 </div>
                 <div>
                   <dt className="text-slate-500">অর্ডারের সময়</dt>

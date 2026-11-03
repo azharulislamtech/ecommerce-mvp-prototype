@@ -1,10 +1,12 @@
 import { CART_DISCOUNT, DELIVERY_CHARGE, calculateCartTotal } from "@/lib/cart";
 import { cartDiscount, cartSubtotal, deliveryCharge as mockDeliveryCharge, formatMoney } from "@/lib/data";
 import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, itemCountLabel } from "@/lib/order-copy";
+import { DHAKA_DELIVERY_CHARGE, OUTSIDE_DHAKA_DELIVERY_CHARGE } from "@/lib/delivery";
 
 type OrderSummaryProps = {
   cta?: React.ReactNode;
-  deliveryCharge?: number;
+  // null = not known yet (no district chosen): the total then excludes delivery.
+  deliveryCharge?: number | null;
   discount?: number;
   itemCount?: number;
   subtotal?: number;
@@ -17,7 +19,10 @@ export function OrderSummary({
   itemCount,
   subtotal = cartSubtotal
 }: OrderSummaryProps) {
-  const total = calculateCartTotal(subtotal, deliveryCharge, discount);
+  // An empty cart has nothing to deliver, so no charge or total is shown.
+  const isEmpty = itemCount === 0;
+  const knownDelivery = isEmpty ? 0 : deliveryCharge;
+  const total = calculateCartTotal(subtotal, knownDelivery ?? 0, discount);
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -32,8 +37,12 @@ export function OrderSummary({
         </div>
         <div className="flex justify-between gap-4 text-slate-600">
           <dt>ডেলিভারি চার্জ</dt>
-          <dd className="font-semibold text-slate-900" data-testid="order-delivery-charge">
-            {formatMoney(deliveryCharge)}
+          <dd className="text-right font-semibold text-slate-900" data-testid="order-delivery-charge">
+            {isEmpty ? "—" : knownDelivery === null ? (
+              <span className="text-xs font-semibold text-slate-500">
+                ঢাকায় {formatMoney(DHAKA_DELIVERY_CHARGE)}, বাইরে {formatMoney(OUTSIDE_DHAKA_DELIVERY_CHARGE)}
+              </span>
+            ) : formatMoney(knownDelivery)}
           </dd>
         </div>
         {discount > 0 ? (
@@ -44,8 +53,8 @@ export function OrderSummary({
         ) : null}
         <div className="border-t border-slate-200 pt-3">
           <div className="flex justify-between gap-4 text-base font-bold text-slate-950">
-            <dt>মোট</dt>
-            <dd>{formatMoney(total)}</dd>
+            <dt>{knownDelivery === null ? "মোট (ডেলিভারি ছাড়া)" : "মোট"}</dt>
+            <dd data-testid="order-total">{isEmpty ? "—" : formatMoney(total)}</dd>
           </div>
         </div>
       </dl>

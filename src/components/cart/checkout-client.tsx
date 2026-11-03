@@ -12,6 +12,7 @@ import { CART_DISCOUNT } from "@/lib/cart";
 import {
   DHAKA_DELIVERY_CHARGE,
   OUTSIDE_DHAKA_DELIVERY_CHARGE,
+  districtOptions,
   getDeliveryChargeForDistrict
 } from "@/lib/delivery";
 import { formatMoney, type Product } from "@/lib/data";
@@ -88,7 +89,7 @@ export function CheckoutClient({ districts, onlinePaymentsEnabled, products }: C
   const subtotal = availableItems.reduce((total, item) => total + item.product.price * item.quantity, 0);
   const checkoutItems = availableItems.map((item) => ({ product_id: item.product.id, quantity: item.quantity }));
   const cannotSubmit = !hydrated || availableItems.length === 0 || unavailableItems.length > 0;
-  const deliveryCharge = getDeliveryChargeForDistrict(selectedDistrict);
+  const deliveryCharge = selectedDistrict ? getDeliveryChargeForDistrict(selectedDistrict) : null;
 
   return (
     <section className="py-8 md:py-10">
@@ -166,8 +167,8 @@ export function CheckoutClient({ districts, onlinePaymentsEnabled, products }: C
                     value={selectedDistrict}
                   >
                     <option value="">জেলা বেছে নিন</option>
-                    {districts.map((district) => (
-                      <option key={district} value={district}>{district}</option>
+                    {districtOptions.filter((option) => districts.includes(option.value)).map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                   </select>
                   <p className="mt-2 text-xs font-semibold text-slate-500">
