@@ -2,6 +2,12 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-03: R10.2 Admin Listing Guideline Panel Deployment
+
+- #25 (R10.2) adds a guideline checklist and live warnings beside the admin product form: unproven claims, discount reminders, coming-soon pricing rules and Home problem tags. Warnings never block a save. The checklist text is pinned to the guideline files by a unit test. No server or DB change. Re-run on the result merged with latest main: unit 32/32, db 45/45, e2e 22/22. On owner request it merged as `7f9222c` after green CI.
+- Deployed `7f9222c` with `--skip-domain` as `dpl_DwHgCQcPgg4ZL8h7nJ2YX92yYW6U` (https://ecommerce-mvp-prototype-kvw4jv60c-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 16 checks on the staged URL and again on https://kenasathi.com after promotion. /admin/products/new redirects when signed out (307).
+- Rollback target: `dpl_8GjWTCUMk7zBbW5gTsrcPPBtZ9tg`. No database changes.
+
 ## 2026-11-03: R10.1 Admin Product Fields and Telegram Alert Without Customer Data
 
 - #22 (R10.1) adds admin product form fields for the V11 columns: availability, estimated price, age, problem tags, learning goals and video URL, plus section-grouped categories. The checks mirror the V11 constraints, and stored availability is read from the DB. Main was merged in (`55958cb`) to keep both plan log rows. Re-run on the merged result: unit 24/24, db 45/45, e2e 21/21. On owner request it merged as `ee402a7` after green CI.
