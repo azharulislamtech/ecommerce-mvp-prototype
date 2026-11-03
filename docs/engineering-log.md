@@ -2,6 +2,13 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-03: R2.9 Bangla Checkout Deployment
+
+- #12 (R2.9) was independently re-run in a clean checkout before the PR: lint, typecheck, unit 10/10, db 45/45, e2e 13/13, build and audit all passed. On owner request it merged as `cac7933` after green CI.
+- Deployed `cac7933` with `--skip-domain` as `dpl_4bWNBki94yWjs7KndzmozUrvjBzb` (https://ecommerce-mvp-prototype-mr5zyzalf-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 16 checks on the staged URL. Staged /cart, /checkout, /track-order and /payment/failed show the Bangla copy and the real support number; the placeholder `01700-000000` is gone. After promotion the same 16 checks passed on https://kenasathi.com, and a 375px screenshot of /checkout showed the Bangla layout.
+- Follow-ups noticed: with an empty cart, checkout still shows delivery BDT 60 and total BDT 60; prices render as "BDT" rather than "৳"; district names are still in English.
+- Rollback target: `dpl_914a7AG26bhNdwwLVTvKxiEyzu6i`. No database changes.
+
 ## 2026-11-03: Request-Time Sitemap Deployment
 
 - Root cause: with `revalidate = 3600`, the production `sitemap.xml` stayed a Vercel cache HIT for about 24 h and kept listing the 9 deactivated dummy products (404). A DB change made outside the admin never triggers the admin's `revalidatePath`.
