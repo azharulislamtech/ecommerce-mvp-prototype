@@ -2,6 +2,7 @@
 import { reconcileCancelledStockAction, updateOrderStatusAction } from "@/app/actions";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/lib/data";
+import { splitGiftNote } from "@/lib/gift";
 import { getAdminOrderDetails } from "@/lib/supabase/orders";
 
 type OrderDetailsPageProps = {
@@ -37,6 +38,7 @@ export default async function OrderDetailsPage({ params, searchParams }: OrderDe
   }
 
   const latestPayment = order.payments[0];
+  const gift = splitGiftNote(order.customer_note);
 
   return (
     <div>
@@ -93,9 +95,14 @@ export default async function OrderDetailsPage({ params, searchParams }: OrderDe
           <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-bold text-slate-950">Delivery Address</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">{order.customer_address}</p>
-            {order.customer_note ? (
-              <p className="mt-3 rounded-md bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600">
-                Note: {order.customer_note}
+            {gift.isGift ? (
+              <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-900" data-testid="admin-gift-flag">
+                Gift order: do not put the price slip or invoice in the parcel.
+              </p>
+            ) : null}
+            {gift.note ? (
+              <p className="mt-3 whitespace-pre-line rounded-md bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600">
+                Note: {gift.note}
               </p>
             ) : null}
           </section>

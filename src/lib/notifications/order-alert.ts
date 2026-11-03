@@ -9,6 +9,8 @@ export type OrderAlertInput = {
   paymentMethod: string;
   district: string;
   siteUrl: string;
+  // R8.1 gift choice: a yes/no flag only, never the customer's note text.
+  isGift: boolean;
 };
 
 export function buildOrderAlert(order: OrderAlertInput) {
@@ -19,6 +21,9 @@ export function buildOrderAlert(order: OrderAlertInput) {
     "Total: " + formatMoney(order.totalAmount) + " (" + order.paymentMethod + ")",
     "Items: " + order.itemCount,
     "District: " + order.district,
+    order.isGift ? "উপহার: হ্যাঁ — দামের কাগজ দেবেন না" : "",
     "Open: " + adminLink
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }

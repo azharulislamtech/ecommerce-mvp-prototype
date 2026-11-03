@@ -9,7 +9,8 @@ test("the Telegram order alert carries no customer personal data", () => {
     itemCount: 2,
     paymentMethod: "cod",
     district: "Dhaka",
-    siteUrl: "https://kenasathi.com/"
+    siteUrl: "https://kenasathi.com/",
+    isGift: false
   });
   assert.match(text, /KS-20261103-0001/);
   assert.match(text, /৳1,560/);
@@ -24,6 +25,14 @@ test("the Telegram order alert carries no customer personal data", () => {
 });
 
 test("the admin link encodes the order number", () => {
-  const text = buildOrderAlert({ orderNumber: "A B/1", totalAmount: 60, itemCount: 1, paymentMethod: "cod", district: "Dhaka", siteUrl: "https://kenasathi.com" });
+  const text = buildOrderAlert({ orderNumber: "A B/1", totalAmount: 60, itemCount: 1, paymentMethod: "cod", district: "Dhaka", siteUrl: "https://kenasathi.com", isGift: false });
   assert.match(text, /\/admin\/orders\/A%20B%2F1$/);
+});
+
+test("a gift order adds only the gift flag, never note text", () => {
+  const base = { orderNumber: "KS-1", totalAmount: 500, itemCount: 1, paymentMethod: "cod", district: "Dhaka", siteUrl: "https://kenasathi.com" };
+  const gift = buildOrderAlert({ ...base, isGift: true });
+  assert.match(gift, /উপহার: হ্যাঁ — দামের কাগজ দেবেন না/);
+  assert.doesNotMatch(gift, /\[উপহার\]|Note/);
+  assert.doesNotMatch(buildOrderAlert({ ...base, isGift: false }), /উপহার/);
 });

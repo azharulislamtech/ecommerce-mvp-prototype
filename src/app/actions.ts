@@ -14,6 +14,7 @@ import {
 import { getCanonicalDistrict } from "@/lib/delivery";
 import { cleanEnv } from "@/lib/env";
 import { sendTelegramNotification } from "@/lib/notifications/telegram";
+import { composeOrderNote } from "@/lib/gift";
 import { buildOrderAlert } from "@/lib/notifications/order-alert";
 import { getSiteUrl } from "@/lib/site";
 import { createSupabaseAuthServerClient, requireAdmin } from "@/lib/supabase/auth";
@@ -55,7 +56,7 @@ export type CheckoutFormState = {
   message: string;
   fieldErrors: Partial<Record<CheckoutField, string>>;
   // Echoed back on error so React's post-action form reset does not wipe what the customer typed.
-  values?: Partial<Record<"customer_name" | "customer_phone" | "customer_address" | "customer_note", string>>;
+  values?: Partial<Record<"customer_name" | "customer_phone" | "customer_address" | "customer_note" | "send_as_gift", string>>;
 };
 
 type ProductReviewField = "order_number" | "customer_phone" | "rating" | "title" | "body";
@@ -425,8 +426,11 @@ export async function createOrderAction(
   const customerDistrict = getText(formData, "customer_district");
   const canonicalDistrict = getCanonicalDistrict(customerDistrict);
   const customerAddress = getText(formData, "customer_address");
-  const customerNote = getText(formData, "customer_note");
-  const values = { customer_name: customerName, customer_phone: customerPhone, customer_address: customerAddress, customer_note: customerNote };
+  const typedNote = getText(formData, "customer_note");
+  const sendAsGift = getText(formData, "send_as_gift") === "on";
+  const values = { customer_name: customerName, customer_phone: customerPhone, customer_address: customerAddress, customer_note: typedNote, send_as_gift: sendAsGift ? "on" : "" };
+  // R8.1: the gift choice becomes a fixed first line of the note (no RPC change).
+  const customerNote = composeOrderNote(typedNote, sendAsGift);
   if (customerNote.length > 1000) return checkoutFormError(CHECKOUT_MESSAGES.noteTooLong, {}, values);
   const paymentMethod = normalizeCheckoutPaymentMethod(getText(formData, "payment_method"));
   const checkoutItems = parseCheckoutItems(getText(formData, "cart_items"));
@@ -523,7 +527,8 @@ export async function createOrderAction(
     itemCount,
     paymentMethod,
     district: canonicalDistrict ?? customerDistrict,
-    siteUrl: getSiteUrl()
+    siteUrl: getSiteUrl(),
+    isGift: sendAsGift
   }));
 
   if (isOnlinePaymentMethod(paymentMethod)) {
