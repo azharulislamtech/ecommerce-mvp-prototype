@@ -2,6 +2,14 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-03: Request-Time Sitemap Deployment
+
+- Root cause: with `revalidate = 3600`, the production `sitemap.xml` stayed a Vercel cache HIT for about 24 h and kept listing the 9 deactivated dummy products (404). A DB change made outside the admin never triggers the admin's `revalidatePath`.
+- Fix: #10 (`export const dynamic = "force-dynamic"` in `src/app/sitemap.ts`). #9 made `scripts/verify-live-release.mjs` pass on an empty catalog (`--require-catalog` restores the strict mode).
+- On owner request, #9 merged as `f91bbce` and #10 as `edc9be1`, after green CI. #10 needed a merge of main to keep both plan §৯ log rows.
+- Deployed `edc9be1` with `--skip-domain` as `dpl_914a7AG26bhNdwwLVTvKxiEyzu6i` (https://ecommerce-mvp-prototype-mtn01bm82-azadbasis-4964s-projects.vercel.app). The staged run of verify-live-release in empty mode passed 16 checks, and the sitemap returned a MISS with 0 product URLs. After promotion, the same 16 checks passed on https://kenasathi.com (5 categories, 0 products). `/sitemap.xml` returns Age 0 and MISS, and `/`, `/products`, `/checkout` and `/api/health` return 200.
+- Rollback target: `dpl_4LTNkAHWpVdR152ErKYhoZNJJsJw`. No database changes.
+
 ## 2026-11-02: Next.js 16.4.3 Security Patch Deployment
 
 - Upgraded `next`/`eslint-config-next` 16.3.8 → 16.4.3 and ran `npm audit fix` (`zod` 4.6.7, `source-map-js` 1.2.2, `postcss-selector-parser` 6.1.5) to clear a critical Next.js advisory range (16.0.0-16.4.0) and two high transitive advisories. No application code changed. Local lint/typecheck, 3 unit, 17 database, 9 isolated production-browser tests, build and `npm audit --audit-level=high` passed.
