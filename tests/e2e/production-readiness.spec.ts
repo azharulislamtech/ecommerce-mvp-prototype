@@ -39,6 +39,26 @@ test('private utility pages are noindex and absent from sitemap',async({request}
   }
 });
 
+test('sitemap drops a product deactivated outside the admin panel without waiting for a cache',async({request})=>{
+  test.skip(process.env.E2E_ISOLATED!=='1','Catalog changes run only against the disposable local database.');
+  const fixture=`http://127.0.0.1:${process.env.E2E_FIXTURE_PORT}`;
+  const first=await (await request.get('/sitemap.xml')).text();
+  const slug=[...first.matchAll(/<loc>[^<]*\/products\/([^<]+)<\/loc>/g)].map(m=>m[1])[0];
+  expect(slug,'a product URL in the sitemap').toBeTruthy();
+  const toggle=(active: boolean)=>request.post(`${fixture}/test/product-active?slug=${encodeURIComponent(slug)}&active=${active}`);
+  expect((await toggle(false)).status()).toBe(200);
+  try {
+    const after=await (await request.get('/sitemap.xml')).text();
+    expect(after).not.toContain(`/products/${slug}<`);
+    expect(after).toContain('/categories/');expect(after).not.toContain('/track-order');
+    const origins=new Set(after.match(/<loc>([^<]+)<\/loc>/g)?.map(loc=>new URL(loc.slice(5,-6)).origin));
+    expect(origins.size).toBe(1);
+  } finally {
+    expect((await toggle(true)).status()).toBe(200);
+  }
+  expect(await (await request.get('/sitemap.xml')).text()).toContain(`/products/${slug}<`);
+});
+
 test('mobile product and cart flows fit the viewport',async({page})=>{
   await page.setViewportSize({width:390,height:844});await page.goto('/products');
   await page.locator('[data-testid="add-to-cart-button"]:enabled').first().click();

@@ -19,6 +19,12 @@ export async function startDatabaseFixture(port=54329) {
     try {
       if(url.pathname==='/test/orders') return send((await db.query('select id,order_number,tracking_token,payment_status from orders')).rows);
       if(url.pathname==='/test/ready') return send({ready:true});
+      // Simulates a catalog change made outside the admin panel (direct DB update).
+      if(url.pathname==='/test/product-active'&&req.method==='POST') {
+        const slug=url.searchParams.get('slug');const active=url.searchParams.get('active')==='true';
+        const {rows}=await db.query('update products set is_active=$2 where slug=$1 returning slug,is_active',[slug,active]);
+        return send(rows[0]??{message:'No such product'},rows.length?200:404);
+      }
       if(url.pathname==='/auth/v1/token') {
         let body='';for await(const chunk of req) body+=chunk;
         const credentials=JSON.parse(body||'{}');
