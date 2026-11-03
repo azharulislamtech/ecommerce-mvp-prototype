@@ -56,7 +56,7 @@ export function ProductPurchaseActions({ productId, stock }: ProductPurchaseActi
         <AddToCartButton
           checkout
           className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-          label="এখনই কিনুন"
+          label="এখনই অর্ডার করুন (COD)"
           productId={productId}
           quantity={safeQuantity}
           stock={stock}
@@ -70,7 +70,7 @@ export function ProductPurchaseActions({ productId, stock }: ProductPurchaseActi
         />
       </div>
       <p className="mt-3 text-xs leading-5 text-slate-500">
-        “এখনই কিনুন” চাপলে পণ্যটা কার্টে যোগ হয়ে চেকআউটে যাবেন। কার্টে আগে থেকে পণ্য থাকলে সেগুলোও এই অর্ডারে থাকবে, চেকআউটে দেখে নিতে পারবেন।
+        “এখনই অর্ডার করুন” চাপলে পণ্যটা কার্টে যোগ হয়ে চেকআউটে যাবেন; টাকা দেবেন পণ্য হাতে পেয়ে। কার্টে আগে থেকে পণ্য থাকলে সেগুলোও এই অর্ডারে থাকবে, চেকআউটে দেখে নিতে পারবেন।
       </p>
     </>
   );
