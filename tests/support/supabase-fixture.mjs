@@ -32,6 +32,7 @@ export async function startDatabaseFixture(port=54329) {
         const allowed={stock:'stock_quantity',availability:'availability',active:'is_active',estimated:'estimated_price',age_min:'age_min_months',age_max:'age_max_months'};
         for(const [key,value] of url.searchParams) {
           if(key==='slug') continue;
+          if(key==='category') {await db.query('update products set category_id=(select id from categories where slug=$2) where slug=$1',[slug,value]);continue;}
           const column=allowed[key];
           if(!column) return send({message:'Unsupported field'},400);
           await db.query(`update products set ${column}=$2 where slug=$1`,[slug,value===''?null:value]);

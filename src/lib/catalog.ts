@@ -26,6 +26,9 @@ export type CatalogFilters = {
   category?: string;
   price?: string;
   sort?: string;
+  // R2.1: header menu links filter by section and by "শীঘ্রই আসছে".
+  section?: string;
+  availability?: string;
 };
 
 const visualByCategorySlug: Record<string, ProductVisual> = {
@@ -92,6 +95,7 @@ function mapProduct(row: CatalogProduct): Product | null {
     name: row.name,
     category: categoryName,
     categorySlug: row.category?.slug,
+    section: row.category?.section ?? undefined,
     updatedAt: row.updated_at,
     shortDescription: row.short_description ?? fallback?.shortDescription ?? "A carefully selected product.",
     description: row.description ?? fallback?.description ?? "More product details will be available soon.",
@@ -120,6 +124,8 @@ function applyFilters(products: Product[], filters: CatalogFilters = {}) {
   const category = normalize(filters.category);
   const price = normalize(filters.price);
   const sort = normalize(filters.sort);
+  const section = normalize(filters.section);
+  const availability = normalize(filters.availability);
 
   let result = [...products];
 
@@ -128,6 +134,14 @@ function applyFilters(products: Product[], filters: CatalogFilters = {}) {
       const haystack = `${product.name} ${product.category} ${product.shortDescription}`.toLowerCase();
       return haystack.includes(query);
     });
+  }
+
+  if (section === "kids" || section === "home") {
+    result = result.filter((product) => product.section === section);
+  }
+
+  if (availability === "coming_soon" || availability === "in_stock") {
+    result = result.filter((product) => product.state === availability);
   }
 
   if (category) {
@@ -188,6 +202,38 @@ export async function getStoreProducts(filters: CatalogFilters = {}) {
 
   const products = await getSupabaseProducts();
   return applyFilters(products.map(mapProduct).filter((product): product is Product => product !== null), filters);
+}
+
+export type StoreNav = {
+  kids: boolean;
+  home: boolean;
+  comingSoon: boolean;
+  kidsCategories: { slug: string; name: string }[];
+};
+
+const EMPTY_NAV: StoreNav = { kids: false, home: false, comingSoon: false, kidsCategories: [] };
+
+// R2.1: a menu link appears only when something real is behind it: a section needs at
+// least one in-stock product, "শীঘ্রই আসছে" at least one coming-soon product. A catalog
+// error must not break every page, so it falls back to the plain menu.
+export async function getStoreNav(): Promise<StoreNav> {
+  try {
+    const products = await getStoreProducts();
+    const inStock = products.filter((product) => product.state === "in_stock");
+    const kidsCategories = new Map<string, string>();
+    for (const product of inStock) {
+      if (product.section === "kids" && product.categorySlug) kidsCategories.set(product.categorySlug, product.category);
+    }
+    return {
+      kids: inStock.some((product) => product.section === "kids"),
+      home: inStock.some((product) => product.section === "home"),
+      comingSoon: products.some((product) => product.state === "coming_soon"),
+      kidsCategories: [...kidsCategories].map(([slug, name]) => ({ slug, name })).sort((a, b) => a.name.localeCompare(b.name, "bn"))
+    };
+  } catch (error) {
+    console.error("Store navigation fell back to the plain menu: " + (error instanceof Error ? error.message : String(error)));
+    return EMPTY_NAV;
+  }
 }
 
 // Only in-stock products can go in the cart or checkout (R2.3).
