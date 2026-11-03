@@ -58,3 +58,32 @@ test("invalid storefront fields are refused with a message and the typed values 
   await expect(page.getByLabel("Problem tags", { exact: true })).toHaveValue("small-space");
   await expect(page.getByLabel("Video link", { exact: true })).toHaveValue("https://vimeo.com/123");
 });
+
+// R10.2: guideline checklist and live warnings beside the form.
+test("the guideline panel warns about claims and discounts and follows the section", async ({ page }) => {
+  await signIn(page);
+  await page.goto("/admin/products/new");
+  const guide = page.getByTestId("listing-guide");
+  const warnings = page.getByTestId("listing-warnings");
+  await expect(guide.getByRole("heading", { name: "গাইডলাইন যাচাই" })).toBeVisible();
+  await expect(warnings).toContainText("এখন কোনো সতর্কবার্তা নেই।");
+  await expect(guide).toContainText("ভিডিওতে ব্যাকগ্রাউন্ড মিউজিক নেই");
+
+  await page.getByLabel("Full Description", { exact: true }).fill("শক্ত কাঠের পাজল, non-toxic রং।");
+  await expect(warnings).toContainText('"non-toxic" লেখা আছে');
+  await page.getByLabel("Discount Price", { exact: true }).fill("400");
+  await expect(warnings).toContainText('বানানো "আগের দাম" নয়');
+
+  const category = page.locator('select[name="category_id"]');
+  const kitchen = await category.locator("option", { hasText: "রান্নাঘর" }).getAttribute("value");
+  await category.selectOption(kitchen!);
+  await expect(guide.getByRole("heading", { name: "সংসারের সমাধান" })).toBeVisible();
+  await expect(warnings).toContainText("অন্তত একটা সমস্যা ট্যাগ দিন");
+  await page.getByLabel("Problem tags", { exact: true }).fill("small-space");
+  await expect(warnings).not.toContainText("সমস্যা ট্যাগ দিন");
+
+  const kids = await category.locator("option", { hasText: "শিশুদের শিক্ষা" }).getAttribute("value");
+  await category.selectOption(kids!);
+  await expect(guide.getByRole("heading", { name: "শিশুদের শিক্ষা" })).toBeVisible();
+  await expect(guide.getByRole("heading", { name: "সংসারের সমাধান" })).toHaveCount(0);
+});
