@@ -29,6 +29,8 @@ export type CatalogFilters = {
   // R2.1: header menu links filter by section and by "শীঘ্রই আসছে".
   section?: string;
   availability?: string;
+  // R3.1: a homepage problem card links to its tag.
+  tag?: string;
 };
 
 const visualByCategorySlug: Record<string, ProductVisual> = {
@@ -96,6 +98,8 @@ function mapProduct(row: CatalogProduct): Product | null {
     category: categoryName,
     categorySlug: row.category?.slug,
     section: row.category?.section ?? undefined,
+    problemTags: row.problem_tags ?? [],
+    videoUrl: row.video_url ?? undefined,
     updatedAt: row.updated_at,
     shortDescription: row.short_description ?? fallback?.shortDescription ?? "A carefully selected product.",
     description: row.description ?? fallback?.description ?? "More product details will be available soon.",
@@ -126,6 +130,7 @@ function applyFilters(products: Product[], filters: CatalogFilters = {}) {
   const sort = normalize(filters.sort);
   const section = normalize(filters.section);
   const availability = normalize(filters.availability);
+  const tag = normalize(filters.tag);
 
   let result = [...products];
 
@@ -142,6 +147,10 @@ function applyFilters(products: Product[], filters: CatalogFilters = {}) {
 
   if (availability === "coming_soon" || availability === "in_stock") {
     result = result.filter((product) => product.state === availability);
+  }
+
+  if (tag) {
+    result = result.filter((product) => product.problemTags?.includes(tag));
   }
 
   if (category) {

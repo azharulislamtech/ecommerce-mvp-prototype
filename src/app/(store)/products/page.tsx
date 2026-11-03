@@ -3,6 +3,7 @@ import { FilterIcon, SearchIcon } from "@/components/ui/icons";
 import { ProductCard } from "@/components/modules/product-card";
 import { SectionHeading } from "@/components/modules/section-heading";
 import { getStoreCategories, getStoreNav, getStoreProducts, type CatalogFilters, type StoreCategory } from "@/lib/catalog";
+import { problemByTag } from "@/lib/problems";
 
 export const revalidate = 60;
 
@@ -16,7 +17,7 @@ const listingMetadata = {
 export async function generateMetadata({ searchParams }: ProductListingPageProps) {
   const filters = await searchParams;
   const category = firstValue(filters?.category);
-  const hasFilters = Boolean(filters?.q || filters?.price || filters?.sort || filters?.section || filters?.availability);
+  const hasFilters = Boolean(filters?.q || filters?.price || filters?.sort || filters?.section || filters?.availability || filters?.tag);
   const knownCategory = category && (await getStoreCategories()).some((item) => item.slug === category);
   return { ...listingMetadata,
     alternates: { canonical: knownCategory && !hasFilters ? `/categories/${category}` : "/products" },
@@ -43,6 +44,7 @@ function FilterPanel({ categories, filters }: FilterPanelProps) {
       {filters.q ? <input name="q" type="hidden" value={filters.q} /> : null}
       {filters.section ? <input name="section" type="hidden" value={filters.section} /> : null}
       {filters.availability ? <input name="availability" type="hidden" value={filters.availability} /> : null}
+      {filters.tag ? <input name="tag" type="hidden" value={filters.tag} /> : null}
       <div>
         <label className="text-sm font-semibold text-slate-950" htmlFor="category">
           Category
@@ -108,13 +110,15 @@ export default async function ProductListingPage({ searchParams }: ProductListin
     price: firstValue(resolvedSearchParams?.price),
     sort: firstValue(resolvedSearchParams?.sort),
     section: firstValue(resolvedSearchParams?.section),
-    availability: firstValue(resolvedSearchParams?.availability)
+    availability: firstValue(resolvedSearchParams?.availability),
+    tag: firstValue(resolvedSearchParams?.tag)
   };
   // R2.1: the header menu lands here with a section or "শীঘ্রই আসছে" filter.
   const menuTitle =
     filters.section === "kids" ? "Kids & Baby"
       : filters.section === "home" ? "সংসারের সমাধান"
-        : filters.availability === "coming_soon" ? "শীঘ্রই আসছে" : null;
+        : filters.availability === "coming_soon" ? "শীঘ্রই আসছে"
+          : filters.tag ? problemByTag(filters.tag)?.question ?? null : null;
 
   const [categories, products, nav] = await Promise.all([
     getStoreCategories(),

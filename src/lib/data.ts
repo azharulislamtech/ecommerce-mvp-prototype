@@ -24,6 +24,9 @@ export type Product = {
   stock: number;
   // R2.1: the category's section, used by the header menu and section filter.
   section?: "kids" | "home";
+  // R3.1: problem tags (homepage problem cards) and the product's own video link.
+  problemTags?: string[];
+  videoUrl?: string;
   // R2.3: never "hidden" here; hidden products are left out of the catalog.
   state: Exclude<StorefrontState, "hidden">;
   estimatedPrice?: number;

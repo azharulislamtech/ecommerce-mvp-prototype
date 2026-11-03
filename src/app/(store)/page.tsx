@@ -1,47 +1,70 @@
-import Image from "next/image";
 import Link from "next/link";
-import { CheckIcon, ShieldIcon, SupportIcon, TruckIcon } from "@/components/ui/icons";
 import { ProductCard } from "@/components/modules/product-card";
-import { ProductVisual } from "@/components/modules/product-visual";
-import { SectionHeading } from "@/components/modules/section-heading";
-import { getStoreCategories, getStoreFeaturedProducts } from "@/lib/catalog";
+import { getStoreNav, getStoreProducts } from "@/lib/catalog";
+import type { Product } from "@/lib/data";
+import { MIN_PRODUCTS_PER_PROBLEM, PROBLEMS } from "@/lib/problems";
+import { RETURN_POLICY_PATH, RETURN_WINDOW_LINE, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from "@/lib/order-copy";
 import { jsonLd } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/site";
 
 export const revalidate = 60;
-export const metadata = { alternates: { canonical: "/" } };
+export const metadata = {
+  title: { absolute: "কেনা সাথী — শিশুদের শেখার জিনিস আর সংসারের সহজ সমাধান" },
+  description: "শিশুদের শেখার খেলনা আর সংসারের কাজের সহজ সমাধান। ক্যাশ অন ডেলিভারি, পণ্য দেখে টাকা দিন।",
+  alternates: { canonical: "/" }
+};
 
-const trustItems = [
-  {
-    title: "Secure Payment",
-    text: "Cash on Delivery checkout with clear delivery charges for Dhaka and all other Bangladesh districts.",
-    icon: ShieldIcon
-  },
-  {
-    title: "Fast Delivery",
-    text: "District-based checkout helps prepare delivery across Bangladesh.",
-    icon: TruckIcon
-  },
-  {
-    title: "Quality Product",
-    text: "Curated products with clear photos, visible stock, and honest pricing.",
-    icon: CheckIcon
-  },
-  {
-    title: "Customer Support",
-    text: "Helpful support stays close before and after every order.",
-    icon: SupportIcon
-  }
-];
+const featuredFirst = (left: Product, right: Product) => Number(right.featured) - Number(left.featured);
 
+function ProductRow({ products, showProblem = false }: { products: Product[]; showProblem?: boolean }) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {products.map((product) => (
+        <ProductCard key={product.id} product={product} showProblem={showProblem} />
+      ))}
+    </div>
+  );
+}
+
+function SectionTitle({ title, href, linkLabel }: { title: string; href?: string; linkLabel?: string }) {
+  return (
+    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <h2 className="text-2xl font-bold text-slate-950">{title}</h2>
+      {href ? (
+        <Link className="text-sm font-semibold text-blue-700 hover:text-blue-900" href={href}>
+          {linkLabel}
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+// R3.1: wireframe §৪ page 1. Every block needs real products behind it, so an empty
+// catalog shows only the honest intro and the trust cards, never invented claims.
 export default async function HomePage() {
-  const [categories, featuredProducts] = await Promise.all([
-    getStoreCategories(),
-    getStoreFeaturedProducts(8)
-  ]);
+  const [products, nav] = await Promise.all([getStoreProducts(), getStoreNav()]);
+  const inStock = products.filter((product) => product.state === "in_stock");
+  const kidsProducts = inStock.filter((product) => product.section === "kids").sort(featuredFirst).slice(0, 4);
+  const homeProducts = inStock.filter((product) => product.section === "home").sort(featuredFirst).slice(0, 4);
+  const comingSoon = products.filter((product) => product.state === "coming_soon").slice(0, 4);
+  const problems = PROBLEMS.filter(
+    (problem) => inStock.filter((product) => product.problemTags?.includes(problem.tag)).length >= MIN_PRODUCTS_PER_PROBLEM
+  );
+  const hasVideo = [...inStock, ...comingSoon].some((product) => product.videoUrl);
+  const sectionCards = [
+    nav.kids && { href: "/products?section=kids", title: "Kids & Baby", text: "খেলতে খেলতে শেখা", tone: "bg-sky-50 border-sky-200 text-sky-900" },
+    nav.home && { href: "/products?section=home", title: "সংসারের সমাধান", text: "ঘরের কাজ সহজ করার জিনিস", tone: "bg-emerald-50 border-emerald-200 text-emerald-900" }
+  ].filter(Boolean) as { href: string; title: string; text: string; tone: string }[];
+
+  const trustCards = [
+    { title: "ক্যাশ অন ডেলিভারি", text: "ডেলিভারিম্যানের সামনে প্যাকেট খুলে পণ্য দেখে তারপর টাকা দিন।" },
+    { title: RETURN_WINDOW_LINE, text: "বদল বা টাকা ফেরতের পুরো নিয়ম রিটার্ন নীতিতে।", href: RETURN_POLICY_PATH },
+    hasVideo ? { title: "ভিডিওসহ পণ্য", text: "যে পণ্যে \"ভিডিও আছে\" লেখা, সেখানে আসল পণ্যের ভিডিও দেখে কিনুন।" } : null,
+    { title: "সৎ তথ্য", text: "বানানো ছাড়, ভুয়া \"মাত্র কয়েকটা বাকি\" বা ভুয়া রিভিউ নেই। পণ্য হাতে থাকলে তবেই বিক্রি।" }
+  ].filter(Boolean) as { title: string; text: string; href?: string }[];
 
   return (
-    <>
+    <div lang="bn">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({
         "@context": "https://schema.org",
         "@type": "Organization",
@@ -55,153 +78,94 @@ export default async function HomePage() {
           height: 512
         }
       }) }} />
-      <section className="bg-white">
-        <div className="container-page grid items-center gap-8 py-8 md:grid-cols-[0.9fr_1.1fr] md:py-12">
-          <div className="max-w-xl">
-            <p className="mb-3 text-sm font-semibold uppercase text-blue-700">Kena Sathi Online Store</p>
-            <h1 className="text-4xl font-bold text-slate-950 sm:text-5xl">
-              Your Trusted Shopping Partner
-            </h1>
-            <p className="mt-4 max-w-lg text-base leading-7 text-slate-600">
-              Discover everyday products, clear offers, cash-on-delivery checkout, and simple order tracking from Kena Sathi.
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link
-                className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-slate-950 px-6 text-sm font-semibold text-white transition hover:bg-blue-700"
-                href="/products"
-              >
-                Shop Now
-              </Link>
-              <Link
-                className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-950 transition hover:border-blue-300 hover:bg-blue-50"
-                href="/products?sort=offers"
-              >
-                View Offers
-              </Link>
-            </div>
-            <div className="mt-6 grid grid-cols-3 gap-3 text-sm text-slate-600">
-              <div>
-                <strong className="block text-lg text-slate-950">24h</strong>
-                Dispatch
-              </div>
-              <div>
-                <strong className="block text-lg text-slate-950">Live</strong>
-                Catalog
-              </div>
-              <div>
-                <strong className="block text-lg text-slate-950">COD</strong>
-                Available
-              </div>
-            </div>
-          </div>
-          <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50 shadow-soft">
-            <Image
-              alt="Kena Sathi featured product collage"
-              className="h-full w-full object-cover"
-              height={720}
-              loading="eager"
-              fetchPriority="high"
-              src="/hero-products.png"
-              width={960}
-            />
-          </div>
-        </div>
-      </section>
 
-      <section className="py-10">
-        <div className="container-page">
-          <SectionHeading
-            description="Browse the categories Kena Sathi customers use most and move quickly to the right product."
-            title="Featured Categories"
-          />
-          {categories.length ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              {categories.map((category) => (
-                <Link
-                  className="group rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft"
-                href={`/categories/${category.slug}`}
-                  key={category.slug}
-                >
-                  <ProductVisual label={category.name} visual={category.visual} />
-                  <h3 className="mt-3 text-sm font-bold text-slate-950">{category.name}</h3>
-                  <p className="mt-1 text-sm text-slate-600">{category.description}</p>
+      <section className="bg-white" data-testid="home-intro">
+        <div className="container-page py-6 md:py-8">
+          <h1 className="text-2xl font-bold text-slate-950 sm:text-3xl">শিশুদের শেখার জিনিস আর সংসারের সহজ সমাধান</h1>
+          {inStock.length ? (
+            <p className="mt-2 text-base leading-7 text-slate-600">
+              ক্যাশ অন ডেলিভারি, পণ্য দেখে টাকা দিন।{" "}
+              <Link className="font-semibold text-blue-700 hover:text-blue-900" href="/products">সব পণ্য দেখুন</Link>
+            </p>
+          ) : (
+            <p className="mt-2 max-w-2xl text-base leading-7 text-slate-600" data-testid="home-empty-note">
+              এই মুহূর্তে বিক্রির জন্য কোনো পণ্য নেই। পণ্য নিজের হাতে আসার পর তবেই এখানে দেখানো হবে। কিছু জানতে চাইলে ফোন করুন:{" "}
+              <a className="font-semibold text-blue-700 hover:text-blue-900" href={SUPPORT_PHONE_TEL}>{SUPPORT_PHONE_DISPLAY}</a>
+            </p>
+          )}
+
+          {sectionCards.length ? (
+            <div className="mt-5 grid grid-cols-2 gap-3" data-testid="home-section-cards">
+              {sectionCards.map((card) => (
+                <Link className={`focus-ring rounded-lg border p-4 transition hover:shadow-sm ${card.tone}`} href={card.href} key={card.href}>
+                  <span className="block text-base font-bold sm:text-lg">{card.title}</span>
+                  <span className="mt-1 block text-sm">{card.text}</span>
+                  <span className="mt-3 inline-block text-sm font-semibold underline underline-offset-2">দেখুন</span>
                 </Link>
               ))}
             </div>
-          ) : (
-            <div className="rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
-              Categories will appear here after the catalog is published.
-            </div>
-          )}
+          ) : null}
         </div>
       </section>
 
-      <section className="bg-white py-10">
-        <div className="container-page">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <SectionHeading
-              description="Fresh picks from the Kena Sathi catalog with clear pricing, visible stock, and quick cart actions."
-              title="Featured Products"
-            />
-            <Link className="text-sm font-semibold text-blue-700 hover:text-blue-900" href="/products">
-              View all products
-            </Link>
-          </div>
-          {featuredProducts.length ? (
-            <div className="grid grid-cols-1 gap-4 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+      {problems.length ? (
+        <section className="py-8" data-testid="home-problems">
+          <div className="container-page">
+            <SectionTitle title="আপনার সমস্যা কোনটা?" />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {problems.map((problem) => (
+                <Link
+                  className={`focus-ring rounded-lg border bg-white p-4 text-base font-semibold transition hover:shadow-sm ${problem.section === "kids" ? "border-sky-200 text-sky-900" : "border-emerald-200 text-emerald-900"}`}
+                  href={`/products?tag=${problem.tag}`}
+                  key={problem.tag}
+                >
+                  {problem.question}
+                </Link>
               ))}
             </div>
-          ) : (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-              Featured products will appear here after products are marked as featured.
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="py-10">
-        <div className="container-page">
-          <SectionHeading
-            description="Kena Sathi keeps shopping practical with payment clarity, delivery updates, and friendly support."
-            title="Why Buy From Us"
-          />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {trustItems.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" key={item.title}>
-                  <span className="grid h-11 w-11 place-items-center rounded-md bg-blue-50 text-blue-700">
-                    <Icon />
-                  </span>
-                  <h3 className="mt-4 text-base font-bold text-slate-950">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
-                </article>
-              );
-            })}
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
-      <section className="bg-slate-950 py-10 text-white">
-        <div className="container-page grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
-          <div>
-            <p className="text-sm font-semibold uppercase text-amber-300">Shop with confidence</p>
-            <h2 className="mt-2 text-2xl font-bold">Order from Kena Sathi with a simple, secure flow.</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-              Browse the live catalog, add your favorite products, and track each order with your phone number.
-            </p>
+      {kidsProducts.length ? (
+        <section className="py-8" data-testid="home-kids-products">
+          <div className="container-page">
+            <SectionTitle href="/products?section=kids" linkLabel="সব দেখুন" title="জনপ্রিয় Kids & Baby পণ্য" />
+            <ProductRow products={kidsProducts} />
           </div>
-          <Link
-            className="focus-ring inline-flex min-h-12 items-center justify-center rounded-md bg-white px-6 text-sm font-semibold text-slate-950 transition hover:bg-amber-100"
-            href="/products"
-          >
-            Browse Products
-          </Link>
+        </section>
+      ) : null}
+
+      {homeProducts.length ? (
+        <section className="py-8" data-testid="home-home-products">
+          <div className="container-page">
+            <SectionTitle href="/products?section=home" linkLabel="সব দেখুন" title="সংসারের সমাধান" />
+            <ProductRow products={homeProducts} showProblem />
+          </div>
+        </section>
+      ) : null}
+
+      {comingSoon.length ? (
+        <section className="py-8" data-testid="home-coming-soon">
+          <div className="container-page">
+            <SectionTitle href="/products?availability=coming_soon" linkLabel="সব দেখুন" title="শীঘ্রই আসছে" />
+            <ProductRow products={comingSoon} />
+          </div>
+        </section>
+      ) : null}
+
+      <section className="bg-white py-8" data-testid="home-trust">
+        <div className="container-page grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {trustCards.map((card) => (
+            <article className="rounded-lg border border-slate-200 bg-slate-50 p-4" key={card.title}>
+              <h2 className="text-base font-bold text-slate-950">
+                {card.href ? <Link className="hover:text-blue-700" href={card.href}>{card.title}</Link> : card.title}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{card.text}</p>
+            </article>
+          ))}
         </div>
       </section>
-    </>
+    </div>
   );
 }

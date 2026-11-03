@@ -5,7 +5,7 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 // polls with reloads until the regenerated page shows the new state.
 test.describe.configure({ timeout: 300_000 });
 
-type Row = { id: string; slug: string; name: string; stock_quantity: number };
+type Row = { id: string; slug: string; name: string; stock_quantity: number; first_stocked_at: string | null };
 const fixture = () => `http://127.0.0.1:${process.env.E2E_FIXTURE_PORT}`;
 
 async function update(request: APIRequestContext, slug: string, fields: [string, string][]) {
@@ -31,20 +31,23 @@ test("coming soon, stock ended, never stocked and hidden products behave as the 
   const rows: Row[] = await (await request.get(`${fixture()}/rest/v1/products?is_active=eq.true`)).json();
   const inStock = rows.filter((row) => row.stock_quantity > 0).sort((a, b) => a.slug.localeCompare(b.slug));
   expect(inStock.length).toBeGreaterThanOrEqual(4);
-  const [soon, ended, never] = inStock;
+  // "Never stocked" must really have no first_stocked_at; earlier tests may have restocked some rows.
+  const never = inStock.find((row) => row.first_stocked_at === null);
+  expect(never, "a product that was never stocked under V11").toBeTruthy();
+  const [soon, ended] = inStock.filter((row) => row.slug !== never!.slug);
 
   try {
     await update(request, soon.slug, [["stock", "0"], ["availability", "coming_soon"], ["estimated", "900"], ["age_min", "36"], ["age_max", "72"]]);
     // 0 → 5 sets first_stocked_at (it really was in stock), then back to 0 = stock ended.
     await update(request, ended.slug, [["stock", "0"], ["stock", "5"], ["stock", "0"]]);
     // A legacy row that goes to 0 without ever being stocked under V11 is hidden, never "স্টক শেষ".
-    await update(request, never.slug, [["stock", "0"]]);
+    await update(request, never!.slug, [["stock", "0"]]);
 
     const card = (row: Row) => page.locator(`[data-testid="product-card"][data-product-id="${row.id}"]`);
     await pollPage(page, "/products", async () =>
       (await card(soon).getAttribute("data-product-state")) === "coming_soon" &&
       (await card(ended).getAttribute("data-product-state")) === "stock_ended" &&
-      (await card(never).count()) === 0);
+      (await card(never!).count()) === 0);
 
     await expect(card(soon).getByTestId("product-state-badge")).toHaveText("শীঘ্রই আসছে");
     await expect(card(soon).getByTestId("product-age-badge")).toHaveText("বয়স ৩–৬ বছর");
@@ -87,7 +90,7 @@ test("coming soon, stock ended, never stocked and hidden products behave as the 
     await expect(page.getByText(/কার্টের .+টি পণ্য এখন পাওয়া যাচ্ছে না/)).toBeVisible();
 
     // A never-stocked product's link is a plain 404.
-    await expect.poll(async () => (await page.goto(`/products/${never.slug}`))?.status(), { timeout: 150_000, intervals: [3_000] }).toBe(404);
+    await expect.poll(async () => (await page.goto(`/products/${never!.slug}`))?.status(), { timeout: 150_000, intervals: [3_000] }).toBe(404);
 
     // Hiding a real product: "এখন পাওয়া যাচ্ছে না", noindex, no Product JSON-LD.
     await update(request, ended.slug, [["active", "false"]]);
@@ -99,7 +102,7 @@ test("coming soon, stock ended, never stocked and hidden products behave as the 
   } finally {
     await update(request, soon.slug, [["availability", "available"], ["estimated", ""], ["age_min", ""], ["age_max", ""], ["stock", String(soon.stock_quantity)]]);
     await update(request, ended.slug, [["active", "true"], ["stock", String(ended.stock_quantity)]]);
-    await update(request, never.slug, [["stock", String(never.stock_quantity)]]);
+    await update(request, never!.slug, [["stock", String(never!.stock_quantity)]]);
     await page.evaluate((key) => window.localStorage.removeItem(key), "shoppilot-cart-v1").catch(() => {});
   }
 });
