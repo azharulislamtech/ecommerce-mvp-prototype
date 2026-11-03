@@ -2,6 +2,14 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-03: R2.5 Bangla Return Policy Deployment
+
+- #16 (R2.5) was reviewed against the owner's decisions: 72 hours for damaged, wrong or missing items; the open-box "পণ্য দেখে টাকা দিন"; no change-of-mind returns; refund within 7 business days. The refused-COD and verified-fault courier-cost promises carry over unchanged from the previous live policy. The remaining "BDT" display text now uses ৳. It was independently re-run in a clean checkout (lint, typecheck, unit 12/12, db 45/45, e2e 16/16, build, audit). On owner request it merged as `2ac6cec` after green CI.
+- Deployed `2ac6cec` with `--skip-domain` as `dpl_AFSFXeyNoZt6saaDeCSfVh49qenr` (https://ecommerce-mvp-prototype-n0lcjkd8e-azadbasis-4964s-projects.vercel.app).
+  - Staged: verify-live-release (empty mode) passed 16 checks. /return-policy shows the 72-hour line and "পণ্য দেখে টাকা দিন", with no "48 hours" or "whenever possible". /terms has no "BDT 60", and the /products filter shows ৳1,500.
+  - Live: after promotion the 16 checks passed on https://kenasathi.com, and a 375px screenshot of /return-policy shows the Bangla layout.
+- Rollback target: `dpl_7SatwkMuq63dGArdR4YNE81ygjuc`. No database changes.
+
 ## 2026-11-03: R2.9 Checkout Polish Deployment
 
 - #14 covers three things: an empty cart and an unknown district no longer assume ৳60; `formatMoney` shows ৳ with Latin digits, while JSON-LD and payments keep "BDT"; all 64 districts have Bangla labels. It was independently re-run in a clean checkout (lint, typecheck, unit 12/12, db 45/45, e2e 14/14, build, audit), and all 64 labels were reviewed. On owner request it merged as `eb44b38` after green CI.
