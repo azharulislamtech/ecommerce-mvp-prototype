@@ -2,6 +2,13 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-03: R2.9 Checkout Polish Deployment
+
+- #14 covers three things: an empty cart and an unknown district no longer assume ৳60; `formatMoney` shows ৳ with Latin digits, while JSON-LD and payments keep "BDT"; all 64 districts have Bangla labels. It was independently re-run in a clean checkout (lint, typecheck, unit 12/12, db 45/45, e2e 14/14, build, audit), and all 64 labels were reviewed. On owner request it merged as `eb44b38` after green CI.
+- Deployed `eb44b38` with `--skip-domain` as `dpl_7SatwkMuq63dGArdR4YNE81ygjuc` (https://ecommerce-mvp-prototype-6yb9abbx7-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 16 checks on the staged URL and again on https://kenasathi.com after promotion. A 375px screenshot of the live /checkout shows the empty-cart summary with "—" for delivery and total.
+- Remaining "BDT" text: the product-page delivery note, the /products price filter and the terms page.
+- Rollback target: `dpl_4bWNBki94yWjs7KndzmozUrvjBzb`. No database changes.
+
 ## 2026-11-03: R2.9 Bangla Checkout Deployment
 
 - #12 (R2.9) was independently re-run in a clean checkout before the PR: lint, typecheck, unit 10/10, db 45/45, e2e 13/13, build and audit all passed. On owner request it merged as `cac7933` after green CI.
