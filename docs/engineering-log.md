@@ -2,6 +2,18 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-03: R2.1/R2.2 Bangla Header Strip, Menu and Footer Deployment
+
+- #29 (R2.1, R2.2) adds:
+  - a black strip on every store page with delivery charges, COD, the open-box line, the 72-hour return line and the hotline;
+  - a Bangla header with a mobile menu and search;
+  - a stock-gated main menu (section and coming-soon links only when real products exist);
+  - a Bangla footer.
+  The store layout revalidates every 60 s. Re-run in one full pass on the result merged with latest main: unit 36/36, db 45/45, e2e 25/25. On owner request it merged as `e821a76` after green CI.
+- Deployed `e821a76` with `--skip-domain` as `dpl_8Tzb5iZJwcuh6Y2NGcmXuVqievoZ` (https://ecommerce-mvp-prototype-5pmn5t1eu-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 16 checks on the staged URL and again on https://kenasathi.com after promotion. /, /return-policy and /checkout show the strip, with no section links (no active products). A 375px screenshot of the live / looks right.
+- Noticed: the homepage hero (R3.1) is still English, with a "24h Dispatch" claim and a hero image of the old dummy products. Prioritise R3.1.
+- Rollback target: `dpl_DnY8qKCg1RZzCnEyQRMeMysy4MUN`. No database changes.
+
 ## 2026-11-03: R2.3/R2.4 Storefront States Deployment
 
 - #27 (R2.3, R2.4) adds the four storefront states (in stock, stock ended, coming soon, hidden):
