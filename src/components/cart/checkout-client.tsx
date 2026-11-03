@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { GIFT_CHECKBOX_LABEL } from "@/lib/gift";
 import { unstable_rethrow } from "next/navigation";
 import { checkoutAttempt, checkoutFingerprint, CHECKOUT_ATTEMPT_STORAGE_KEY } from "@/lib/checkout-attempt";
 import { useActionState } from "react";
@@ -74,7 +75,8 @@ export function CheckoutClient({ districts, onlinePaymentsEnabled, products }: C
           customer_name: text("customer_name"),
           customer_phone: text("customer_phone"),
           customer_address: text("customer_address"),
-          customer_note: text("customer_note")
+          customer_note: text("customer_note"),
+          send_as_gift: text("send_as_gift")
         }
       } satisfies CheckoutFormState;
     }
@@ -222,6 +224,18 @@ export function CheckoutClient({ districts, onlinePaymentsEnabled, products }: C
                     name="customer_note"
                     placeholder="যেমন: বিকেলে ফোন করে আসবেন"
                   />
+                </label>
+                <label className="flex items-start gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-3 sm:col-span-2">
+                  <input
+                    className="focus-ring mt-0.5 h-5 w-5 shrink-0 accent-blue-700"
+                    defaultChecked={state.values?.send_as_gift === "on"}
+                    name="send_as_gift"
+                    type="checkbox"
+                  />
+                  <span className="text-sm leading-6 text-slate-700">
+                    <span className="font-semibold text-slate-950">{GIFT_CHECKBOX_LABEL}</span>
+                    <span className="block text-slate-500">বিনা খরচে। দাম আর মোট টাকা একই থাকবে।</span>
+                  </span>
                 </label>
               </div>
               {state.fieldErrors.cart_items ? <FieldError message={state.fieldErrors.cart_items} /> : null}
