@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CheckIcon, ShieldIcon, SupportIcon, TruckIcon } from "@/components/ui/icons";
+import { CheckIcon } from "@/components/ui/icons";
+import { ProductVideoLink } from "@/components/modules/product-video-link";
+import { problemLine } from "@/lib/problems";
 import { ProductPurchaseActions } from "@/components/cart/product-purchase-actions";
 import { ProductCard } from "@/components/modules/product-card";
 import { ProductGallery } from "@/components/modules/product-gallery";
@@ -100,6 +102,7 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
   }
 
   const canBuyNow = product.state === "in_stock";
+  const problem = problemLine(product.problemTags);
   const [related, reviewData] = await Promise.all([
     getStoreRelatedProducts(product, 3),
     getProductReviewData(product.id)
@@ -117,7 +120,10 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
       ])} />
       <section className="py-8 md:py-10">
         <div className="container-page grid gap-8 lg:grid-cols-[1fr_0.9fr]">
-          <div className="min-w-0">
+          {/* R6.1: on a phone the buy panel comes first so price and buttons are on the first
+              screen; on desktop the video and photos sit on the left as in the wireframe. */}
+          <div className="order-2 min-w-0 lg:order-1">
+            {product.videoUrl ? <ProductVideoLink name={product.name} url={product.videoUrl} /> : null}
             <ProductGallery
               imageAlt={product.imageAlt}
               imageUrl={product.imageUrl}
@@ -127,21 +133,30 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
             />
           </div>
 
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" data-testid="product-purchase-panel">
+          <div className="order-1 lg:order-2 lg:sticky lg:top-24 lg:self-start">
+            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" data-testid="product-purchase-panel" lang="bn">
               <div className="flex flex-wrap items-center gap-2">
                 <ProductStateBadges product={product} />
                 <StatusBadge tone="blue">{product.category}</StatusBadge>
                 {summary.reviewCount > 0 && summary.averageRating !== null ? (
                   <a className="text-sm font-semibold text-amber-600 hover:underline" href="#reviews">
-                    {summary.averageRating} rating ({summary.reviewCount} {summary.reviewCount === 1 ? "review" : "reviews"})
+                    রেটিং {summary.averageRating} ({summary.reviewCount}টি রিভিউ)
                   </a>
                 ) : null}
               </div>
-              <h1 className="mt-4 text-3xl font-bold text-slate-950">{product.name}</h1>
-              <p className="mt-3 text-base leading-7 text-slate-600">{product.shortDescription}</p>
+              {problem ? (
+                <p className="mt-3 text-sm font-semibold text-emerald-700" data-testid="product-problem-line">সমস্যা: {problem}</p>
+              ) : null}
+              <div className="mt-3 flex items-start gap-3">
+                {product.imageUrl ? (
+                  // Small photo for phones, where the big gallery comes after the buy panel.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img alt="" className="h-16 w-16 shrink-0 rounded-md border border-slate-200 object-cover lg:hidden" loading="eager" src={product.imageUrl} />
+                ) : null}
+                <h1 className="text-2xl font-bold text-slate-950 sm:text-3xl">{product.name}</h1>
+              </div>
 
-              <div className="mt-5">
+              <div className="mt-4">
                 <ProductPrice product={product} size="page" />
               </div>
 
@@ -153,24 +168,22 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
                 </div>
               )}
 
-              <div className="mt-6 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-                <span className="inline-flex items-center gap-2">
-                  <ShieldIcon className="h-4 w-4 text-emerald-600" />
-                  Secure payment
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <TruckIcon className="h-4 w-4 text-blue-600" />
-                  Fast delivery
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <SupportIcon className="h-4 w-4 text-amber-600" />
-                  Easy support
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <CheckIcon className="h-4 w-4 text-emerald-600" />
-                  Cash on delivery
-                </span>
-              </div>
+              <p className="mt-5 text-base leading-7 text-slate-600">{product.shortDescription}</p>
+
+              <ul className="mt-5 grid gap-2 text-sm text-slate-700" data-testid="product-trust-marks">
+                <li className="inline-flex items-center gap-2">
+                  <CheckIcon className="h-4 w-4 shrink-0 text-emerald-600" />
+                  ক্যাশ অন ডেলিভারি
+                </li>
+                <li className="inline-flex items-center gap-2">
+                  <CheckIcon className="h-4 w-4 shrink-0 text-emerald-600" />
+                  পণ্য দেখে টাকা দিন
+                </li>
+                <li className="inline-flex items-center gap-2">
+                  <CheckIcon className="h-4 w-4 shrink-0 text-emerald-600" />
+                  <Link className="hover:text-blue-700" href={RETURN_POLICY_PATH}>{RETURN_WINDOW_LINE}</Link>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
