@@ -13,6 +13,14 @@ import {
 } from "@/lib/payments/payment-service";
 import { getCanonicalDistrict } from "@/lib/delivery";
 import { cleanEnv } from "@/lib/env";
+import {
+  comingSoonStockError,
+  extrasColumns,
+  parseProductExtras,
+  willGoOnSale,
+  type ProductExtras,
+  type ProductExtrasField
+} from "@/lib/admin/product-fields";
 import { sendTelegramNotification } from "@/lib/notifications/telegram";
 import { composeOrderNote } from "@/lib/gift";
 import { buildOrderAlert } from "@/lib/notifications/order-alert";
@@ -35,13 +43,26 @@ type ProductField =
   | "stock_quantity"
   | "short_description"
   | "description"
-  | "images";
+  | "images"
+  | ProductExtrasField;
 
 export type ProductFormState = {
   status: "idle" | "error";
   message: string;
   fieldErrors: Partial<Record<ProductField, string>>;
+  // Echoed back on error so React's post-action form reset does not wipe the admin's input.
+  values?: Record<string, string>;
 };
+
+const PRODUCT_TEXT_FIELDS = [
+  "name", "slug", "category_id", "status", "price", "discount_price", "stock_quantity", "short_description",
+  "description", "is_featured", "availability", "estimated_price", "age_min_months", "age_max_months",
+  "problem_tags", "learning_goals", "video_url"
+] as const;
+
+function productFormValues(formData: FormData) {
+  return Object.fromEntries(PRODUCT_TEXT_FIELDS.map((name) => [name, getText(formData, name)]));
+}
 
 type CheckoutField =
   | "cart_items"
@@ -84,6 +105,7 @@ type ProductPayload = {
   isActive: boolean;
   isFeatured: boolean;
   imageFiles: File[];
+  extras: ProductExtras;
 };
 
 function loginRedirect(message: string): never {
@@ -146,11 +168,16 @@ function parseCheckoutItems(value: string): CheckoutItemPayload[] | null {
 function isValidBangladeshPhone(value: string) {
   return /^(?:\+?88)?01[3-9]\d{8}$/.test(value);
 }
-function productFormError(message: string, fieldErrors: ProductFormState["fieldErrors"] = {}): ProductFormState {
+function productFormError(
+  message: string,
+  fieldErrors: ProductFormState["fieldErrors"] = {},
+  values?: Record<string, string>
+): ProductFormState {
   return {
     status: "error",
     message,
-    fieldErrors
+    fieldErrors,
+    values
   };
 }
 
@@ -226,7 +253,8 @@ function parseProductForm(formData: FormData): { payload?: ProductPayload; state
   const intent = getText(formData, "intent");
   const status = getText(formData, "status");
 
-  const fieldErrors: ProductFormState["fieldErrors"] = {};
+  const parsedExtras = parseProductExtras((field) => getText(formData, field));
+  const fieldErrors: ProductFormState["fieldErrors"] = { ...parsedExtras.errors };
 
   if (name.length < 2 || name.length > 160) {
     fieldErrors.name = "Product name must be between 2 and 160 characters.";
@@ -288,7 +316,7 @@ function parseProductForm(formData: FormData): { payload?: ProductPayload; state
 
   if (Object.keys(fieldErrors).length > 0 || price === null) {
     return {
-      state: productFormError("Please fix the highlighted product fields.", fieldErrors)
+      state: productFormError("Please fix the highlighted product fields.", fieldErrors, productFormValues(formData))
     };
   }
 
@@ -304,9 +332,25 @@ function parseProductForm(formData: FormData): { payload?: ProductPayload; state
       description,
       isActive: intent === "draft" ? false : status !== "inactive",
       isFeatured: getText(formData, "is_featured") === "on",
-      imageFiles
+      imageFiles,
+      extras: parsedExtras.extras
     }
   };
+}
+
+// R10.1: a product goes in a sub-category of a new section, never in the section root.
+async function productCategoryError(
+  supabase: Awaited<ReturnType<typeof createSupabaseAuthServerClient>>,
+  categoryId: string
+) {
+  const { data: category } = await supabase
+    .from("categories")
+    .select("id, section, parent_id")
+    .eq("id", categoryId)
+    .maybeSingle();
+  if (!category) return "Choose a category.";
+  if (category.section && !category.parent_id) return "Choose a sub-category, not the section itself.";
+  return undefined;
 }
 
 async function ensureUniqueProductSlug(
@@ -769,10 +813,17 @@ export async function createProductAction(
   }
 
   const supabase = await createSupabaseAuthServerClient();
+  const values = productFormValues(formData);
   const duplicateSlugMessage = await ensureUniqueProductSlug(supabase, parsed.payload.slug);
+  const categoryMessage = await productCategoryError(supabase, parsed.payload.categoryId);
+  const stockMessage = comingSoonStockError(parsed.payload.extras.availability, parsed.payload.stockQuantity, null);
 
-  if (duplicateSlugMessage) {
-    return productFormError("Please fix the highlighted product fields.", { slug: duplicateSlugMessage });
+  if (duplicateSlugMessage || categoryMessage || stockMessage) {
+    return productFormError("Please fix the highlighted product fields.", {
+      slug: duplicateSlugMessage ?? undefined,
+      category_id: categoryMessage,
+      stock_quantity: stockMessage
+    }, values);
   }
 
   const { data: product, error } = await supabase
@@ -787,13 +838,14 @@ export async function createProductAction(
       discount_price: parsed.payload.discountPrice,
       stock_quantity: parsed.payload.stockQuantity,
       is_active: parsed.payload.isActive,
-      is_featured: parsed.payload.isFeatured
+      is_featured: parsed.payload.isFeatured,
+      ...extrasColumns(parsed.payload.extras, null)
     })
     .select("id, slug")
     .single();
 
   if (error) {
-    return productFormError(`Could not create product: ${error.message}`);
+    return productFormError(`Could not create product: ${error.message}`, {}, values);
   }
 
   const imageError = await uploadProductImages(
@@ -826,13 +878,29 @@ export async function updateProductAction(
   }
 
   const supabase = await createSupabaseAuthServerClient();
+  const values = productFormValues(formData);
+  const { data: existingProduct } = await supabase
+    .from("products")
+    .select("slug, availability")
+    .eq("id", productId)
+    .maybeSingle();
+  // Trust the stored availability, not the form, when deciding what to write.
+  const previousAvailability = existingProduct?.availability ?? null;
   const duplicateSlugMessage = await ensureUniqueProductSlug(supabase, parsed.payload.slug, productId);
+  const categoryMessage = await productCategoryError(supabase, parsed.payload.categoryId);
+  const stockMessage = comingSoonStockError(
+    parsed.payload.extras.availability,
+    parsed.payload.stockQuantity,
+    previousAvailability
+  );
 
-  if (duplicateSlugMessage) {
-    return productFormError("Please fix the highlighted product fields.", { slug: duplicateSlugMessage });
+  if (duplicateSlugMessage || categoryMessage || stockMessage) {
+    return productFormError("Please fix the highlighted product fields.", {
+      slug: duplicateSlugMessage ?? undefined,
+      category_id: categoryMessage,
+      stock_quantity: stockMessage
+    }, values);
   }
-
-  const { data: existingProduct } = await supabase.from("products").select("slug").eq("id", productId).maybeSingle();
   const { error } = await supabase
     .from("products")
     .update({
@@ -845,12 +913,13 @@ export async function updateProductAction(
       discount_price: parsed.payload.discountPrice,
       stock_quantity: parsed.payload.stockQuantity,
       is_active: parsed.payload.isActive,
-      is_featured: parsed.payload.isFeatured
+      is_featured: parsed.payload.isFeatured,
+      ...extrasColumns(parsed.payload.extras, previousAvailability)
     })
     .eq("id", productId);
 
   if (error) {
-    return productFormError(`Could not update product: ${error.message}`);
+    return productFormError(`Could not update product: ${error.message}`, {}, values);
   }
 
   const imageError = await uploadProductImages(
@@ -867,7 +936,10 @@ export async function updateProductAction(
     redirect(`/admin/products/${productId}/edit?error=${encodeURIComponent(imageError)}`);
   }
 
-  redirect(`/admin/products?notice=${encodeURIComponent("Product updated successfully.")}`);
+  const updatedNotice = willGoOnSale(parsed.payload.extras.availability, parsed.payload.stockQuantity, previousAvailability)
+    ? "Product updated. Stock was added, so it is now Available (the coming-soon badge is removed)."
+    : "Product updated successfully.";
+  redirect(`/admin/products?notice=${encodeURIComponent(updatedNotice)}`);
 }
 
 export async function updateProductStatusAction(formData: FormData) {
