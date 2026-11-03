@@ -48,7 +48,7 @@ export function AddToCartButton({
       }}
       type="button"
     >
-      {soldOut ? "Sold Out" : added && !checkout ? "Added" : label}
+      {soldOut ? "এখন পাওয়া যাচ্ছে না" : added && !checkout ? "যোগ হয়েছে" : label}
     </button>
   );
 }

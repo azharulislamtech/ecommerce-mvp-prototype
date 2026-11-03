@@ -41,13 +41,13 @@ export function ProductCard({ product }: ProductCardProps) {
           <AddToCartButton
             checkout
             className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-            label="Buy Now"
+            label="এখনই কিনুন"
             productId={product.id}
             stock={product.stock}
           />
           <AddToCartButton
             className="focus-ring inline-flex min-h-11 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-950 transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:text-slate-400"
-            label="Add"
+            label="কার্টে যোগ করুন"
             productId={product.id}
             stock={product.stock}
           />

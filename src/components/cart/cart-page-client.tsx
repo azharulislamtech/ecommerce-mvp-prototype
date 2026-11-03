@@ -28,7 +28,7 @@ export function CartPageClient({ products }: CartPageClientProps) {
       <section className="py-8 md:py-10">
         <div className="container-page">
           <div className="rounded-lg border border-slate-200 bg-white p-6 text-sm font-semibold text-slate-600 shadow-sm">
-            Loading cart...
+            কার্ট লোড হচ্ছে...
           </div>
         </div>
       </section>
@@ -40,23 +40,23 @@ export function CartPageClient({ products }: CartPageClientProps) {
       <div className="container-page">
         <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase text-blue-700">Cart</p>
-            <h1 className="mt-2 text-3xl font-bold text-slate-950">Review Your Items</h1>
+            <p className="text-sm font-semibold text-blue-700">কার্ট</p>
+            <h1 className="mt-2 text-3xl font-bold text-slate-950">আপনার পণ্যগুলো দেখে নিন</h1>
           </div>
           <Link className="text-sm font-semibold text-blue-700 hover:text-blue-900" href="/products">
-            Continue shopping
+            আরও কেনাকাটা করুন
           </Link>
         </div>
 
         {items.length === 0 ? (
           <div className="rounded-lg border border-slate-200 bg-white p-8 text-center shadow-sm">
-            <h2 className="text-xl font-bold text-slate-950">Your cart is empty</h2>
-            <p className="mt-2 text-sm text-slate-600">Add products before checkout.</p>
+            <h2 className="text-xl font-bold text-slate-950">আপনার কার্ট খালি</h2>
+            <p className="mt-2 text-sm text-slate-600">চেকআউটের আগে পণ্য যোগ করুন।</p>
             <Link
               className="focus-ring mt-5 inline-flex min-h-11 items-center justify-center rounded-md bg-slate-950 px-5 text-sm font-semibold text-white hover:bg-blue-700"
               href="/products"
             >
-              Browse Products
+              পণ্য দেখুন
             </Link>
           </div>
         ) : (
@@ -64,7 +64,7 @@ export function CartPageClient({ products }: CartPageClientProps) {
             <div className="space-y-4">
               {unavailableItems.length ? (
                 <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-                  {unavailableItems.length} cart item is no longer active. Remove it before checkout.
+                  কার্টের {unavailableItems.length}টি পণ্য এখন পাওয়া যাচ্ছে না। চেকআউটের আগে সেগুলো সরিয়ে দিন।
                 </div>
               ) : null}
 
@@ -89,13 +89,14 @@ export function CartPageClient({ products }: CartPageClientProps) {
                       <button
                         className="grid h-8 w-8 place-items-center rounded-md text-lg font-bold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
                         disabled={item.quantity <= 1}
+                        aria-label="পরিমাণ কমান"
                         onClick={() => setItemQuantity(item.product.id, item.quantity - 1, item.product.stock)}
                         type="button"
                       >
                         -
                       </button>
                       <input
-                        aria-label={`Quantity for ${item.product.name}`}
+                        aria-label={`${item.product.name}-এর পরিমাণ`}
                         className="w-12 border-0 bg-transparent text-center text-sm font-bold outline-none"
                         min="1"
                         max={Math.max(1, item.product.stock)}
@@ -112,6 +113,7 @@ export function CartPageClient({ products }: CartPageClientProps) {
                       <button
                         className="grid h-8 w-8 place-items-center rounded-md text-lg font-bold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
                         disabled={item.quantity >= item.product.stock}
+                        aria-label="পরিমাণ বাড়ান"
                         onClick={() => setItemQuantity(item.product.id, item.quantity + 1, item.product.stock)}
                         type="button"
                       >
@@ -119,7 +121,7 @@ export function CartPageClient({ products }: CartPageClientProps) {
                       </button>
                     </div>
                     {item.quantity >= item.product.stock ? (
-                      <p className="mt-2 text-xs font-semibold text-amber-700">Only {item.product.stock} in stock.</p>
+                      <p className="mt-2 text-xs font-semibold text-amber-700">স্টকে আছে মাত্র {item.product.stock}টি।</p>
                     ) : null}
                   </div>
                   <div className="flex items-center justify-between gap-4 sm:block sm:text-right">
@@ -127,10 +129,10 @@ export function CartPageClient({ products }: CartPageClientProps) {
                       {formatMoney(item.product.price * item.quantity)}
                     </p>
                     <button
-                      aria-label={`Remove ${item.product.name}`}
+                      aria-label={`${item.product.name} কার্ট থেকে সরান`}
                       className="mt-0 grid h-10 w-10 place-items-center rounded-md border border-slate-200 text-slate-500 hover:bg-rose-50 hover:text-rose-600 sm:ml-auto sm:mt-4"
                       onClick={() => removeItem(item.product.id)}
-                      title="Remove"
+                      title="সরান"
                       type="button"
                     >
                       <TrashIcon className="h-4 w-4" />
@@ -152,7 +154,7 @@ export function CartPageClient({ products }: CartPageClientProps) {
                     data-testid="cart-checkout-link"
                     href="/checkout"
                   >
-                    Proceed to Checkout
+                    চেকআউটে যান
                   </Link>
                 }
                 deliveryCharge={DELIVERY_CHARGE}
