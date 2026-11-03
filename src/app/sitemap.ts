@@ -2,7 +2,12 @@ import type { MetadataRoute } from "next";
 import { getStoreProducts, getStoreCategories } from "@/lib/catalog";
 import { getSiteUrl } from "@/lib/site";
 
-export const revalidate = 3600;
+// Rendered on every request. With `revalidate = 3600` the production sitemap stayed
+// a Vercel cache HIT for over 24 hours and kept listing deactivated products, because
+// a catalog change made directly in the database never triggers the admin's
+// revalidatePath. The sitemap is two small queries and is requested mostly by
+// crawlers, so request-time rendering is cheap and always reflects the catalog.
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
