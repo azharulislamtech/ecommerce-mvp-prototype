@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState, type FormEvent } from "react";
 import { useFormStatus } from "react-dom";
 import {
   createProductAction,
@@ -13,6 +13,8 @@ import type { AdminProduct } from "@/lib/supabase/admin-catalog";
 import type { CategoryRow } from "@/lib/supabase/database.types";
 import { catalogReadiness } from "@/lib/catalog-readiness";
 import { groupCategoryOptions } from "@/lib/admin/product-fields";
+import type { GuidelineSection, ListingDraft } from "@/lib/admin/listing-guidelines";
+import { ListingGuide } from "./listing-guide";
 
 const initialState: ProductFormState = {
   status: "idle",
@@ -89,6 +91,36 @@ export function ProductForm({ categories, error, mode, notice, product }: Produc
   const value = (name: string, saved: string | number | null | undefined) =>
     state.values ? state.values[name] ?? "" : saved ?? "";
   const savedAvailability = product?.availability ?? "available";
+  const formKey = state.values ? JSON.stringify(state.values) : "saved";
+  const sectionByCategory = new Map(categories.map((c) => [c.id, c.section ?? null]));
+  const draftFrom = (get: (name: string) => string): ListingDraft => ({
+    name: get("name"),
+    shortDescription: get("short_description"),
+    description: get("description"),
+    price: get("price"),
+    discountPrice: get("discount_price"),
+    availability: get("availability") || "available",
+    stock: get("stock_quantity"),
+    estimatedPrice: get("estimated_price"),
+    problemTags: get("problem_tags"),
+    section: (sectionByCategory.get(get("category_id")) ?? null) as GuidelineSection | null
+  });
+  const initialDraft = draftFrom((name) => {
+    const saved: Record<string, string | number | null | undefined> = {
+      name: product?.name, short_description: product?.short_description, description: product?.description,
+      price: product?.price, discount_price: product?.discount_price, availability: savedAvailability,
+      stock_quantity: product?.stock_quantity ?? 0, estimated_price: product?.estimated_price,
+      problem_tags: product?.problem_tags.join(", "), category_id: product?.category_id
+    };
+    return String(value(name, saved[name]));
+  });
+  // Live draft for the guideline panel; it resets whenever the form remounts after a save attempt.
+  const [live, setLive] = useState<{ key: string; draft: ListingDraft } | null>(null);
+  const draft = live?.key === formKey ? live.draft : initialDraft;
+  const updateDraft = (event: FormEvent<HTMLFormElement>) => {
+    const data = new FormData(event.currentTarget);
+    setLive({ key: formKey, draft: draftFrom((name) => String(data.get(name) ?? "")) });
+  };
 
   return (
     <div className="space-y-5">
@@ -117,7 +149,8 @@ export function ProductForm({ categories, error, mode, notice, product }: Produc
         </div>
       ) : null}
 
-      <form action={formAction} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" key={state.values ? JSON.stringify(state.values) : "saved"}>
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
+      <form action={formAction} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" key={formKey} onChange={updateDraft}>
         <div className="grid gap-4 lg:grid-cols-2">
           <label className="block">
             <span className="text-sm font-semibold text-slate-950">Product Name</span>
@@ -384,6 +417,8 @@ export function ProductForm({ categories, error, mode, notice, product }: Produc
           </Link>
         </div>
       </form>
+      <ListingGuide draft={draft} />
+      </div>
 
       {mode === "edit" && product?.images.length ? (
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
