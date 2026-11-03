@@ -14,6 +14,8 @@ import {
 import { getCanonicalDistrict } from "@/lib/delivery";
 import { cleanEnv } from "@/lib/env";
 import { sendTelegramNotification } from "@/lib/notifications/telegram";
+import { buildOrderAlert } from "@/lib/notifications/order-alert";
+import { getSiteUrl } from "@/lib/site";
 import { createSupabaseAuthServerClient, requireAdmin } from "@/lib/supabase/auth";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
@@ -515,20 +517,14 @@ export async function createOrderAction(
   revalidatePath("/products");
 
   const itemCount = checkoutItems.reduce((total, item) => total + item.quantity, 0);
-  if (!order.replayed) await sendTelegramNotification(
-    [
-      "New order " + order.order_number,
-      "Total: BDT " + order.total_amount + " (" + paymentMethod + ")",
-      "Items: " + itemCount,
-      "Customer: " + customerName,
-      "Phone: " + customerPhone,
-      "District: " + canonicalDistrict,
-      "Address: " + customerAddress,
-      customerNote ? "Note: " + customerNote : ""
-    ]
-      .filter(Boolean)
-      .join("\n")
-  );
+  if (!order.replayed) await sendTelegramNotification(buildOrderAlert({
+    orderNumber: order.order_number,
+    totalAmount: Number(order.total_amount),
+    itemCount,
+    paymentMethod,
+    district: canonicalDistrict ?? customerDistrict,
+    siteUrl: getSiteUrl()
+  }));
 
   if (isOnlinePaymentMethod(paymentMethod)) {
     if (order.payment_status === "paid") redirect(`/payment/success?t=${encodeURIComponent(order.tracking_token)}`);
