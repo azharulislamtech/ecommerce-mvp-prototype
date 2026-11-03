@@ -1,3 +1,4 @@
+import type { StorefrontState } from "./storefront-state";
 import { DEFAULT_DELIVERY_CHARGE, districts } from "./delivery";
 
 export type ProductVisual = "electronics" | "fashion" | "home" | "beauty" | "accessories";
@@ -21,6 +22,11 @@ export type Product = {
   price: number;
   oldPrice?: number;
   stock: number;
+  // R2.3: never "hidden" here; hidden products are left out of the catalog.
+  state: Exclude<StorefrontState, "hidden">;
+  estimatedPrice?: number;
+  ageMinMonths?: number;
+  ageMaxMonths?: number;
   featured: boolean;
   imageAlt?: string;
   imageUrl?: string;
@@ -84,6 +90,7 @@ export const products: Product[] = [
     price: 3490,
     oldPrice: 4290,
     stock: 18,
+    state: "in_stock",
     featured: true,
     visual: "electronics",
     specs: ["Bluetooth 5.3", "24 hour total battery", "USB-C charging", "Touch controls"]
@@ -99,6 +106,7 @@ export const products: Product[] = [
     price: 2450,
     oldPrice: 2990,
     stock: 11,
+    state: "in_stock",
     featured: true,
     visual: "fashion",
     specs: ["Vegan leather", "Adjustable strap", "Three inner pockets", "Magnetic closure"]
@@ -113,6 +121,7 @@ export const products: Product[] = [
       "A quiet ceramic diffuser with a clean shape and gentle ambient light for relaxing home corners.",
     price: 1890,
     stock: 8,
+    state: "in_stock",
     featured: true,
     visual: "home",
     specs: ["220ml capacity", "Auto shut-off", "Warm light mode", "Quiet operation"]
@@ -128,6 +137,7 @@ export const products: Product[] = [
     price: 1290,
     oldPrice: 1590,
     stock: 24,
+    state: "in_stock",
     featured: true,
     visual: "beauty",
     specs: ["30ml bottle", "Light texture", "Daily use", "No heavy fragrance"]
@@ -143,6 +153,7 @@ export const products: Product[] = [
     price: 3990,
     oldPrice: 4890,
     stock: 6,
+    state: "in_stock",
     featured: false,
     visual: "accessories",
     specs: ["1.8 inch display", "Heart-rate monitor", "IP68 splash resistance", "7 day battery"]
@@ -157,6 +168,7 @@ export const products: Product[] = [
       "A soft cotton throw that adds warmth and texture without making the room feel busy.",
     price: 1690,
     stock: 15,
+    state: "in_stock",
     featured: false,
     visual: "home",
     specs: ["100% cotton", "Machine washable", "Textured weave", "130 x 170 cm"]

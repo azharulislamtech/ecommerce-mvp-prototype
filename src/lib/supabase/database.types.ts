@@ -416,6 +416,10 @@ export type Database = {
         Args: { p_payment_id: string; p_status: string; p_transaction_id: string; p_method: string; p_response: Json };
         Returns: PaymentStatus;
       };
+      get_unavailable_product: {
+        Args: { p_slug: string };
+        Returns: { name: string; slug: string; state: string }[];
+      };
       is_admin: {
         Args: Record<string, never>;
         Returns: boolean;

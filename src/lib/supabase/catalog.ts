@@ -126,3 +126,21 @@ export async function getProductBySlug(slug: string) {
 
   return data ? mapProduct(data as ProductSelection) : null;
 }
+
+// R1.9 RPC: returns a row only for a real (once stocked or coming-soon) product that is
+// now hidden; name and slug only, no price or stock.
+export async function getUnavailableProduct(slug: string) {
+  if (!hasSupabasePublicConfig()) {
+    return null;
+  }
+
+  const supabase = createSupabasePublicServerClient();
+  const { data, error } = await supabase.rpc("get_unavailable_product", { p_slug: slug });
+
+  if (error) {
+    throw new Error(`Failed to look up unavailable product: ${error.message}`);
+  }
+
+  const row = (data as { name: string; slug: string }[] | null)?.[0];
+  return row ? { name: row.name, slug: row.slug } : null;
+}
