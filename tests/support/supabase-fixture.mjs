@@ -17,7 +17,7 @@ export async function startDatabaseFixture(port=54329) {
     const numericFields=new Set(['price','discount_price','subtotal','delivery_charge','discount_amount','total_amount','unit_price','total_price','average_rating','review_count']);
     const send=(data,status=200)=>{res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(data,(key,value)=>numericFields.has(key)&&value!==null?Number(value):value));};
     try {
-      if(url.pathname==='/test/orders') return send((await db.query('select id,order_number,tracking_token,payment_status from orders')).rows);
+      if(url.pathname==='/test/orders') return send((await db.query('select id,order_number,tracking_token,payment_status,customer_note,subtotal::text,delivery_charge::text,total_amount::text from orders')).rows);
       if(url.pathname==='/test/ready') return send({ready:true});
       // Simulates a catalog change made outside the admin panel (direct DB update).
       if(url.pathname==='/test/product-active'&&req.method==='POST') {

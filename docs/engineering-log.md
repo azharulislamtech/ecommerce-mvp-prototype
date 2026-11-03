@@ -2,6 +2,13 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-03: R8.1 Gift Checkbox Deployment
+
+- #20 (R8.1) adds a free "উপহার হিসেবে পাঠান" checkbox. It writes a fixed first line into `orders.customer_note` (no DB/RPC change), and the admin order page shows a gift warning. It was independently re-run in a clean checkout (lint, typecheck, unit 14/14, db 45/45, e2e 19/19, build, audit). On owner request it merged as `2144384` after green CI.
+- Deployed `2144384` with `--skip-domain` as `dpl_4dPcvqWj5F5uReLLDCLwWdfEuDBN` (https://ecommerce-mvp-prototype-at47n2ylo-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 16 checks on the staged URL and again on https://kenasathi.com after promotion. /checkout shows the gift checkbox.
+- The Telegram alert currently still includes the customer details and note. The no-PII alert, which keeps a gift flag, is the next PR.
+- Rollback target: `dpl_9FgXhmhqJek9xXBaiVG7hpm3kHT7`. No database changes.
+
 ## 2026-11-03: R2.7 Bangla Privacy Policy Deployment
 
 - #18 (R2.7) wording was checked against the code: the Telegram order alert, reviews without name or phone, the browser-only cart and recent orders, and analytics only if enabled. Retention follows the owner's decisions (orders 2 y / 6 y; interest list 30 d after contact or 6 months; WhatsApp until opt-out or 12 months). It was independently re-run in a clean checkout (lint, typecheck, unit 12/12, db 45/45, e2e 17/17, build, audit). On owner request it merged as `f99d37d` after green CI.
