@@ -1,3 +1,5 @@
+import { formatMoney } from "@/lib/data";
+import { DHAKA_DELIVERY_CHARGE, OUTSIDE_DHAKA_DELIVERY_CHARGE } from "@/lib/delivery";
 export const metadata = {
   title: "Terms & Conditions",
   description: "The terms that apply when you shop with Kena Sathi.",
@@ -27,8 +29,8 @@ export default function TermsPage() {
           <div>
             <h2 className="text-lg font-bold text-slate-950">Pricing and Delivery Charges</h2>
             <p className="mt-2">
-              All prices are shown in Bangladeshi Taka (BDT). The delivery charge is calculated at checkout:
-              BDT 60 inside Dhaka and BDT 120 for all other districts of Bangladesh. The total you see at
+              All prices are shown in Bangladeshi Taka (৳). The delivery charge is calculated at checkout:
+              {formatMoney(DHAKA_DELIVERY_CHARGE)} inside Dhaka and {formatMoney(OUTSIDE_DHAKA_DELIVERY_CHARGE)} for all other districts of Bangladesh. The total you see at
               checkout is the final amount payable — there are no hidden charges.
             </p>
           </div>

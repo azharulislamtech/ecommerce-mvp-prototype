@@ -8,6 +8,8 @@ import { ProductGallery } from "@/components/modules/product-gallery";
 import { ProductReviewForm } from "@/components/modules/product-review-form";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/lib/data";
+import { DHAKA_DELIVERY_CHARGE, OUTSIDE_DHAKA_DELIVERY_CHARGE } from "@/lib/delivery";
+import { RETURN_POLICY_PATH, RETURN_WINDOW_LINE } from "@/lib/order-copy";
 import { getStoreProductBySlug, getStoreProducts, getStoreRelatedProducts } from "@/lib/catalog";
 import { getProductReviewData } from "@/lib/supabase/reviews";
 import { StructuredData } from "@/components/modules/structured-data";
@@ -148,9 +150,13 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
             </ul>
           </article>
           <aside className="rounded-lg border border-slate-200 bg-slate-50 p-5">
-            <h2 className="text-lg font-bold text-slate-950">Delivery Info</h2>
+            <h2 className="text-lg font-bold text-slate-950">ডেলিভারি ও রিটার্ন</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Delivery charge is calculated at checkout: Dhaka is BDT 60, and all other Bangladesh districts are BDT 120. Delivery time depends on courier coverage.
+              ডেলিভারি চার্জ চেকআউটে যোগ হয়: ঢাকায় {formatMoney(DHAKA_DELIVERY_CHARGE)}, ঢাকার বাইরে {formatMoney(OUTSIDE_DHAKA_DELIVERY_CHARGE)}। কত দিনে পৌঁছাবে তা কুরিয়ারের এলাকার ওপর নির্ভর করে।
+            </p>
+            <p className="mt-3 text-sm leading-6 text-slate-600" data-testid="product-return-line">
+              ক্যাশ অন ডেলিভারিতে পণ্য দেখে টাকা দিন। {RETURN_WINDOW_LINE}।{" "}
+              <Link className="font-semibold text-blue-700 hover:text-blue-900" href={RETURN_POLICY_PATH}>রিটার্ন নীতি দেখুন</Link>
             </p>
             <h3 className="mt-5 text-base font-bold text-slate-950">Payment Info</h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">

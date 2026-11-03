@@ -70,9 +70,9 @@ function FilterPanel({ categories, filters }: FilterPanelProps) {
           name="price"
         >
           <option value="">Any price</option>
-          <option value="under-1500">Under BDT 1,500</option>
-          <option value="1500-3000">BDT 1,500 to 3,000</option>
-          <option value="over-3000">Over BDT 3,000</option>
+          <option value="under-1500">Under ৳1,500</option>
+          <option value="1500-3000">৳1,500 to ৳3,000</option>
+          <option value="over-3000">Over ৳3,000</option>
         </select>
       </div>
       <div>
