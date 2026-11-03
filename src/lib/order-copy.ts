@@ -4,6 +4,11 @@
 export const SUPPORT_PHONE_DISPLAY = "০১৭১৭-১২১৮৩৯";
 export const SUPPORT_PHONE_TEL = "tel:+8801717121839";
 
+// R2.5: the one return line used everywhere (header, trust cards, product page, policy).
+// Never write "৭ দিনে রিটার্ন".
+export const RETURN_WINDOW_LINE = "ভাঙা/ভুল/অসম্পূর্ণ পণ্য? ডেলিভারির ৭২ ঘণ্টার মধ্যে জানান";
+export const RETURN_POLICY_PATH = "/return-policy";
+
 const ORDER_STATUS_LABELS: Record<string, string> = {
   pending: "অপেক্ষমাণ",
   confirmed: "নিশ্চিত হয়েছে",
