@@ -2,6 +2,15 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-03: R2.7 Bangla Privacy Policy Deployment
+
+- #18 (R2.7) wording was checked against the code: the Telegram order alert, reviews without name or phone, the browser-only cart and recent orders, and analytics only if enabled. Retention follows the owner's decisions (orders 2 y / 6 y; interest list 30 d after contact or 6 months; WhatsApp until opt-out or 12 months). It was independently re-run in a clean checkout (lint, typecheck, unit 12/12, db 45/45, e2e 17/17, build, audit). On owner request it merged as `f99d37d` after green CI.
+- Deployed `f99d37d` with `--skip-domain` as `dpl_9FgXhmhqJek9xXBaiVG7hpm3kHT7` (https://ecommerce-mvp-prototype-ek1kixcnz-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 16 checks on the staged URL and again on https://kenasathi.com after promotion. /privacy-policy shows the Bangla text with the 2-year, 6-year and 12-month rules and the Telegram disclosure.
+- Open items:
+  - Automatic deletion (R9.2) must ship before interest data from R7.1 reaches its limit.
+  - The owner must decide on Telegram alerts: recommended to send only the order number, district and total, so customer details are not kept outside the 2-year rule.
+- Rollback target: `dpl_AFSFXeyNoZt6saaDeCSfVh49qenr`. No database changes.
+
 ## 2026-11-03: R2.5 Bangla Return Policy Deployment
 
 - #16 (R2.5) was reviewed against the owner's decisions: 72 hours for damaged, wrong or missing items; the open-box "পণ্য দেখে টাকা দিন"; no change-of-mind returns; refund within 7 business days. The refused-COD and verified-fault courier-cost promises carry over unchanged from the previous live policy. The remaining "BDT" display text now uses ৳. It was independently re-run in a clean checkout (lint, typecheck, unit 12/12, db 45/45, e2e 16/16, build, audit). On owner request it merged as `2ac6cec` after green CI.
