@@ -2,6 +2,22 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-04: R3.1 Honest Bangla Homepage Deployment
+
+- #31 (R3.1) changes the homepage:
+  - Rewritten in Bangla.
+  - Section cards, problem cards and product blocks only appear when real products back them.
+  - Trust cards are limited to true claims.
+  - Removed: the English hero, the "24h Dispatch" and "Live Catalog" claims, and the dummy-product image.
+  - The empty state honestly says no products are for sale yet.
+  - Problem tags are documented in the Kids and Home section guidelines (v1.3), and the common guideline is unchanged.
+- Verification: re-run in one full pass on the result merged with latest main (unit 39/39, db 45/45, e2e 27/27). On owner request it merged as `f5e97ee` after green CI.
+- Deployed `f5e97ee` with `--skip-domain` as `dpl_DRkQXeZjdhSVEMKYAZxZ4Rhjd11M` (https://ecommerce-mvp-prototype-69gbyrpne-azadbasis-4964s-projects.vercel.app).
+  - Staged: verify-live-release (empty mode) passed 16 checks. / has no "24h", "Dispatch" or "Trusted Shopping" text and shows the empty-state note.
+  - Live: after promotion the 16 checks passed on https://kenasathi.com, and a 375px screenshot shows the Bangla h1, the empty note with the hotline, and three trust cards.
+- Follow-up: the header logo `<img>` uses `loading="lazy"` although it is above the fold. It should load eagerly (priority) to avoid a blank slot on first paint.
+- Rollback target: `dpl_8Tzb5iZJwcuh6Y2NGcmXuVqievoZ`. No database changes.
+
 ## 2026-11-03: R2.1/R2.2 Bangla Header Strip, Menu and Footer Deployment
 
 - #29 (R2.1, R2.2) adds:
