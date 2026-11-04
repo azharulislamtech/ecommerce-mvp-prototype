@@ -29,7 +29,7 @@ export async function startDatabaseFixture(port=54329) {
       // update at a time, in the order given, so the first_stocked_at trigger sees each step.
       if(url.pathname==='/test/product-update'&&req.method==='POST') {
         const slug=url.searchParams.get('slug');
-        const allowed={stock:'stock_quantity',availability:'availability',active:'is_active',estimated:'estimated_price',age_min:'age_min_months',age_max:'age_max_months',video:'video_url',featured:'is_featured',description:'description'};
+        const allowed={stock:'stock_quantity',availability:'availability',active:'is_active',estimated:'estimated_price',age_min:'age_min_months',age_max:'age_max_months',video:'video_url',featured:'is_featured',description:'description',name:'name'};
         for(const [key,value] of url.searchParams) {
           if(key==='slug') continue;
           if(key==='goals') {await db.query('update products set learning_goals=$2::text[] where slug=$1',[slug,value?value.split(','):[]]);continue;}

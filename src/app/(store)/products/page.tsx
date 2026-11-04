@@ -125,6 +125,13 @@ export default async function ProductListingPage({ searchParams }: ProductListin
     getStoreProducts(filters),
     getStoreNav()
   ]);
+  // R2.10: when a search finds nothing, offer popular in-stock products instead of a dead end.
+  const popular = filters.q && !products.length
+    ? (await getStoreProducts())
+        .filter((product) => product.state === "in_stock")
+        .sort((left, right) => Number(right.featured) - Number(left.featured))
+        .slice(0, 4)
+    : [];
 
   return (
     <section className="py-8 md:py-10">
@@ -157,13 +164,13 @@ export default async function ProductListingPage({ searchParams }: ProductListin
         <div className="mb-5 grid gap-3 lg:grid-cols-[1fr_auto]">
           <form action="/products" className="relative">
             <label>
-              <span className="sr-only">Search products</span>
+              <span className="sr-only">পণ্য খুঁজুন</span>
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 className="focus-ring h-12 w-full rounded-md border border-slate-200 bg-white pl-10 pr-4 text-sm"
                 defaultValue={filters.q ?? ""}
                 name="q"
-                placeholder="Search product name"
+                placeholder="পণ্য বা সমস্যা লিখে খুঁজুন…"
                 type="search"
               />
             </label>
@@ -204,19 +211,31 @@ export default async function ProductListingPage({ searchParams }: ProductListin
                 ))}
               </div>
             ) : (
-              <div className="rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
-                <h2 className="text-lg font-bold text-slate-950">No products found</h2>
+              <div className="rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm" data-testid="search-empty" lang="bn">
+                <h2 className="text-lg font-bold text-slate-950">
+                  {filters.q ? `“${filters.q}” দিয়ে কোনো পণ্য পাওয়া যায়নি` : "এই বাছাইয়ে কোনো পণ্য নেই"}
+                </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Try a different search, clear filters, or check back after new products are published.
+                  অন্য শব্দে খুঁজে দেখুন — বাংলা বা ইংরেজি দুটোই চলে, যেমন “পাজল” বা “puzzle”। অথবা বাছাই মুছে সব পণ্য দেখুন।
                 </p>
                 <Link
                   className="focus-ring mt-5 inline-flex min-h-11 items-center justify-center rounded-md border border-slate-300 px-5 text-sm font-semibold text-slate-950 hover:bg-slate-50"
                   href="/products"
                 >
-                  Clear Filters
+                  বাছাই মুছুন
                 </Link>
               </div>
             )}
+            {popular.length ? (
+              <section className="mt-8" data-testid="search-popular" lang="bn">
+                <h2 className="mb-4 text-xl font-bold text-slate-950">জনপ্রিয় পণ্য</h2>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {popular.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
           </div>
         </div>
       </div>
