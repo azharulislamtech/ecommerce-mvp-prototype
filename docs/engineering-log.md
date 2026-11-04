@@ -2,6 +2,22 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-04: R10.3 Admin Categories Page Deployment
+
+- #46 (R10.3) adds `/admin/categories`:
+  - Categories are grouped by section, with active/inactive status and in-stock and coming-soon counts.
+  - Warnings for an empty category and for an inactive parent.
+  - Legacy categories are read-only, so V12's log stays accurate.
+- `setCategoryActiveAction` runs `requireAdmin()` first, re-reads the category on the server, refuses a category without a section, and writes through the V2 "Admins can manage categories" RLS policy. It then calls `revalidatePath("/", "layout")`.
+- No migration and no DB change.
+- Verification:
+  - Independently re-run in one full pass on a clean checkout of a417667 (unit 55/55, db 51/51, e2e 41/41, build, audit).
+  - #45 merged first, and origin/main was merged into the branch (`e96cd5f`), keeping both plan §৯ rows. That diff is docs only. Lint and typecheck were re-run.
+  - On owner request #46 merged as `1f56b68` after green CI.
+- Deployed `1f56b68` with `--skip-domain` as `dpl_9RtUMscDzw14GdcqNwKkEuVfZy7q` (https://ecommerce-mvp-prototype-i0r7gjmma-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 11 checks on the staged URL and again on https://kenasathi.com after promotion. Signed out, `/admin/categories` returns 307 to `/admin/login?reason=auth-required`.
+- Next owner step: activate the new categories in the admin and add the first real products.
+- Rollback target: `dpl_Czfvyr4x5a69dSmk7kCq2NXJ4vz2`.
+
 ## 2026-11-04: V12 Applied (R1.8) and Legacy Category Redirects Deployed (R2.8)
 
 - On the owner's explicit OK ("Yes, apply V12 now"), V12 was applied to production in the contract order (`docs/db/V12-contract.md`). The run files are the repo files, with V12 wrapped in `begin; set local lock_timeout = '5s'; … commit;`.
