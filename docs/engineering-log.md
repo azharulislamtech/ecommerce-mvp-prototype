@@ -2,6 +2,23 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-04: V12 Applied (R1.8) and Legacy Category Redirects Deployed (R2.8)
+
+- On the owner's explicit OK ("Yes, apply V12 now"), V12 was applied to production in the contract order (`docs/db/V12-contract.md`). The run files are the repo files, with V12 wrapped in `begin; set local lock_timeout = '5s'; … commit;`.
+  1. Backup: `scripts/backup-production.ps1` produced `.private-backups/20261104-213847` (verified, encrypted). It counted orders 8, products 10, payments 8, cancelled 1, payment mismatches 0.
+  2. `V12-precheck.sql`: 10/10 ok. Active legacy categories 5, active never-stocked legacy products 0, all legacy products 10, order_items on legacy products 8 (kept).
+  3. V12: `CREATE TABLE`, `ALTER TABLE`, `REVOKE`, `INSERT 0 5`, `INSERT 0 0`, `UPDATE 5`, `UPDATE 0`, `COMMIT`, in 3.3 s.
+  4. `V12-postcheck.sql`: 8/8 ok. The log has RLS on and is closed to API roles. The legacy categories are hidden. The log holds 5 categories and 0 products. Launch categories are untouched, and every order item still finds its product.
+- #44 (R1.8, R2.8) merged as `0fc8a12` after green CI. It was independently re-run first in a clean checkout of c8bb887 (unit 51/51, db 51/51 including the 6 V12 tests, e2e 38/38, build, audit).
+- Deployed `0fc8a12` with `--skip-domain` as `dpl_Czfvyr4x5a69dSmk7kCq2NXJ4vz2` (https://ecommerce-mvp-prototype-4d1zwnm1j-azadbasis-4964s-projects.vercel.app), right after the postcheck.
+  - verify-live-release (empty mode) passed 11 checks on the staged URL and again on https://kenasathi.com after promotion. It is 11 instead of 16 because the 5 legacy categories left the sitemap.
+  - Live: `/categories/home-living` returns 301 to `/products?section=home`. Electronics, fashion, beauty and accessories return 301 to `/`. The sitemap has no legacy category, and `/products` shows the `store-empty` note.
+- Plan: R1.8 ✅ and R2.8 ✅.
+- Next owner steps (admin): activate the new categories and add the first real products. R11.3, the controlled COD test, happens on the first real product.
+- Rollback:
+  - Code: `dpl_FpDzSM8t1pLphJjJ2xKovWeaxP6N`.
+  - Data: `db/rollback/V12-rollback.sql` inside begin/commit, which restores exactly the 5 logged categories. Then `V12-precheck.sql` passes again.
+
 ## 2026-11-04: R2.10 Bangla and English Search Deployment
 
 - #41 (R2.10) adds `src/lib/search.ts`:
