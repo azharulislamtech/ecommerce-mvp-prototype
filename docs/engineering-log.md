@@ -2,6 +2,17 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-04: R2.10 Bangla and English Search Deployment
+
+- #41 (R2.10) adds `src/lib/search.ts`:
+  - Bangla and English word groups, matched both ways (পাজল / puzzle, রান্নাঘর / kitchen).
+  - Search covers the name, short description, category, section, problem tags and their questions, and learning goals and their titles.
+  - Every query word must match, and name matches rank first. Hidden products never match.
+- `/products` has a Bangla search box and empty state. A search with no match shows up to 4 popular in-stock products.
+- Verification: the branch was cut before #39, so origin/main was merged in first. Then it was independently re-run in one full pass in a fresh worktree (lint, typecheck, unit 51/51, db 45/45, e2e 37/37, build, audit). The first e2e attempt could not start because another session's e2e held fixture port 54329. That runner still exited 0, so e2e results are now read from the log, not the exit code. On owner request it merged as `dc87680` after green CI.
+- Deployed `dc87680` with `--skip-domain` as `dpl_FpDzSM8t1pLphJjJ2xKovWeaxP6N` (https://ecommerce-mvp-prototype-44k6gvp6s-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 16 checks on the staged URL and again on https://kenasathi.com after promotion. Live `/products?q=পাজল` shows the Bangla empty state and placeholder.
+- Rollback target: `dpl_EXGdx9PbgRXKLftuSqpGb9rKt1zJ`. No database changes.
+
 ## 2026-11-04: R5.1 Category Pages Deployment
 
 - #39 (R5.1) rebuilds `/categories/[slug]`:
