@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 import type { Product } from "@/lib/data";
 import { problemLine } from "@/lib/problems";
+import { learningLine } from "@/lib/kids";
 import { ProductVisual } from "@/components/modules/product-visual";
 import { ProductPrice, ProductStateBadges, ProductUnavailableNote } from "@/components/modules/product-state";
 
@@ -9,10 +10,13 @@ type ProductCardProps = {
   product: Product;
   // R3.1: Home Solutions cards show the problem the product solves.
   showProblem?: boolean;
+  // R4.1: Kids cards show what the product teaches.
+  showLearning?: boolean;
 };
 
-export function ProductCard({ product, showProblem = false }: ProductCardProps) {
+export function ProductCard({ product, showProblem = false, showLearning = false }: ProductCardProps) {
   const problem = showProblem ? problemLine(product.problemTags) : null;
+  const learning = showLearning ? learningLine(product.learningGoals) : null;
   const inStock = product.state === "in_stock";
 
   return (
@@ -34,6 +38,7 @@ export function ProductCard({ product, showProblem = false }: ProductCardProps) 
             >
               {product.name}
             </Link>
+            {learning ? <p className="mt-1 text-sm font-semibold text-sky-800" data-testid="product-learning-line">শেখায়: {learning}</p> : null}
             {problem ? <p className="mt-1 text-sm font-semibold text-emerald-700" data-testid="product-problem-line">সমস্যা: {problem}</p> : null}
             <p className="mt-1 line-clamp-2 text-sm text-slate-600">{product.shortDescription}</p>
           </div>

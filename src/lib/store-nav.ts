@@ -5,7 +5,7 @@ import type { StoreNav } from "@/lib/catalog";
 export function mainMenuLinks(nav: StoreNav) {
   return [
     { href: "/products", label: "সব পণ্য", show: true },
-    { href: "/products?section=kids", label: "Kids & Baby", show: nav.kids },
+    { href: "/kids", label: "Kids & Baby", show: nav.kids },
     { href: "/products?section=home", label: "সংসারের সমাধান", show: nav.home },
     { href: "/products?availability=coming_soon", label: "শীঘ্রই আসছে", show: nav.comingSoon },
     { href: "/track-order", label: "অর্ডার ট্র্যাক", show: true }

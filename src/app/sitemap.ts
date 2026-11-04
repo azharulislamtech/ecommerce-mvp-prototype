@@ -13,7 +13,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
   const [products, categories] = await Promise.all([getStoreProducts(), getStoreCategories()]);
 
-  const staticRoutes = ["", "/products", "/privacy-policy", "/terms", "/return-policy"].map(
+  // R4.1: the Kids page is listed only when it has in-stock products (empty pages are noindex).
+  const hasKids = products.some((product) => product.section === "kids" && product.state === "in_stock");
+  const staticRoutes = ["", "/products", ...(hasKids ? ["/kids"] : []), "/privacy-policy", "/terms", "/return-policy"].map(
     (path) => ({
       url: siteUrl + path,
       changeFrequency: "weekly" as const,

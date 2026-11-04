@@ -42,7 +42,7 @@ export function ProductReviewForm({ productId, productSlug }: ProductReviewFormP
       <p className="text-sm font-semibold text-blue-700">শুধু যাচাই করা ক্রেতা</p>
       <h2 className="mt-2 text-xl font-bold text-slate-950">আপনার অভিজ্ঞতা লিখুন</h2>
       <p className="mt-2 text-sm leading-6 text-slate-600">
-        Only customers with a delivered order containing this product can submit a review. Every review is checked before it is published.
+        শুধু এই পণ্যসহ ডেলিভারি হওয়া অর্ডারের ক্রেতা রিভিউ দিতে পারেন। প্রতিটা রিভিউ যাচাইয়ের পরে দেখানো হয়।
       </p>
 
       <form action={formAction} className="mt-5">

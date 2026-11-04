@@ -19,7 +19,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
       <HeaderStrip />
       <SiteHeader links={links} />
       <main>{children}</main>
-      <SiteFooter shopLinks={links.filter((link) => link.href.startsWith("/products"))} />
+      <SiteFooter shopLinks={links.filter((link) => link.href !== "/track-order")} />
       <StoreAnalytics />
     </CartProvider>
   );

@@ -26,6 +26,8 @@ export type Product = {
   section?: "kids" | "home";
   // R3.1: problem tags (homepage problem cards) and the product's own video link.
   problemTags?: string[];
+  // R4.1: Kids learning goals (the "আপনার বাচ্চা কী শিখবে?" tiles).
+  learningGoals?: string[];
   videoUrl?: string;
   // R2.3: never "hidden" here; hidden products are left out of the catalog.
   state: Exclude<StorefrontState, "hidden">;

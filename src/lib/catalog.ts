@@ -99,6 +99,7 @@ function mapProduct(row: CatalogProduct): Product | null {
     categorySlug: row.category?.slug,
     section: row.category?.section ?? undefined,
     problemTags: row.problem_tags ?? [],
+    learningGoals: row.learning_goals ?? [],
     videoUrl: row.video_url ?? undefined,
     updatedAt: row.updated_at,
     shortDescription: row.short_description ?? fallback?.shortDescription ?? "A carefully selected product.",

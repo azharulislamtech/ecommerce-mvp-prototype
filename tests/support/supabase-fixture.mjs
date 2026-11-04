@@ -32,6 +32,7 @@ export async function startDatabaseFixture(port=54329) {
         const allowed={stock:'stock_quantity',availability:'availability',active:'is_active',estimated:'estimated_price',age_min:'age_min_months',age_max:'age_max_months',video:'video_url',featured:'is_featured',description:'description'};
         for(const [key,value] of url.searchParams) {
           if(key==='slug') continue;
+          if(key==='goals') {await db.query('update products set learning_goals=$2::text[] where slug=$1',[slug,value?value.split(','):[]]);continue;}
           if(key==='tags') {await db.query('update products set problem_tags=$2::text[] where slug=$1',[slug,value?value.split(','):[]]);continue;}
           if(key==='category') {await db.query('update products set category_id=(select id from categories where slug=$2) where slug=$1',[slug,value]);continue;}
           const column=allowed[key];

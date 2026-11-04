@@ -52,7 +52,7 @@ export default async function HomePage() {
   );
   const hasVideo = [...inStock, ...comingSoon].some((product) => product.videoUrl);
   const sectionCards = [
-    nav.kids && { href: "/products?section=kids", title: "Kids & Baby", text: "খেলতে খেলতে শেখা", tone: "bg-sky-50 border-sky-200 text-sky-900" },
+    nav.kids && { href: "/kids", title: "Kids & Baby", text: "খেলতে খেলতে শেখা", tone: "bg-sky-50 border-sky-200 text-sky-900" },
     nav.home && { href: "/products?section=home", title: "সংসারের সমাধান", text: "ঘরের কাজ সহজ করার জিনিস", tone: "bg-emerald-50 border-emerald-200 text-emerald-900" }
   ].filter(Boolean) as { href: string; title: string; text: string; tone: string }[];
 
@@ -130,7 +130,7 @@ export default async function HomePage() {
       {kidsProducts.length ? (
         <section className="py-8" data-testid="home-kids-products">
           <div className="container-page">
-            <SectionTitle href="/products?section=kids" linkLabel="সব দেখুন" title="জনপ্রিয় Kids & Baby পণ্য" />
+            <SectionTitle href="/kids" linkLabel="সব দেখুন" title="জনপ্রিয় Kids & Baby পণ্য" />
             <ProductRow products={kidsProducts} />
           </div>
         </section>
