@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CheckIcon } from "@/components/ui/icons";
 import { ProductVideoLink } from "@/components/modules/product-video-link";
+import { ProductDescription } from "@/components/modules/product-description";
+import { isOnlineCheckoutEnabled } from "@/lib/payments/payment-service";
 import { problemLine } from "@/lib/problems";
 import { ProductPurchaseActions } from "@/components/cart/product-purchase-actions";
 import { ProductCard } from "@/components/modules/product-card";
@@ -192,16 +194,8 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
       <section className="bg-white py-10">
         <div className="container-page grid gap-6 lg:grid-cols-[1fr_0.8fr]">
           <article>
-            <h2 className="text-2xl font-bold text-slate-950">Description</h2>
-            <p className="mt-3 leading-7 text-slate-600">{product.description}</p>
-            {product.specs.length > 0 && <h3 className="mt-8 text-lg font-bold text-slate-950">Specification</h3>}
-            <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-              {product.specs.map((spec) => (
-                <li className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" key={spec}>
-                  {spec}
-                </li>
-              ))}
-            </ul>
+            <h2 className="mb-4 text-2xl font-bold text-slate-950">পণ্যের বিবরণ</h2>
+            <ProductDescription specs={product.specs} text={product.description} />
           </article>
           <aside className="rounded-lg border border-slate-200 bg-slate-50 p-5">
             <h2 className="text-lg font-bold text-slate-950">ডেলিভারি ও রিটার্ন</h2>
@@ -212,9 +206,11 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
               ক্যাশ অন ডেলিভারিতে পণ্য দেখে টাকা দিন। {RETURN_WINDOW_LINE}।{" "}
               <Link className="font-semibold text-blue-700 hover:text-blue-900" href={RETURN_POLICY_PATH}>রিটার্ন নীতি দেখুন</Link>
             </p>
-            <h3 className="mt-5 text-base font-bold text-slate-950">Payment Info</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              Cash on Delivery is active now. Online payment will be enabled later after gateway verification and customer demand.
+            <h3 className="mt-5 text-base font-bold text-slate-950">পেমেন্ট</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600" data-testid="product-payment-info">
+              {isOnlineCheckoutEnabled()
+                ? "ক্যাশ অন ডেলিভারি, অথবা চেকআউটে অনলাইন পেমেন্ট।"
+                : "এখন শুধু ক্যাশ অন ডেলিভারি: পণ্য হাতে পেয়ে টাকা দিন।"}
             </p>
           </aside>
         </div>
@@ -223,14 +219,14 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
       <section className="py-10" id="reviews">
         <div className="container-page grid gap-6 lg:grid-cols-[1fr_0.8fr]">
           <article>
-            <h2 className="text-2xl font-bold text-slate-950">Customer Reviews</h2>
+            <h2 className="text-2xl font-bold text-slate-950">ক্রেতাদের রিভিউ</h2>
             {summary.reviewCount > 0 && summary.averageRating !== null ? (
               <p className="mt-2 text-sm font-semibold text-slate-600">
-                Rated {summary.averageRating} out of 5 by {summary.reviewCount} verified {summary.reviewCount === 1 ? "customer" : "customers"}.
+                {summary.reviewCount}জন যাচাই করা ক্রেতার গড় রেটিং ৫-এর মধ্যে {summary.averageRating}।
               </p>
             ) : (
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                No reviews yet. Be the first verified customer to review this product.
+                এখনো কোনো রিভিউ নেই। এই পণ্য কিনে থাকলে প্রথম রিভিউটা আপনিই দিন।
               </p>
             )}
             <ul className="mt-5 grid gap-4">
@@ -238,14 +234,14 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
                 <li className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" key={review.id}>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-bold text-amber-600">{review.rating}/5</span>
-                    {review.verified_purchase ? <StatusBadge tone="green">Verified purchase</StatusBadge> : null}
+                    {review.verified_purchase ? <StatusBadge tone="green">যাচাই করা ক্রেতা</StatusBadge> : null}
                     <span className="text-xs text-slate-500">
-                      {new Intl.DateTimeFormat("en-BD", { dateStyle: "medium" }).format(new Date(review.created_at))}
+                      {new Intl.DateTimeFormat("bn-BD", { dateStyle: "medium" }).format(new Date(review.created_at))}
                     </span>
                   </div>
                   {review.title ? <h3 className="mt-3 text-base font-bold text-slate-950">{review.title}</h3> : null}
                   <p className="mt-2 text-sm leading-6 text-slate-600">{review.body}</p>
-                  <p className="mt-3 text-xs font-semibold uppercase text-slate-500">{review.reviewer_label}</p>
+                  <p className="mt-3 text-xs font-semibold text-slate-500">{review.reviewer_label === "Verified customer" ? "যাচাই করা ক্রেতা" : review.reviewer_label}</p>
                 </li>
               ))}
             </ul>

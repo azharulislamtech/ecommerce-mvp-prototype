@@ -602,7 +602,7 @@ export async function submitProductReviewAction(
   formData: FormData
 ): Promise<ProductReviewFormState> {
   if (getText(formData, "website")) {
-    return productReviewFormError("We could not submit this review. Please try again.");
+    return productReviewFormError("রিভিউ পাঠানো যায়নি। আবার চেষ্টা করুন।");
   }
 
   const orderNumber = getText(formData, "order_number").toUpperCase();
@@ -613,27 +613,27 @@ export async function submitProductReviewAction(
   const fieldErrors: ProductReviewFormState["fieldErrors"] = {};
 
   if (!/^[A-Z0-9-]{6,64}$/.test(orderNumber)) {
-    fieldErrors.order_number = "Enter the order ID from your confirmation.";
+    fieldErrors.order_number = "অর্ডার নিশ্চিত হওয়ার পেজ বা SMS থেকে অর্ডার নম্বর লিখুন।";
   }
 
   if (!isValidBangladeshPhone(customerPhone)) {
-    fieldErrors.customer_phone = "Enter the phone number used at checkout.";
+    fieldErrors.customer_phone = "চেকআউটে দেওয়া মোবাইল নম্বর লিখুন।";
   }
 
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    fieldErrors.rating = "Choose a rating from 1 to 5.";
+    fieldErrors.rating = "১ থেকে ৫-এর মধ্যে রেটিং বাছুন।";
   }
 
   if (title && (title.length < 3 || title.length > 120)) {
-    fieldErrors.title = "Use 3 to 120 characters for the review title.";
+    fieldErrors.title = "শিরোনাম ৩ থেকে ১২০ অক্ষরের মধ্যে রাখুন।";
   }
 
   if (body.length < 20 || body.length > 1500) {
-    fieldErrors.body = "Your review must be between 20 and 1500 characters.";
+    fieldErrors.body = "রিভিউ ২০ থেকে ১৫০০ অক্ষরের মধ্যে লিখুন।";
   }
 
   if (Object.keys(fieldErrors).length) {
-    return productReviewFormError("Please fix the highlighted review fields.", fieldErrors);
+    return productReviewFormError("লাল চিহ্নিত ঘরগুলো ঠিক করুন।", fieldErrors);
   }
 
   const supabase = createSupabaseServiceClient();
@@ -648,8 +648,8 @@ export async function submitProductReviewAction(
 
   if (error) {
     return productReviewFormError(
-      "We could not verify a delivered order for this product. Check the order ID and checkout phone number, then try again.",
-      { order_number: "Only a delivered order containing this product can be reviewed." }
+      "এই পণ্যের কোনো ডেলিভারি হওয়া অর্ডার মেলানো যায়নি। অর্ডার নম্বর আর চেকআউটের মোবাইল নম্বর দেখে আবার চেষ্টা করুন।",
+      { order_number: "শুধু এই পণ্যসহ ডেলিভারি হওয়া অর্ডারের রিভিউ দেওয়া যায়।" }
     );
   }
 
@@ -668,7 +668,7 @@ export async function submitProductReviewAction(
 
   return {
     status: "success",
-    message: "Thank you. Your verified review has been submitted for approval.",
+    message: "ধন্যবাদ। আপনার রিভিউ পাওয়া গেছে, যাচাইয়ের পরে দেখানো হবে।",
     fieldErrors: {}
   };
 }
