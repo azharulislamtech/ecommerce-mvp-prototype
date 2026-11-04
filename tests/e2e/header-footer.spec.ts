@@ -71,7 +71,12 @@ test("section menu links appear only when real products are behind them", async 
     await expect(page.getByTestId("site-footer").getByRole("link", { name: "Kids & Baby" })).toBeVisible();
 
     await menu.getByRole("link", { name: "Kids & Baby" }).click();
-    await expect(page).toHaveURL(/\/products\?section=kids$/);
+    // R4.1: the menu now opens the Kids page.
+    await expect(page).toHaveURL(/\/kids$/);
+    await expect(page.getByRole("heading", { level: 1, name: "খেলতে খেলতে শেখা, নিরাপদে বেড়ে ওঠা" })).toBeVisible();
+    await expect(page.getByTestId("kids-products").getByTestId("product-card")).toHaveCount(1);
+    // The section filter on /products still works, with its light-blue category menu.
+    await page.goto("/products?section=kids");
     await expect(page.getByTestId("menu-section-title")).toHaveText("Kids & Baby");
     await expect(page.getByTestId("kids-category-menu").getByRole("link", { name: "শিশুদের শিক্ষা" })).toBeVisible();
     await expect(page.locator('[data-testid="product-card"]')).toHaveCount(1);
