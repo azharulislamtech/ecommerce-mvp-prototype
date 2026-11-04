@@ -2,6 +2,19 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-04: R6.2 Product Description and Bangla Review Copy Deployment
+
+- #35 (R6.2) changes the product page:
+  - Descriptions written with the guideline template show as sections: steps, a "পণ্যের তথ্য" table and an FAQ, with no DB change.
+  - The return FAQ always uses the site's one return rule.
+  - Payment info, reviews and the review form are in Bangla. The review action changed message strings only.
+  - JSON-LD and SSLCommerz keep "BDT".
+- Verification: independently re-run in one full pass on a clean checkout of 6fb4140 (lint, typecheck, unit 43/43, db 45/45, e2e 31/31 including the full verified-review path, build, audit 0 high). On owner request it merged as `08b8cf5` after green CI.
+- Deployed `08b8cf5` with `--skip-domain` as `dpl_R8yRE554dpuzfwSKYUQ9p1Yw6khW` (https://ecommerce-mvp-prototype-p6h5zox1m-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 16 checks on the staged URL and again on https://kenasathi.com after promotion.
+- Not checkable live yet: the product page itself, because no products are active.
+- Follow-ups: one English sentence is left in the review form, and React keys use line text (a duplicate line gives a dev-only warning).
+- Rollback target: `dpl_Go1biSUukrDDCXfcXkMMVG32GbpX`. No database changes.
+
 ## 2026-11-04: R6.1 Product Page Deployment
 
 - #33 (R6.1) changes the product page:
