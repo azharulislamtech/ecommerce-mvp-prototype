@@ -90,6 +90,16 @@ export async function startDatabaseFixture(port=54329) {
       }
       const table=url.pathname.split('/rest/v1/')[1];
       if(!['products','categories','orders','order_items','payments','product_reviews','admin_users'].includes(table)) return send({message:'Unsupported test table'},404);
+      // Minimal PATCH for the admin categories toggle (R10.3): only categories.is_active, only
+      // with the signed-in admin token, filtered by id. Everything else stays read-only.
+      if(req.method==='PATCH') {
+        if(table!=='categories'||req.headers.authorization!==`Bearer ${accessToken}`) return send({message:'Unsupported test write'},403);
+        let body='';for await(const chunk of req) body+=chunk;
+        const changes=JSON.parse(body||'{}');const id=(url.searchParams.get('id')??'').replace(/^eq\./,'');
+        if(Object.keys(changes).some(key=>key!=='is_active')||typeof changes.is_active!=='boolean') return send({message:'Only is_active can change'},400);
+        const {rows}=await db.query('update categories set is_active=$2 where id=$1 returning *',[id,changes.is_active]);
+        return send(req.headers.prefer?.includes('return=representation')?rows:null,rows.length?200:404);
+      }
       let rows=(await db.query(`select * from ${table}`)).rows;
       for(const [key,value] of url.searchParams) {
         if(value.startsWith('eq.')) rows=rows.filter(row=>String(row[key])===value.slice(3));

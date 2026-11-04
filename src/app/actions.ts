@@ -13,6 +13,7 @@ import {
 } from "@/lib/payments/payment-service";
 import { getCanonicalDistrict } from "@/lib/delivery";
 import { cleanEnv } from "@/lib/env";
+import { canToggleCategory } from "@/lib/admin/category-admin";
 import {
   comingSoonStockError,
   extrasColumns,
@@ -947,6 +948,43 @@ export async function updateProductAction(
     ? "Product updated. Stock was added, so it is now Available (the coming-soon badge is removed)."
     : "Product updated successfully.";
   redirect(`/admin/products?notice=${encodeURIComponent(updatedNotice)}`);
+}
+
+// R10.3: switch a new-section category on or off from the admin. Legacy demo categories
+// (no section) are refused: V12 owns them, and its rollback log must stay accurate.
+export async function setCategoryActiveAction(formData: FormData) {
+  await requireAdmin();
+
+  const categoryId = getText(formData, "category_id");
+  const nextActive = getText(formData, "next_active");
+  const back = (message: string, kind: "notice" | "error" = "notice") =>
+    redirect(`/admin/categories?${kind}=${encodeURIComponent(message)}`);
+
+  if (!categoryId || !["true", "false"].includes(nextActive)) {
+    back("Invalid category request.", "error");
+  }
+
+  const supabase = await createSupabaseAuthServerClient();
+  const { data: category } = await supabase
+    .from("categories")
+    .select("id, name, slug, section")
+    .eq("id", categoryId)
+    .maybeSingle();
+
+  if (!canToggleCategory(category)) {
+    back("Only Kids & Baby and Home Solutions categories can be switched here.", "error");
+  }
+
+  const { error } = await supabase.from("categories").update({ is_active: nextActive === "true" }).eq("id", categoryId);
+
+  if (error) {
+    back(`Could not update the category: ${error.message}`, "error");
+  }
+
+  // Menus, the Kids page, category pages and the sitemap all read categories.
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/categories");
+  back(`${category!.name} is now ${nextActive === "true" ? "active" : "inactive"}.`);
 }
 
 export async function updateProductStatusAction(formData: FormData) {
