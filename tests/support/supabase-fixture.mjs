@@ -47,6 +47,11 @@ export async function startDatabaseFixture(port=54329) {
         const {rows}=await db.query("update orders set order_status='delivered' where tracking_token=$1 returning order_number",[url.searchParams.get('token')]);
         return send(rows[0]??{message:'No such order'},rows.length?200:404);
       }
+      // Test-only: switch a category on or off (the redesign categories are seeded inactive).
+      if(url.pathname==='/test/category-active'&&req.method==='POST') {
+        const {rows}=await db.query('update categories set is_active=$2 where slug=$1 returning slug,is_active',[url.searchParams.get('slug'),url.searchParams.get('active')==='true']);
+        return send(rows[0]??{message:'No such category'},rows.length?200:404);
+      }
       if(url.pathname==='/auth/v1/token') {
         let body='';for await(const chunk of req) body+=chunk;
         const credentials=JSON.parse(body||'{}');

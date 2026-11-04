@@ -101,13 +101,15 @@ test("a verified review still submits, with Bangla messages", async ({ page, req
   await form.getByRole("button", { name: "রিভিউ পাঠান" }).click();
   await expect(form).toContainText("এই পণ্যের কোনো ডেলিভারি হওয়া অর্ডার মেলানো যায়নি", { timeout: 30_000 });
   await expect(form.getByRole("button", { name: "রিভিউ পাঠান" })).toBeEnabled();
+  // After an error, what the customer typed is still there (React resets forms after an
+  // action; the server echoes the values back, as in checkout).
+  await expect(form.locator('[name="order_number"]')).toHaveValue("KS-WRONG-0001");
+  await expect(form.locator('[name="customer_phone"]')).toHaveValue("01712345678");
+  await expect(form.locator('[name="rating"]')).toHaveValue("5");
+  await expect(form.locator('[name="body"]')).toHaveValue("খুব কাজের জিনিস, প্রতিদিন ব্যবহার করছি।");
 
+  // Only the order number needs fixing.
   await form.locator('[name="order_number"]').fill(orderNumber);
-  await form.locator('[name="customer_phone"]').fill("01712345678");
-  await form.locator('[name="rating"]').selectOption("5");
-  await form.locator('[name="body"]').fill("খুব কাজের জিনিস, প্রতিদিন ব্যবহার করছি।");
   await form.getByRole("button", { name: "রিভিউ পাঠান" }).click();
-  // The server action can take a few seconds under the full suite's load; the old error
-  // stays on screen until it returns.
   await expect(form).toContainText("ধন্যবাদ। আপনার রিভিউ পাওয়া গেছে, যাচাইয়ের পরে দেখানো হবে।", { timeout: 30_000 });
 });
