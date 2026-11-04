@@ -17,6 +17,7 @@ import {
 import { hasSupabasePublicConfig } from "@/lib/supabase/server";
 import { getUnavailableProduct as getSupabaseUnavailableProduct } from "@/lib/supabase/catalog";
 import { STATE_RANK, storefrontState } from "@/lib/storefront-state";
+import { searchProducts } from "@/lib/search";
 import type { CategoryRow } from "@/lib/supabase/database.types";
 
 export type StoreCategory = (typeof mockCategories)[number];
@@ -135,11 +136,9 @@ function applyFilters(products: Product[], filters: CatalogFilters = {}) {
 
   let result = [...products];
 
+  // R2.10: Bangla and English search over name, category, section, problems and goals.
   if (query) {
-    result = result.filter((product) => {
-      const haystack = `${product.name} ${product.category} ${product.shortDescription}`.toLowerCase();
-      return haystack.includes(query);
-    });
+    result = searchProducts(result, query);
   }
 
   if (section === "kids" || section === "home") {
