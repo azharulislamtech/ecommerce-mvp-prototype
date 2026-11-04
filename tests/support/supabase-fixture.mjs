@@ -1,10 +1,14 @@
 // Loopback-only, disposable PostgREST boundary for browser tests. Never deployed.
 import { createServer } from "node:http";
-import { createTestDatabase } from "./database.mjs";
+import { applyMigrationFile, applyRollbackFile, createTestDatabase } from "./database.mjs";
 import { randomUUID } from "node:crypto";
 
 export async function startDatabaseFixture(port=54329) {
   const db=await createTestDatabase();
+  // Production after V12 has no demo catalog. The browser suite needs one, so the fixture
+  // undoes V12 with its own rollback (which also exercises the rollback on every run);
+  // /test/catalog-cutover re-applies V12 to test the storefront after the cutover.
+  await applyRollbackFile(db,'V12-rollback.sql');
   const adminId=randomUUID();
   const user={id:adminId,aud:'authenticated',role:'authenticated',email:'admin@example.invalid',
     app_metadata:{provider:'email',providers:['email']},user_metadata:{},created_at:new Date().toISOString()};
@@ -46,6 +50,15 @@ export async function startDatabaseFixture(port=54329) {
       if(url.pathname==='/test/order-delivered'&&req.method==='POST') {
         const {rows}=await db.query("update orders set order_status='delivered' where tracking_token=$1 returning order_number",[url.searchParams.get('token')]);
         return send(rows[0]??{message:'No such order'},rows.length?200:404);
+      }
+      // Test-only: apply V12 (the real migration file) or its rollback, to test the cutover.
+      if(url.pathname==='/test/catalog-cutover'&&req.method==='POST') {
+        const action=url.searchParams.get('action');
+        if(action==='apply') await applyMigrationFile(db,'V12__hide_legacy_demo_catalog.sql');
+        else if(action==='rollback') await applyRollbackFile(db,'V12-rollback.sql');
+        else return send({message:'Unknown action'},400);
+        const {rows}=await db.query("select count(*) filter (where is_active)::int as active_categories from categories where section is null");
+        return send({action,...rows[0]});
       }
       // Test-only: switch a category on or off (the redesign categories are seeded inactive).
       if(url.pathname==='/test/category-active'&&req.method==='POST') {
