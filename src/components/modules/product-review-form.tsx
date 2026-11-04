@@ -45,7 +45,7 @@ export function ProductReviewForm({ productId, productSlug }: ProductReviewFormP
         শুধু এই পণ্যসহ ডেলিভারি হওয়া অর্ডারের ক্রেতা রিভিউ দিতে পারেন। প্রতিটা রিভিউ যাচাইয়ের পরে দেখানো হয়।
       </p>
 
-      <form action={formAction} className="mt-5">
+      <form action={formAction} className="mt-5" key={state.values ? JSON.stringify(state.values) : state.status}>
         <input className="hidden" name="website" tabIndex={-1} type="text" autoComplete="off" aria-hidden="true" />
         {state.status !== "idle" ? (
           <div
@@ -64,6 +64,7 @@ export function ProductReviewForm({ productId, productSlug }: ProductReviewFormP
             <span className="text-sm font-semibold text-slate-950">অর্ডার নম্বর</span>
             <input
               className="focus-ring mt-2 h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+              defaultValue={state.values?.order_number}
               name="order_number"
               placeholder="SP-20260704-001001"
               required
@@ -74,6 +75,7 @@ export function ProductReviewForm({ productId, productSlug }: ProductReviewFormP
             <span className="text-sm font-semibold text-slate-950">চেকআউটে দেওয়া মোবাইল নম্বর</span>
             <input
               className="focus-ring mt-2 h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+              defaultValue={state.values?.customer_phone}
               name="customer_phone"
               pattern="^(?:\+?88)?01[3-9][0-9]{8}$"
               placeholder="01712000000"
@@ -86,7 +88,7 @@ export function ProductReviewForm({ productId, productSlug }: ProductReviewFormP
 
         <label className="mt-4 block">
           <span className="text-sm font-semibold text-slate-950">রেটিং</span>
-          <select className="focus-ring mt-2 h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm" defaultValue="" name="rating" required>
+          <select className="focus-ring mt-2 h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm" defaultValue={state.values?.rating ?? ""} name="rating" required>
             <option disabled value="">রেটিং বাছুন</option>
             <option value="5">৫ — খুব ভালো</option>
             <option value="4">৪ — ভালো</option>
@@ -101,6 +103,7 @@ export function ProductReviewForm({ productId, productSlug }: ProductReviewFormP
           <span className="text-sm font-semibold text-slate-950">শিরোনাম <span className="font-normal text-slate-500">(ঐচ্ছিক)</span></span>
           <input
             className="focus-ring mt-2 h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+            defaultValue={state.values?.title}
             maxLength={120}
             name="title"
             placeholder="কী ভালো লেগেছে?"
@@ -113,6 +116,7 @@ export function ProductReviewForm({ productId, productSlug }: ProductReviewFormP
           <textarea
             className="focus-ring mt-2 min-h-28 w-full rounded-md border border-slate-200 bg-white px-3 py-3 text-sm"
             maxLength={1500}
+            defaultValue={state.values?.body}
             minLength={20}
             name="body"
             placeholder="পণ্যটা কেমন, কীভাবে কাজে লাগল — অন্য ক্রেতাদের জন্য লিখুন।"

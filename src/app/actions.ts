@@ -86,6 +86,9 @@ export type ProductReviewFormState = {
   status: "idle" | "error" | "success";
   message: string;
   fieldErrors: Partial<Record<ProductReviewField, string>>;
+  // Echoed back on error so React's post-action form reset does not wipe what the
+  // customer typed (same fix as checkout, R2.9).
+  values?: Partial<Record<"order_number" | "customer_phone" | "rating" | "title" | "body", string>>;
 };
 
 type CheckoutItemPayload = {
@@ -127,12 +130,14 @@ function checkoutFormError(
 
 function productReviewFormError(
   message: string,
-  fieldErrors: ProductReviewFormState["fieldErrors"] = {}
+  fieldErrors: ProductReviewFormState["fieldErrors"] = {},
+  values?: ProductReviewFormState["values"]
 ): ProductReviewFormState {
   return {
     status: "error",
     message,
-    fieldErrors
+    fieldErrors,
+    values
   };
 }
 
@@ -610,6 +615,7 @@ export async function submitProductReviewAction(
   const rating = Number(getText(formData, "rating"));
   const title = getText(formData, "title");
   const body = getText(formData, "body");
+  const values = { order_number: getText(formData, "order_number"), customer_phone: customerPhone, rating: getText(formData, "rating"), title, body };
   const fieldErrors: ProductReviewFormState["fieldErrors"] = {};
 
   if (!/^[A-Z0-9-]{6,64}$/.test(orderNumber)) {
@@ -633,7 +639,7 @@ export async function submitProductReviewAction(
   }
 
   if (Object.keys(fieldErrors).length) {
-    return productReviewFormError("লাল চিহ্নিত ঘরগুলো ঠিক করুন।", fieldErrors);
+    return productReviewFormError("লাল চিহ্নিত ঘরগুলো ঠিক করুন।", fieldErrors, values);
   }
 
   const supabase = createSupabaseServiceClient();
@@ -649,7 +655,8 @@ export async function submitProductReviewAction(
   if (error) {
     return productReviewFormError(
       "এই পণ্যের কোনো ডেলিভারি হওয়া অর্ডার মেলানো যায়নি। অর্ডার নম্বর আর চেকআউটের মোবাইল নম্বর দেখে আবার চেষ্টা করুন।",
-      { order_number: "শুধু এই পণ্যসহ ডেলিভারি হওয়া অর্ডারের রিভিউ দেওয়া যায়।" }
+      { order_number: "শুধু এই পণ্যসহ ডেলিভারি হওয়া অর্ডারের রিভিউ দেওয়া যায়।" },
+      values
     );
   }
 
