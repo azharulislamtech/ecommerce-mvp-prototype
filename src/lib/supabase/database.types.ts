@@ -144,6 +144,28 @@ export type Database = {
         };
         Relationships: [];
       };
+      interest_requests: {
+        Row: {
+          id: string;
+          product_id: string;
+          customer_name: string | null;
+          phone: string;
+          quantity: number | null;
+          status: "new" | "contacted" | "purchased" | "not_interested";
+          contacted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: { id?: string; product_id: string; customer_name?: string | null; phone: string; quantity?: number | null };
+        Update: { status?: "new" | "contacted" | "purchased" | "not_interested"; contacted_at?: string | null };
+        Relationships: [];
+      };
+      data_retention_runs: {
+        Row: { id: string; ran_at: string; run_trigger: "admin" | "schedule"; results: Record<string, number | string> };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       product_images: {
         Row: {
           id: string;
@@ -415,6 +437,14 @@ export type Database = {
       apply_verified_payment: {
         Args: { p_payment_id: string; p_status: string; p_transaction_id: string; p_method: string; p_response: Json };
         Returns: PaymentStatus;
+      };
+      submit_product_interest: {
+        Args: { p_product_id: string; p_phone: string; p_customer_name?: string | null; p_quantity?: number | null; p_request_key?: string | null };
+        Returns: undefined;
+      };
+      run_data_retention: {
+        Args: { p_trigger: "admin" | "schedule"; p_now?: string };
+        Returns: { rule: string; affected: number }[];
       };
       get_unavailable_product: {
         Args: { p_slug: string };

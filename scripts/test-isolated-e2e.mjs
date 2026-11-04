@@ -36,7 +36,7 @@ const env={...process.env,
   APP_BASE_URL:`http://127.0.0.1:${port}`,
   TELEGRAM_BOT_TOKEN:'',TELEGRAM_CHAT_ID:'',ENABLE_ONLINE_PAYMENTS:'false',NEXT_PUBLIC_ENABLE_ANALYTICS:'false',
   E2E_BASE_URL:`http://127.0.0.1:${port}`,E2E_ISOLATED:'1',E2E_FIXTURE_PORT:String(fixturePort),
-  E2E_ADMIN_EMAIL:'admin@example.invalid',E2E_ADMIN_PASSWORD:'isolated-test-password'
+  E2E_ADMIN_EMAIL:'admin@example.invalid',E2E_ADMIN_PASSWORD:'isolated-test-password',CRON_SECRET:'isolated-test-cron-secret'
 };
 console.log(`Isolated e2e: app on ${port}, fixture on ${fixturePort}`);
 let app;

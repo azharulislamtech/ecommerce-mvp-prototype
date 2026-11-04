@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CheckIcon } from "@/components/ui/icons";
 import { ProductVideoLink } from "@/components/modules/product-video-link";
+import { InterestForm } from "@/components/modules/interest-form";
 import { ProductDescription } from "@/components/modules/product-description";
 import { isOnlineCheckoutEnabled } from "@/lib/payments/payment-service";
 import { problemLine } from "@/lib/problems";
@@ -133,6 +134,9 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
               label={product.name}
               visual={product.visual}
             />
+            {product.state === "coming_soon" ? (
+              <p className="mt-2 text-xs text-slate-500" data-testid="sample-image-note">ছবি নমুনা হতে পারে; পণ্য হাতে এলে আসল ছবি দেওয়া হবে।</p>
+            ) : null}
           </div>
 
           <div className="order-1 lg:order-2 lg:sticky lg:top-24 lg:self-start">
@@ -167,6 +171,8 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
               ) : (
                 <div className="mt-5">
                   <ProductUnavailableNote product={product} />
+                  {/* R7.1: interest only, never an order or a payment. */}
+                  {product.state === "coming_soon" ? <InterestForm productId={product.id} /> : null}
                 </div>
               )}
 
@@ -253,7 +259,7 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
       {related.length ? (
         <section className="bg-white py-10">
           <div className="container-page">
-            <h2 className="mb-5 text-2xl font-bold text-slate-950">{canBuyNow ? "আরও পণ্য" : "স্টকে থাকা বিকল্প পণ্য"}</h2>
+            <h2 className="mb-5 text-2xl font-bold text-slate-950">{canBuyNow ? "আরও পণ্য" : product.state === "coming_soon" ? "এখনই লাগবে? স্টকে আছে এমন বিকল্প" : "স্টকে থাকা বিকল্প পণ্য"}</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((item) => (
                 <ProductCard key={item.id} product={item} />

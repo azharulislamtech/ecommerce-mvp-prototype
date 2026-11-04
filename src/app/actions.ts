@@ -1,6 +1,6 @@
 "use server";
 
-import { CHECKOUT_MESSAGES, checkoutErrorMessage } from "@/lib/order-copy";
+import { CHECKOUT_MESSAGES, INTEREST_MESSAGES, checkoutErrorMessage } from "@/lib/order-copy";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createHash } from "node:crypto";
@@ -950,6 +950,114 @@ export async function updateProductAction(
   redirect(`/admin/products?notice=${encodeURIComponent(updatedNotice)}`);
 }
 
+export type InterestFormState = {
+  status: "idle" | "error" | "success";
+  message: string;
+  fieldErrors: Partial<Record<"customer_phone" | "customer_name" | "quantity", string>>;
+  values?: Partial<Record<"customer_phone" | "customer_name" | "quantity", string>>;
+};
+
+// R7.1: "আগ্রহ জানান" on a coming-soon product. It records interest only: no order, no money
+// (guideline §৩.৩). The same thank-you shows whether or not this number already asked, so
+// the form never reveals who is on the list.
+export async function submitInterestAction(
+  productId: string,
+  _previousState: InterestFormState,
+  formData: FormData
+): Promise<InterestFormState> {
+  const thanks: InterestFormState = { status: "success", message: INTEREST_MESSAGES.thanks, fieldErrors: {} };
+  if (getText(formData, "website")) return thanks;
+
+  const phone = getText(formData, "customer_phone");
+  const name = getText(formData, "customer_name");
+  const quantityText = getText(formData, "quantity");
+  const values = { customer_phone: phone, customer_name: name, quantity: quantityText };
+  const fieldErrors: InterestFormState["fieldErrors"] = {};
+  const quantity = quantityText ? Number(quantityText) : null;
+
+  if (!isValidBangladeshPhone(phone)) fieldErrors.customer_phone = INTEREST_MESSAGES.phone;
+  if (name.length > 80) fieldErrors.customer_name = INTEREST_MESSAGES.name;
+  if (quantity !== null && (!Number.isInteger(quantity) || quantity < 1 || quantity > 99)) fieldErrors.quantity = INTEREST_MESSAGES.quantity;
+  if (Object.keys(fieldErrors).length) {
+    return { status: "error", message: INTEREST_MESSAGES.fix, fieldErrors, values };
+  }
+
+  const requestHeaders = await headers();
+  const clientIp = requestHeaders.get("x-vercel-forwarded-for")?.split(",")[0]?.trim()
+    || requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase.rpc("submit_product_interest", {
+    p_product_id: productId,
+    p_phone: phone,
+    p_customer_name: name || null,
+    p_quantity: quantity,
+    p_request_key: createHash("sha256").update(clientIp).digest("hex")
+  });
+
+  if (error) {
+    const text = error.message ?? "";
+    const message = /Too many requests/i.test(text) ? INTEREST_MESSAGES.tooMany
+      : /not taking interest/i.test(text) ? INTEREST_MESSAGES.closed
+        : /mobile number/i.test(text) ? INTEREST_MESSAGES.phone
+          : INTEREST_MESSAGES.failed;
+    return { status: "error", message, fieldErrors: {}, values };
+  }
+
+  return thanks;
+}
+
+const INTEREST_STATUSES = ["new", "contacted", "purchased", "not_interested"] as const;
+const BROADCAST_REMINDER = "WhatsApp-এর broadcast list-এ নম্বরটা থাকলে সেখান থেকেও বাদ দিন।";
+
+// R7.2: the owner updates an interest request. Moving to "contacted" stamps contacted_at once,
+// which starts the 30-day deletion clock (R9.2).
+export async function updateInterestStatusAction(formData: FormData) {
+  await requireAdmin();
+  const id = getText(formData, "interest_id");
+  const status = getText(formData, "status") as (typeof INTEREST_STATUSES)[number];
+  const back = (message: string, kind: "notice" | "error" = "notice") =>
+    redirect(`/admin/interest?${kind}=${encodeURIComponent(message)}`);
+  if (!id || !INTEREST_STATUSES.includes(status)) back("Invalid interest update.", "error");
+
+  const supabase = await createSupabaseAuthServerClient();
+  const { data: current } = await supabase.from("interest_requests").select("contacted_at").eq("id", id).maybeSingle();
+  if (!current) back("That interest request no longer exists.", "error");
+  const contactedAt = status !== "new" && !current!.contacted_at ? new Date().toISOString() : current!.contacted_at;
+  const { data, error } = await supabase
+    .from("interest_requests")
+    .update({ status, contacted_at: status === "new" ? null : contactedAt })
+    .eq("id", id)
+    .select("id");
+  if (error || !data?.length) back(`Could not update: ${error?.message ?? "no row changed"}`, "error");
+  revalidatePath("/admin/interest");
+  back("Interest request updated.");
+}
+
+// R9.2: delete one interest request on the person's request.
+export async function deleteInterestAction(formData: FormData) {
+  await requireAdmin();
+  const id = getText(formData, "interest_id");
+  const back = (message: string, kind: "notice" | "error" = "notice") =>
+    redirect(`/admin/interest?${kind}=${encodeURIComponent(message)}`);
+  if (!id) back("Invalid delete request.", "error");
+  const supabase = await createSupabaseAuthServerClient();
+  const { data, error } = await supabase.from("interest_requests").delete().eq("id", id).select("id");
+  if (error || !data?.length) back(`Could not delete: ${error?.message ?? "no row deleted"}`, "error");
+  revalidatePath("/admin/interest");
+  back(`Interest request deleted. ${BROADCAST_REMINDER}`);
+}
+
+// R9.2: run every retention rule now (the same function the daily schedule runs).
+export async function runDataRetentionAction() {
+  await requireAdmin();
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase.rpc("run_data_retention", { p_trigger: "admin" });
+  if (error) redirect(`/admin/interest?error=${encodeURIComponent(`Retention run failed: ${error.message}`)}`);
+  const summary = (data ?? []).map((row) => `${row.rule}: ${row.affected}`).join(", ");
+  revalidatePath("/admin/interest");
+  redirect(`/admin/interest?notice=${encodeURIComponent(`Retention run finished (${summary}). ${BROADCAST_REMINDER}`)}`);
+}
+
 // R10.3: switch a new-section category on or off from the admin. Legacy demo categories
 // (no section) are refused: V12 owns them, and its rollback log must stay accurate.
 export async function setCategoryActiveAction(formData: FormData) {
@@ -975,10 +1083,15 @@ export async function setCategoryActiveAction(formData: FormData) {
     back("Only Kids & Baby and Home Solutions categories can be switched here.", "error");
   }
 
-  const { error } = await supabase.from("categories").update({ is_active: nextActive === "true" }).eq("id", categoryId);
+  // .select() returns the changed row, so an RLS miss (0 rows) cannot look like success.
+  const { data: changed, error } = await supabase
+    .from("categories")
+    .update({ is_active: nextActive === "true" })
+    .eq("id", categoryId)
+    .select("id");
 
-  if (error) {
-    back(`Could not update the category: ${error.message}`, "error");
+  if (error || !changed?.length) {
+    back(`Could not update the category: ${error?.message ?? "no row changed"}`, "error");
   }
 
   // Menus, the Kids page, category pages and the sitemap all read categories.

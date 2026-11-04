@@ -78,7 +78,7 @@ export async function startDatabaseFixture(port=54329) {
       if(rpc) {
         let body='';for await(const chunk of req) body+=chunk;
         const args=JSON.parse(body||'{}');
-        const allowed=['create_checkout_order','get_product_review_summary','get_public_product_reviews','is_within_public_rate_limit','record_public_rate_limit_hit','is_admin','update_admin_order','reconcile_cancelled_stock','get_unavailable_product','submit_verified_product_review'];
+        const allowed=['create_checkout_order','get_product_review_summary','get_public_product_reviews','is_within_public_rate_limit','record_public_rate_limit_hit','is_admin','update_admin_order','reconcile_cancelled_stock','get_unavailable_product','submit_verified_product_review','submit_product_interest','run_data_retention'];
         if(!allowed.includes(rpc)) return send({message:'Unsupported test RPC'},400);
         const names=Object.keys(args);
         if(names.some(x=>!/^p_[a-z_]+$/.test(x))) return send({message:'Invalid argument'},400);
@@ -89,9 +89,20 @@ export async function startDatabaseFixture(port=54329) {
         return send(['is_within_public_rate_limit','record_public_rate_limit_hit','is_admin','update_admin_order','reconcile_cancelled_stock'].includes(rpc)?Object.values(rows[0])[0]:rows);
       }
       const table=url.pathname.split('/rest/v1/')[1];
-      if(!['products','categories','orders','order_items','payments','product_reviews','admin_users'].includes(table)) return send({message:'Unsupported test table'},404);
+      if(!['products','categories','orders','order_items','payments','product_reviews','admin_users','interest_requests','data_retention_runs'].includes(table)) return send({message:'Unsupported test table'},404);
       // Minimal PATCH for the admin categories toggle (R10.3): only categories.is_active, only
       // with the signed-in admin token, filtered by id. Everything else stays read-only.
+      // R7.2 / R9.2: admin-only status update and delete for interest requests.
+      if((req.method==='PATCH'||req.method==='DELETE')&&table==='interest_requests') {
+        if(req.headers.authorization!==`Bearer ${accessToken}`) return send({message:'Unsupported test write'},403);
+        const id=(url.searchParams.get('id')??'').replace(/^eq\./,'');
+        if(req.method==='DELETE') {const {rows}=await db.query('delete from interest_requests where id=$1 returning id',[id]);return send(rows);}
+        let body='';for await(const chunk of req) body+=chunk;
+        const changes=JSON.parse(body||'{}');
+        if(Object.keys(changes).some(key=>!['status','contacted_at'].includes(key))) return send({message:'Only status and contacted_at can change'},400);
+        const {rows}=await db.query('update interest_requests set status=coalesce($2,status), contacted_at=$3 where id=$1 returning id',[id,changes.status??null,changes.contacted_at??null]);
+        return send(rows);
+      }
       if(req.method==='PATCH') {
         if(table!=='categories'||req.headers.authorization!==`Bearer ${accessToken}`) return send({message:'Unsupported test write'},403);
         let body='';for await(const chunk of req) body+=chunk;
