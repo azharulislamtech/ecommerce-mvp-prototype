@@ -29,7 +29,7 @@ export async function startDatabaseFixture(port=54329) {
       // update at a time, in the order given, so the first_stocked_at trigger sees each step.
       if(url.pathname==='/test/product-update'&&req.method==='POST') {
         const slug=url.searchParams.get('slug');
-        const allowed={stock:'stock_quantity',availability:'availability',active:'is_active',estimated:'estimated_price',age_min:'age_min_months',age_max:'age_max_months',video:'video_url',featured:'is_featured'};
+        const allowed={stock:'stock_quantity',availability:'availability',active:'is_active',estimated:'estimated_price',age_min:'age_min_months',age_max:'age_max_months',video:'video_url',featured:'is_featured',description:'description'};
         for(const [key,value] of url.searchParams) {
           if(key==='slug') continue;
           if(key==='tags') {await db.query('update products set problem_tags=$2::text[] where slug=$1',[slug,value?value.split(','):[]]);continue;}
@@ -40,6 +40,11 @@ export async function startDatabaseFixture(port=54329) {
         }
         const {rows}=await db.query('select slug,stock_quantity,availability,is_active,first_stocked_at from products where slug=$1',[slug]);
         return send(rows[0]??{message:'No such product'},rows.length?200:404);
+      }
+      // Test-only: mark an order delivered, so a verified review can be submitted.
+      if(url.pathname==='/test/order-delivered'&&req.method==='POST') {
+        const {rows}=await db.query("update orders set order_status='delivered' where tracking_token=$1 returning order_number",[url.searchParams.get('token')]);
+        return send(rows[0]??{message:'No such order'},rows.length?200:404);
       }
       if(url.pathname==='/auth/v1/token') {
         let body='';for await(const chunk of req) body+=chunk;
@@ -54,7 +59,7 @@ export async function startDatabaseFixture(port=54329) {
       if(rpc) {
         let body='';for await(const chunk of req) body+=chunk;
         const args=JSON.parse(body||'{}');
-        const allowed=['create_checkout_order','get_product_review_summary','get_public_product_reviews','is_within_public_rate_limit','record_public_rate_limit_hit','is_admin','update_admin_order','reconcile_cancelled_stock','get_unavailable_product'];
+        const allowed=['create_checkout_order','get_product_review_summary','get_public_product_reviews','is_within_public_rate_limit','record_public_rate_limit_hit','is_admin','update_admin_order','reconcile_cancelled_stock','get_unavailable_product','submit_verified_product_review'];
         if(!allowed.includes(rpc)) return send({message:'Unsupported test RPC'},400);
         const names=Object.keys(args);
         if(names.some(x=>!/^p_[a-z_]+$/.test(x))) return send({message:'Invalid argument'},400);

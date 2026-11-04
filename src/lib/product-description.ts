@@ -101,7 +101,9 @@ export function parseDescription(text: string): ParsedDescription {
       continue;
     }
     const fact = line.match(FACT);
-    if (fact && !current.heading?.startsWith("ডেলিভারি")) {
+    // A fact value is short ("৪৫০ গ্রাম"); a long value or a full sentence is a note, not a fact.
+    const isFact = fact && fact[2].length <= 60 && !fact[2].includes("।");
+    if (fact && isFact && !current.heading?.startsWith("ডেলিভারি")) {
       facts.push({ label: fact[1].trim(), value: fact[2].trim() });
       structured = true;
       continue;
