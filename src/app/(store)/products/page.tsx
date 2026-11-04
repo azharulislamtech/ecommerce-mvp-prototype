@@ -211,6 +211,7 @@ export default async function ProductListingPage({ searchParams }: ProductListin
                 ))}
               </div>
             ) : (
+              Object.values(filters).some(Boolean) ? (
               <div className="rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm" data-testid="search-empty" lang="bn">
                 <h2 className="text-lg font-bold text-slate-950">
                   {filters.q ? `“${filters.q}” দিয়ে কোনো পণ্য পাওয়া যায়নি` : "এই বাছাইয়ে কোনো পণ্য নেই"}
@@ -225,6 +226,12 @@ export default async function ProductListingPage({ searchParams }: ProductListin
                   বাছাই মুছুন
                 </Link>
               </div>
+              ) : (
+              // Nothing on sale at all (for example right after the V12 cutover): say so plainly.
+              <p className="rounded-lg border border-slate-200 bg-white p-6 text-base text-slate-700" data-testid="store-empty" lang="bn">
+                এই মুহূর্তে বিক্রির জন্য কোনো পণ্য নেই। পণ্য নিজের হাতে আসার পর তবেই এখানে দেখানো হবে।
+              </p>
+              )
             )}
             {popular.length ? (
               <section className="mt-8" data-testid="search-popular" lang="bn">

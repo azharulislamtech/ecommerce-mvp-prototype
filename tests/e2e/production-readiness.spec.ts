@@ -19,10 +19,12 @@ test('product metadata and category links expose crawlable commerce content',asy
   const response=await request.get(href!);expect(response.status()).toBe(200);
   const html=await response.text();expect(html).toContain('application/ld+json');expect(html).toContain('"@type":"Product"');
   expect(html).toContain('"priceCurrency":"BDT"');expect(html).toContain('rel="canonical"');
-  // The homepage no longer lists old categories (R3.1); take a category from the product filter.
-  const categorySlug=await page.locator('select#category option[value]:not([value=""])').first().getAttribute('value');
-  expect(categorySlug).toBeTruthy();await page.goto(`/categories/${categorySlug}`);
-  await expect(page.locator('h1')).toBeVisible();await expect(page.locator('a[href^="/products/"]').first()).toBeVisible();
+  // R2.8: the legacy demo category URLs are permanent (301) redirects; the new category pages
+  // are covered in storefront-categories.spec.ts.
+  for(const [slug,target] of [['home-living','/products?section=home'],['electronics','/'],['fashion','/'],['beauty','/'],['accessories','/']]) {
+    const redirect=await request.get(`/categories/${slug}`,{maxRedirects:0});
+    expect(redirect.status(),slug).toBe(301);expect(redirect.headers()['location'],slug).toBe(target);
+  }
 });
 
 test('private utility pages are noindex and absent from sitemap',async({request})=>{

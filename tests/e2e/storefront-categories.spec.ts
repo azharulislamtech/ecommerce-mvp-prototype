@@ -15,14 +15,21 @@ async function setCategory(request: APIRequestContext, slug: string, active: boo
 }
 
 test("a category page has Bangla filters in the URL and an honest empty-filter message", async ({ page, request }) => {
-  const categories: { slug: string; is_active: boolean }[] = await (await request.get(`${fixture()}/rest/v1/categories?is_active=eq.true`)).json();
-  // Pick a legacy category that has products.
-  let slug = "";
-  for (const category of categories) {
-    await page.goto(`/categories/${category.slug}`);
-    if ((await page.getByTestId("product-card").count()) > 0) { slug = category.slug; break; }
-  }
-  expect(slug, "a category with products").not.toBe("");
+  // R2.8 redirects the legacy demo categories, so this uses a new Home Solutions category.
+  test.skip(process.env.E2E_ISOLATED !== "1", "Catalog changes run only against the disposable local database.");
+  const slug = "home-kitchen";
+  const rows: { slug: string; stock_quantity: number; category_id: string }[] =
+    await (await request.get(`${fixture()}/rest/v1/products?is_active=eq.true`)).json();
+  const cats: { id: string; slug: string }[] = await (await request.get(`${fixture()}/rest/v1/categories`)).json();
+  const moved = rows.filter((row) => row.stock_quantity > 0).sort((a, b) => a.slug.localeCompare(b.slug)).slice(0, 2);
+  const slugOf = (id: string) => cats.find((c) => c.id === id)!.slug;
+  await setCategory(request, "home-solutions", true);
+  await setCategory(request, slug, true);
+  for (const row of moved) await update(request, row.slug, [["category", slug]]);
+  try {
+  await page.goto(`/categories/${slug}`);
+  await expect(page.getByRole("heading", { level: 1, name: "রান্নাঘর গোছানো থাকে না?" })).toBeVisible();
+  await expect(page.getByTestId("category-breadcrumb")).toHaveText("হোম › সংসারের সমাধান › রান্নাঘর");
 
   await expect(page.getByTestId("category-breadcrumb")).toContainText("হোম ›");
   await expect(page.locator("main")).not.toContainText("will be available soon");
@@ -48,6 +55,11 @@ test("a category page has Bangla filters in the URL and an honest empty-filter m
   await page.getByTestId("category-filter-button").locator("summary").click();
   await expect(page.getByTestId("category-filter-button").getByRole("button", { name: "ফিল্টার দেখুন" })).toBeVisible();
   expect(await noOverflow(page)).toBe(true);
+  } finally {
+    for (const row of moved) await update(request, row.slug, [["category", slugOf(row.category_id)]]);
+    await setCategory(request, slug, false);
+    await setCategory(request, "home-solutions", false);
+  }
 });
 
 test("section pages show the question, in-stock chips and the Kids age filter", async ({ page, request }) => {

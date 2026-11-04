@@ -1,5 +1,10 @@
 import { PGlite } from "@electric-sql/pglite";
 import { readFile, readdir } from "node:fs/promises";
+// Runs a SQL file from db/rollback (for example the V12 rollback) on a test database.
+export async function applyRollbackFile(db, name) {
+  const sql = (await readFile(`db/rollback/${name}`,'utf8')).replace(/^﻿/,'');
+  try { await db.exec(sql); } catch (error) { throw new Error(`Rollback ${name}: ${error.message}`); }
+}
 export async function applyMigrationFile(db, name) {
   const sql = (await readFile(`db/migration/${name}`,'utf8')).replace(/^﻿/,'').replace('create extension if not exists pgcrypto;','');
   try { await db.exec(sql); } catch (error) { throw new Error(`Migration ${name}: ${error.message}`); }
