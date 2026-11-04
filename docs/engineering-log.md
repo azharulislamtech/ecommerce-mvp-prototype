@@ -2,6 +2,20 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-04: R4.1 Kids & Baby Page Deployment
+
+- #37 (R4.1) adds the `/kids` page:
+  - Age buttons (৩–৪, ৪–৫, ৫–৬ বছর), learning-goal tiles, a coming-soon block, and a list filtered by `?age` and `?goal`. Each part appears only when in-stock products back it.
+  - Filtered views and an empty section are `noindex`.
+  - Kids links in the header, footer and homepage now go to `/kids`, and `/products?section=kids` still works.
+  - The sitemap lists `/kids` only when in-stock Kids products exist.
+  - Uses the V11 `learning_goals` column, so no DB change.
+  - Also: the Kids guideline is now v1.4 (learning-goal tags), and the review form is fully Bangla.
+- Verification: independently re-run in one full pass on a clean checkout of 0e2ec86 (lint, typecheck, unit 47/47, db 45/45, e2e 33/33, build, audit). On owner request it merged as `6787351` after green CI.
+- Deployed `6787351` with `--skip-domain` as `dpl_Fgkn5r63cTsuFtA5FdQjCKYb9p7d` (https://ecommerce-mvp-prototype-rpcon9gpo-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 16 checks on the staged URL and again on https://kenasathi.com after promotion. Live `/kids` returns 200 with the empty note and `noindex`, and the sitemap has no `/kids` (no products yet).
+- Still English: the Terms page body (separate task).
+- Rollback target: `dpl_R8yRE554dpuzfwSKYUQ9p1Yw6khW`. No database changes.
+
 ## 2026-11-04: R6.2 Product Description and Bangla Review Copy Deployment
 
 - #35 (R6.2) changes the product page:
