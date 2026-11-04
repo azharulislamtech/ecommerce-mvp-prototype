@@ -19,7 +19,8 @@ import { getUnavailableProduct as getSupabaseUnavailableProduct } from "@/lib/su
 import { STATE_RANK, storefrontState } from "@/lib/storefront-state";
 import type { CategoryRow } from "@/lib/supabase/database.types";
 
-export type StoreCategory = (typeof mockCategories)[number];
+// R5.1: section and parent let a category page show its sub-categories and filters.
+export type StoreCategory = (typeof mockCategories)[number] & { section?: "kids" | "home"; parentSlug?: string };
 
 export type CatalogFilters = {
   q?: string;
@@ -59,12 +60,14 @@ function visualFromSlug(slug: string | null | undefined): ProductVisual {
   return fallbackVisuals[index];
 }
 
-function mapCategory(row: CategoryRow): StoreCategory {
+function mapCategory(row: CategoryRow, slugById: Map<string, string>): StoreCategory {
   return {
     name: row.name,
     slug: row.slug,
-    description: row.description ?? "Curated products for everyday use",
-    visual: visualFromSlug(row.slug)
+    description: row.description ?? "",
+    visual: visualFromSlug(row.slug),
+    section: row.section ?? undefined,
+    parentSlug: row.parent_id ? slugById.get(row.parent_id) : undefined
   };
 }
 
@@ -194,14 +197,15 @@ function requireCatalogConfig() {
   }
 }
 
-export async function getStoreCategories() {
+export async function getStoreCategories(): Promise<StoreCategory[]> {
   if (!hasSupabasePublicConfig()) {
     requireCatalogConfig();
     return mockCategories;
   }
 
   const categories = await getSupabaseCategories();
-  return categories.map(mapCategory);
+  const slugById = new Map(categories.map((row) => [row.id, row.slug]));
+  return categories.map((row) => mapCategory(row, slugById));
 }
 
 export async function getStoreProducts(filters: CatalogFilters = {}) {
