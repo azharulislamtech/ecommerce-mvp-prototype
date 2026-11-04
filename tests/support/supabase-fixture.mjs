@@ -91,6 +91,13 @@ export async function startDatabaseFixture(port=54329) {
       return send(rows);
     } catch(error) {return send({message:error.message,code:error.code??'TEST'},400);}
   });
-  await new Promise(resolve=>server.listen(port,'127.0.0.1',resolve));
-  return {close:async()=>{await new Promise(resolve=>server.close(resolve));await db.close();}};
+  // A busy port must fail the run loudly (EADDRINUSE), never leave a half-started fixture.
+  // Port 0 asks the OS for a free port; the real port is returned to the caller.
+  try {
+    await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',()=>{server.off('error',reject);resolve();});});
+  } catch(error) {
+    await db.close();
+    throw new Error(`Test database fixture could not listen on 127.0.0.1:${port}: ${error.code??error.message}`);
+  }
+  return {port:server.address().port,close:async()=>{await new Promise(resolve=>server.close(resolve));await db.close();}};
 }
