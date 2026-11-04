@@ -2,6 +2,18 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-04: R5.1 Category Pages Deployment
+
+- #39 (R5.1) rebuilds `/categories/[slug]`:
+  - A Bangla breadcrumb with JSON-LD, and an h1 question from `category-copy.ts`.
+  - Section roots show their whole section, with sub-category chips only when backed by stock.
+  - URL filters (availability, Kids age, price), each shown only when products back it, plus sorting. On phones they sit behind one "ফিল্টার" `<details>`.
+  - Honest Bangla empty and no-match states. Filtered views are noindex. The old English "available soon" claim is gone.
+- Also in #39: the review form now keeps what the customer typed after an error (React 19 form reset). The action echoes the values back, using the checkout R2.9 pattern. Validation and the RPC are unchanged.
+- Verification: independently re-run in one full pass on a clean checkout of 3dc2aa2 (lint, typecheck, unit 47/47, db 45/45, e2e 35/35, build, audit). On owner request it merged as `248d19a` after green CI.
+- Deployed `248d19a` with `--skip-domain` as `dpl_EXGdx9PbgRXKLftuSqpGb9rKt1zJ` (https://ecommerce-mvp-prototype-k96xfqhdt-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 16 checks on the staged URL and again on https://kenasathi.com after promotion. Live `/categories/accessories` returns 200 with BreadcrumbList and without the old claim. `/categories/kids-education` stays 404 (inactive until R1.8/V12).
+- Rollback target: `dpl_Fgkn5r63cTsuFtA5FdQjCKYb9p7d`. No database changes.
+
 ## 2026-11-04: R4.1 Kids & Baby Page Deployment
 
 - #37 (R4.1) adds the `/kids` page:
