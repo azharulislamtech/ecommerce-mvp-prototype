@@ -2,6 +2,22 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-05: V13 Applied (R9.2) with Interest Form and Admin Interest List (R7.1, R7.2)
+
+- On the owner's explicit OK ("Yes, apply and deploy"), V13 was applied to production in the contract order (`docs/db/V13-contract.md`). V13 was wrapped in `begin; set local lock_timeout = '5s'; … commit;`.
+  1. Backup: `.private-backups/20261105-064713` (verified, encrypted). It counted orders 8, products 10, payments 8, cancelled 1, payment mismatches 0.
+  2. `V13-precheck.sql`: 6/6 ok. The first run would change 0 rows under every rule.
+  3. V13: table, index, RLS, grants, policy and function created, in 1.5 s. The one NOTICE is the expected "policy does not exist, skipping" from `drop policy if exists`.
+  4. `V13-postcheck.sql`: 6/6 ok. Security definer with fixed search_path, execute for service_role only, run log RLS on and closed to the public, admin read policy present.
+- #48 (R7.1, R7.2, R9.2) merged as `99ab754` after green CI. It was independently re-run first in a clean checkout of a62d93b (unit 57/57, db 58/58, e2e 43/43, build, audit).
+- Deployed `99ab754` with `--skip-domain` as `dpl_AS9f6RUBpoQUmYhs6B5hkaAku3FC` (https://ecommerce-mvp-prototype-3zimmjnua-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 11 checks on the staged URL and again on https://kenasathi.com after promotion. Signed out, `/admin/interest` returns 307 to login. `/api/cron/retention` returns 503 "CRON_SECRET is not configured".
+- First retention run: `run_data_retention('admin')` ran via psql. A guard aborted it if any rule would change rows, because the admin button needs the owner's login. Every rule affected 0 rows, and the run was logged in `data_retention_runs`.
+- Not done (R9.2 stays 🔄): `CRON_SECRET` is not set in Vercel production, because writing secrets is outside Claude's permissions. The owner sets it in Vercel → Settings → Environment Variables (Production, a long random value). Then redeploy, and confirm a `schedule` run the next day. Until then the daily cron safely returns 503.
+- Plan: R7.1 ✅, R7.2 ✅, R9.2 🔄.
+- Rollback:
+  - Code: `dpl_9RtUMscDzw14GdcqNwKkEuVfZy7q`.
+  - Data: `db/rollback/V13-rollback.sql` drops the function and the log. It does not restore deleted rows; use the backup for that.
+
 ## 2026-11-04: R10.3 Admin Categories Page Deployment
 
 - #46 (R10.3) adds `/admin/categories`:
