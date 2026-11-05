@@ -33,7 +33,7 @@ export function ProductCard({ product, showProblem = false, showLearning = false
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <Link
-              className="line-clamp-2 text-base font-semibold text-slate-950 hover:text-blue-700"
+              className="focus-ring line-clamp-2 flex min-h-11 items-center text-base font-semibold text-slate-950 hover:text-blue-700"
               href={`/products/${product.slug}`}
             >
               {product.name}

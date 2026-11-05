@@ -181,7 +181,7 @@ export default async function ProductListingPage({ searchParams }: ProductListin
                 <FilterIcon className="h-4 w-4" />
                 Filter products
               </span>
-              <span className="text-slate-400">Open</span>
+              <span className="text-slate-500">খুলুন</span>
             </summary>
             <form action="/products" className="mt-4 border-t border-slate-200 pt-4">
               <FilterPanel categories={categories} filters={filters} />
@@ -199,9 +199,9 @@ export default async function ProductListingPage({ searchParams }: ProductListin
 
           <div>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-slate-600">{products.length} products available</p>
-              <Link className="text-sm font-semibold text-blue-700 hover:text-blue-900" href="/cart">
-                Review cart
+              <p className="text-sm text-slate-600" lang="bn">{products.length.toLocaleString("bn-BD")}টি পণ্য</p>
+              <Link className="focus-ring inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 hover:text-blue-900" href="/cart">
+                কার্ট দেখুন
               </Link>
             </div>
             {products.length ? (
