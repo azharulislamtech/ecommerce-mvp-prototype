@@ -78,7 +78,7 @@ export async function startDatabaseFixture(port=54329) {
       if(rpc) {
         let body='';for await(const chunk of req) body+=chunk;
         const args=JSON.parse(body||'{}');
-        const allowed=['create_checkout_order','get_product_review_summary','get_public_product_reviews','is_within_public_rate_limit','record_public_rate_limit_hit','is_admin','update_admin_order','reconcile_cancelled_stock','get_unavailable_product','submit_verified_product_review','submit_product_interest','run_data_retention'];
+        const allowed=['create_checkout_order','get_product_review_summary','get_public_product_reviews','is_within_public_rate_limit','record_public_rate_limit_hit','is_admin','update_admin_order','reconcile_cancelled_stock','get_unavailable_product','submit_verified_product_review','submit_product_interest','run_data_retention','subscribe_whatsapp_updates'];
         if(!allowed.includes(rpc)) return send({message:'Unsupported test RPC'},400);
         const names=Object.keys(args);
         if(names.some(x=>!/^p_[a-z_]+$/.test(x))) return send({message:'Invalid argument'},400);
@@ -89,9 +89,26 @@ export async function startDatabaseFixture(port=54329) {
         return send(['is_within_public_rate_limit','record_public_rate_limit_hit','is_admin','update_admin_order','reconcile_cancelled_stock'].includes(rpc)?Object.values(rows[0])[0]:rows);
       }
       const table=url.pathname.split('/rest/v1/')[1];
-      if(!['products','categories','orders','order_items','payments','product_reviews','admin_users','interest_requests','data_retention_runs'].includes(table)) return send({message:'Unsupported test table'},404);
+      if(!['products','categories','orders','order_items','payments','product_reviews','admin_users','interest_requests','data_retention_runs','whatsapp_subscribers'].includes(table)) return send({message:'Unsupported test table'},404);
       // Minimal PATCH for the admin categories toggle (R10.3): only categories.is_active, only
       // with the signed-in admin token, filtered by id. Everything else stays read-only.
+      // R9.1: admin-only updates and deletes for WhatsApp subscribers, run as the admin so the
+      // V11 trigger (only an admin may reactivate an opted-out number) behaves as in production.
+      if((req.method==='PATCH'||req.method==='DELETE')&&table==='whatsapp_subscribers') {
+        if(req.headers.authorization!==`Bearer ${accessToken}`) return send({message:'Unsupported test write'},403);
+        const id=(url.searchParams.get('id')??'').replace(/^eq\./,'');
+        let body='';for await(const chunk of req) body+=chunk;
+        const changes=JSON.parse(body||'{}');
+        const allowed=['last_response_at','opted_out_at','reconsent_requested_at','consent_at','consent_version'];
+        if(Object.keys(changes).some(key=>!allowed.includes(key))) return send({message:'Unsupported column'},400);
+        const {rows}=await db.transaction(async(tx)=>{
+          await tx.query("select set_config('request.jwt.claim.sub',$1,true)",[adminId]);
+          if(req.method==='DELETE') return tx.query('delete from whatsapp_subscribers where id=$1 returning id',[id]);
+          const names=Object.keys(changes);
+          return tx.query(`update whatsapp_subscribers set ${names.map((n,i)=>`${n}=$${i+2}`).join(',')} where id=$1 returning id`,[id,...names.map(n=>changes[n])]);
+        });
+        return send(rows);
+      }
       // R7.2 / R9.2: admin-only status update and delete for interest requests.
       if((req.method==='PATCH'||req.method==='DELETE')&&table==='interest_requests') {
         if(req.headers.authorization!==`Bearer ${accessToken}`) return send({message:'Unsupported test write'},403);
