@@ -24,6 +24,7 @@ import {
 } from "@/lib/admin/product-fields";
 import { sendTelegramNotification } from "@/lib/notifications/telegram";
 import { composeOrderNote } from "@/lib/gift";
+import { BROADCAST_REMINDER, CURRENT_CONSENT_VERSION, WHATSAPP_MESSAGES } from "@/lib/whatsapp";
 import { buildOrderAlert } from "@/lib/notifications/order-alert";
 import { getSiteUrl } from "@/lib/site";
 import { createSupabaseAuthServerClient, requireAdmin } from "@/lib/supabase/auth";
@@ -1007,7 +1008,6 @@ export async function submitInterestAction(
 }
 
 const INTEREST_STATUSES = ["new", "contacted", "purchased", "not_interested"] as const;
-const BROADCAST_REMINDER = "WhatsApp-এর broadcast list-এ নম্বরটা থাকলে সেখান থেকেও বাদ দিন।";
 
 // R7.2: the owner updates an interest request. Moving to "contacted" stamps contacted_at once,
 // which starts the 30-day deletion clock (R9.2).
@@ -1056,6 +1056,76 @@ export async function runDataRetentionAction() {
   const summary = (data ?? []).map((row) => `${row.rule}: ${row.affected}`).join(", ");
   revalidatePath("/admin/interest");
   redirect(`/admin/interest?notice=${encodeURIComponent(`Retention run finished (${summary}). ${BROADCAST_REMINDER}`)}`);
+}
+
+export type WhatsAppFormState = {
+  status: "idle" | "error" | "success";
+  message: string;
+  fieldErrors: Partial<Record<"customer_phone" | "consent", string>>;
+  values?: { customer_phone?: string };
+};
+
+// R9.1: subscribe to WhatsApp updates. The tick on the consent box plus the stored version
+// is the explicit consent. The RPC never reactivates an opted-out number (it only marks it
+// as asking for re-consent), and the reply is the same for everyone.
+export async function subscribeWhatsAppAction(_previousState: WhatsAppFormState, formData: FormData): Promise<WhatsAppFormState> {
+  const thanks: WhatsAppFormState = { status: "success", message: WHATSAPP_MESSAGES.thanks, fieldErrors: {} };
+  if (getText(formData, "website")) return thanks;
+  const phone = getText(formData, "customer_phone");
+  const values = { customer_phone: phone };
+  const fieldErrors: WhatsAppFormState["fieldErrors"] = {};
+  if (!isValidBangladeshPhone(phone)) fieldErrors.customer_phone = WHATSAPP_MESSAGES.phone;
+  if (getText(formData, "consent") !== "on") fieldErrors.consent = WHATSAPP_MESSAGES.consent;
+  if (Object.keys(fieldErrors).length) {
+    return { status: "error", message: fieldErrors.consent ?? fieldErrors.customer_phone ?? "", fieldErrors, values };
+  }
+  const requestHeaders = await headers();
+  const clientIp = requestHeaders.get("x-vercel-forwarded-for")?.split(",")[0]?.trim()
+    || requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const { error } = await createSupabaseServiceClient().rpc("subscribe_whatsapp_updates", {
+    p_phone: phone,
+    p_consent_version: CURRENT_CONSENT_VERSION,
+    p_request_key: createHash("sha256").update(clientIp).digest("hex")
+  });
+  if (error) {
+    const message = /Too many requests/i.test(error.message) ? WHATSAPP_MESSAGES.tooMany
+      : /mobile number/i.test(error.message) ? WHATSAPP_MESSAGES.phone : WHATSAPP_MESSAGES.failed;
+    return { status: "error", message, fieldErrors: {}, values };
+  }
+  return thanks;
+}
+
+const WHATSAPP_ADMIN_ACTIONS = ["responded", "opt_out", "reactivate", "delete"] as const;
+
+// R9.1 / R9.2: the owner manages subscribers. Reactivating an opted-out number writes a new
+// consent time and the current version; the V11 trigger also refuses it for non-admins.
+export async function manageWhatsAppSubscriberAction(formData: FormData) {
+  await requireAdmin();
+  const id = getText(formData, "subscriber_id");
+  const action = getText(formData, "action") as (typeof WHATSAPP_ADMIN_ACTIONS)[number];
+  const back = (message: string, kind: "notice" | "error" = "notice") =>
+    redirect(`/admin/whatsapp?${kind}=${encodeURIComponent(message)}`);
+  if (!id || !WHATSAPP_ADMIN_ACTIONS.includes(action)) back("Invalid request.", "error");
+
+  const supabase = await createSupabaseAuthServerClient();
+  const now = new Date().toISOString();
+  const query = action === "delete"
+    ? supabase.from("whatsapp_subscribers").delete().eq("id", id).select("id")
+    : supabase.from("whatsapp_subscribers").update(
+        action === "responded" ? { last_response_at: now }
+          : action === "opt_out" ? { opted_out_at: now, reconsent_requested_at: null }
+            : { opted_out_at: null, consent_at: now, consent_version: CURRENT_CONSENT_VERSION }
+      ).eq("id", id).select("id");
+  const { data, error } = await query;
+  if (error || !data?.length) back(`Could not update: ${error?.message ?? "no row changed"}`, "error");
+
+  revalidatePath("/admin/whatsapp");
+  back(
+    action === "responded" ? "Last response saved."
+      : action === "reactivate" ? "Number reactivated with new consent."
+        : action === "opt_out" ? `Number opted out. ${BROADCAST_REMINDER}`
+          : `Number deleted. ${BROADCAST_REMINDER}`
+  );
 }
 
 // R10.3: switch a new-section category on or off from the admin. Legacy demo categories

@@ -9,6 +9,7 @@ const adminLinks = [
   { href: "/admin/products/new", label: "Add Product" },
   { href: "/admin/categories", label: "Categories" },
   { href: "/admin/interest", label: "Interest" },
+  { href: "/admin/whatsapp", label: "WhatsApp" },
   { href: "/admin/orders", label: "Orders" },
   { href: "/admin/reviews", label: "Reviews" },
   { href: "/", label: "Storefront" }

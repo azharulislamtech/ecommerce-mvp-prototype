@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ProductCard } from "@/components/modules/product-card";
+import { WhatsAppSubscribe } from "@/components/modules/whatsapp-subscribe";
 import { getStoreNav, getStoreProducts } from "@/lib/catalog";
 import { fitsAge, hasGoal, kidsPageData } from "@/lib/kids";
 import { RETURN_POLICY_PATH, RETURN_WINDOW_LINE } from "@/lib/order-copy";
@@ -148,6 +149,12 @@ export default async function KidsPage({ searchParams }: KidsPageProps) {
           </div>
         </section>
       ) : null}
+
+      <section className="py-6">
+        <div className="container-page">
+          <WhatsAppSubscribe />
+        </div>
+      </section>
 
       <section className="bg-white py-8" data-testid="kids-trust">
         <div className="container-page grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

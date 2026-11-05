@@ -160,6 +160,28 @@ export type Database = {
         Update: { status?: "new" | "contacted" | "purchased" | "not_interested"; contacted_at?: string | null };
         Relationships: [];
       };
+      whatsapp_subscribers: {
+        Row: {
+          id: string;
+          phone: string;
+          consent_at: string;
+          consent_version: string;
+          last_response_at: string | null;
+          opted_out_at: string | null;
+          reconsent_requested_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: {
+          consent_at?: string;
+          consent_version?: string;
+          last_response_at?: string | null;
+          opted_out_at?: string | null;
+          reconsent_requested_at?: string | null;
+        };
+        Relationships: [];
+      };
       data_retention_runs: {
         Row: { id: string; ran_at: string; run_trigger: "admin" | "schedule"; results: Record<string, number | string> };
         Insert: never;
@@ -437,6 +459,10 @@ export type Database = {
       apply_verified_payment: {
         Args: { p_payment_id: string; p_status: string; p_transaction_id: string; p_method: string; p_response: Json };
         Returns: PaymentStatus;
+      };
+      subscribe_whatsapp_updates: {
+        Args: { p_phone: string; p_consent_version: string; p_request_key?: string | null };
+        Returns: undefined;
       };
       submit_product_interest: {
         Args: { p_product_id: string; p_phone: string; p_customer_name?: string | null; p_quantity?: number | null; p_request_key?: string | null };
