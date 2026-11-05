@@ -2,6 +2,16 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-05: GitHub Repository Renamed to kenasathi-web
+
+- On owner request, the GitHub repository `azharulislamtech/ecommerce-mvp-prototype` was renamed to `azharulislamtech/kenasathi-web` through the GitHub API.
+  - GitHub keeps permanent redirects: the old web URL returns 301 to the new one, and the old API path returns 301.
+  - Do not create a new repository with the old name, because that would break the redirects.
+- The local `origin` remote now points to `https://github.com/azharulislamtech/kenasathi-web.git`. All worktrees share it. Fetch works and `main` was unchanged at `4d7e75d`.
+- This PR updates the GitHub links in the docs and the package name in `package.json` and `package-lock.json` to `kenasathi-web`.
+- Not changed: the Vercel project is still named `ecommerce-mvp-prototype`. Deploys are linked by project ID through the CLI, not by repo name, so deployment URLs keep that prefix. kenasathi.com is not affected. Renaming the Vercel project is a separate, optional step.
+- No runtime change and no database change.
+
 ## 2026-11-05: R11.2 Bangla Font and Accessibility Deployment
 
 - #52 (R11.2) adds:
@@ -261,7 +271,7 @@ Append meaningful changes here. Keep newest entries at the top.
 
 ## 2026-10-02: Consistent Brand Logo And Browser Icons
 
-- Published and promoted as `dpl_C2qv3XQa3UhMRHvvfpNU8BftpfRp`, source `df1175e`; [PR #2](https://github.com/azharulislamtech/ecommerce-mvp-prototype/pull/2) merged into main as `d044060`. [GitHub CI](https://github.com/azharulislamtech/ecommerce-mvp-prototype/actions/runs/37019691713) passed. All 13 staged/live release checks, six live icon asset checks and the live manifest passed; browser confirmed the live header SVG loaded at 36px. Previous hardening deployment `dpl_6x7VyDCPSkxivzgZBno8FHcVCUNf` remains the immediate application rollback target.
+- Published and promoted as `dpl_C2qv3XQa3UhMRHvvfpNU8BftpfRp`, source `df1175e`; [PR #2](https://github.com/azharulislamtech/kenasathi-web/pull/2) merged into main as `d044060`. [GitHub CI](https://github.com/azharulislamtech/kenasathi-web/actions/runs/37019691713) passed. All 13 staged/live release checks, six live icon asset checks and the live manifest passed; browser confirmed the live header SVG loaded at 36px. Previous hardening deployment `dpl_6x7VyDCPSkxivzgZBno8FHcVCUNf` remains the immediate application rollback target.
 - Preserved the existing emerald/gold KS identity as a font-independent SVG in `src/app/icon.svg`; the shared storefront/footer/admin logo uses the same asset with fixed 36px dimensions, accessible link naming, keyboard focus and a 44px minimum link height.
 - Added a multi-resolution 16/32/48px ICO favicon, opaque 180px Apple touch icon, 192/512px PNG icons and a separate padded maskable 512px icon. Next's metadata file conventions register icons and the manifest automatically; the manifest uses browser display and does not imply offline support.
 - Home Organization JSON-LD identifies the real Kena Sathi URL and a crawlable 512px logo. No customer/order/database/payment behavior changed.
@@ -270,7 +280,7 @@ Append meaningful changes here. Keep newest entries at the top.
 
 ## 2026-10-02: Vercel Production Deployment And Live Verification
 
-- After explicit owner approval, PR #1 merged into `main` as `04249976e5064deab2bd31b10129910bbabb3a49`. [GitHub CI run 36997183643](https://github.com/azharulislamtech/ecommerce-mvp-prototype/actions/runs/36997183643) completed successfully, including lint/typecheck/unit/database tests, isolated production-browser tests, build and dependency audit. Workspace synchronized to main; deployed application code matches this release (later additions are release documentation/verifier).
+- After explicit owner approval, PR #1 merged into `main` as `04249976e5064deab2bd31b10129910bbabb3a49`. [GitHub CI run 36997183643](https://github.com/azharulislamtech/kenasathi-web/actions/runs/36997183643) completed successfully, including lint/typecheck/unit/database tests, isolated production-browser tests, build and dependency audit. Workspace synchronized to main; deployed application code matches this release (later additions are release documentation/verifier).
 - User completed device authentication; confirmed account `azadbasis-4964`, team `azadbasis-4964s-projects`, existing project `prj_MdYl4Mdwj0hPUAJZmHU5zNGB4Qtk`.
 - Explicitly configured `NEXT_PUBLIC_SITE_URL=https://kenasathi.com`, `ENABLE_ONLINE_PAYMENTS=false`, `ALLOW_DEMO_CATALOG=false` without exposing credentials.
 - Deployed application revision `26e29a1` as `dpl_6x7VyDCPSkxivzgZBno8FHcVCUNf`; cloud build passed. Staged URL https://ecommerce-mvp-prototype-6pij5s22n-azadbasis-4964s-projects.vercel.app passed 13 HTTP/SEO/health checks before promotion.
@@ -292,7 +302,7 @@ Owner authorized completing the external rollout against the named Supabase proj
 - Real Supabase integration checks used authenticated-admin RLS product insert/update/delete, service-role COD amount/replay/stock, cancellation/reopening, atomic settlement and downgrade rejection inside a fully rolled-back transaction. No lasting test customer/order/product rows were created.
 - Database regression suite: 17 passed with V1-V10. Production browser suite: 9 passed with all ten migrations. Existing lint/typecheck/unit/build verification remains required for source release.
 - Remaining account boundary: Supabase dashboard and Vercel CLI/browser lack signed-in sessions. Vercel device-login handoff started; no application deployment has been claimed. Browser Auth login, Storage upload, provider monitoring/analytics, off-site backup retention and SSLCommerz remain separate operational gates.
-- Published source revision `c3e4515` on `codex/production-hardening` and draft PR [#1](https://github.com/azharulislamtech/ecommerce-mvp-prototype/pull/1). GitHub Actions is enabled, but no cloud workflow run was observed; local passing checks are not a cloud-CI result.
+- Published source revision `c3e4515` on `codex/production-hardening` and draft PR [#1](https://github.com/azharulislamtech/kenasathi-web/pull/1). GitHub Actions is enabled, but no cloud workflow run was observed; local passing checks are not a cloud-CI result.
 - Post-migration live read-only checks: home/products/tracking/sitemap return 200; new `/api/health` remains 404 and category sitemap entries are absent, confirming the new application revision is not deployed. Do not merge/deploy or describe it as live solely from database migration success.
 
 

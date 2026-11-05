@@ -8,7 +8,7 @@ Local lint/typecheck/build, 17 database tests, 3 unit tests and 9 isolated produ
 
 Deployment: `dpl_6x7VyDCPSkxivzgZBno8FHcVCUNf`, application revision `26e29a1`, unique URL https://ecommerce-mvp-prototype-6pij5s22n-azadbasis-4964s-projects.vercel.app. Previous rollback target: https://ecommerce-mvp-prototype-nn7hdp8eh-azadbasis-4964s-projects.vercel.app. Production environment explicitly sets site URL to kenasathi.com, disables online payments and disables demo catalog. Credentials/backups were excluded from upload. `node scripts/verify-live-release.mjs https://kenasathi.com` repeats the non-mutating release checks. While the store has no products it passes in empty-catalog mode and reports the skipped product checks; every URL the sitemap does list is still checked, so a stale sitemap fails. Add `--require-catalog` once real products are live.
 
-Source PR #1 merged into main with explicit owner approval (`0424997`). [GitHub cloud CI](https://github.com/azharulislamtech/ecommerce-mvp-prototype/actions/runs/36997183643) completed successfully. The merged source includes the live verifier and release evidence added after deploying the application code.
+Source PR #1 merged into main with explicit owner approval (`0424997`). [GitHub cloud CI](https://github.com/azharulislamtech/kenasathi-web/actions/runs/36997183643) completed successfully. The merged source includes the live verifier and release evidence added after deploying the application code.
 
 ## Local recovery utilities
 
