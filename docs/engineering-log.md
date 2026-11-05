@@ -2,6 +2,25 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-05: R9.1 WhatsApp Updates Deployment
+
+- #50 (R9.1) adds the WhatsApp subscribe form on the Kids page:
+  - Versioned consent text (`wa-2026-11-v1`) with a required tick, a honeypot and a privacy link.
+  - The same thank-you for everyone. An opted-out number is only marked for re-consent.
+  - Rate-limited by the V11 RPC (5 per hour per phone, 30 per hour per hashed-IP key).
+- It also adds `/admin/whatsapp`:
+  - a copy-all of active numbers;
+  - "They replied today", which feeds V13's 12-month rule;
+  - opt out and delete, with the broadcast-list reminder;
+  - a re-consent queue with reactivate, which writes a new consent time and version.
+
+  Admin writes check that a row changed.
+- No migration and no DB change.
+- Verification: main (#49) was merged into the branch at `75085e4`, keeping both plan §৯ rows. Then, independently re-run in one full pass on the merged commit in a fresh worktree (unit 61/61, db 58/58, e2e 45/45, build, audit). On owner request it merged as `01e03e5` after green CI.
+- Deployed `01e03e5` with `--skip-domain` as `dpl_FjWzCiYVa8DBMg4SobwvMFe1ndDz` (https://ecommerce-mvp-prototype-p3f7cno29-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 11 checks on the staged URL and again on https://kenasathi.com after promotion. Live `/kids` shows the consent text. Signed out, `/admin/whatsapp` returns 307 to login.
+- Still open: `CRON_SECRET` in Vercel production (owner), for R9.2's daily schedule.
+- Rollback target: `dpl_AS9f6RUBpoQUmYhs6B5hkaAku3FC`.
+
 ## 2026-11-05: V13 Applied (R9.2) with Interest Form and Admin Interest List (R7.1, R7.2)
 
 - On the owner's explicit OK ("Yes, apply and deploy"), V13 was applied to production in the contract order (`docs/db/V13-contract.md`). V13 was wrapped in `begin; set local lock_timeout = '5s'; … commit;`.
