@@ -2,6 +2,22 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-05: R11.2 Bangla Font and Accessibility Deployment
+
+- #52 (R11.2) adds:
+  - `<html lang="bn">`, with the admin wrapped in `lang="en"`.
+  - Hind Siliguri via `next/font/google`, self-hosted from `/_next/static/immutable/media`.
+  - A "মূল লেখায় যান" skip link and `<main id="main">`.
+  - Fixes for axe and the 44px-target check: contrast, the OrderSummary `dl`, and small links and controls.
+  - `@axe-core/playwright` 4.10.2 (devDependency, exact pin) with 12 accessibility e2e tests.
+- Verification: independently re-run in one full pass on a clean checkout of c083dfc (unit 61/61, db 58/58, e2e 57/57, build, audit). On owner request it merged as `86f3a61` after green CI.
+- Deployed `86f3a61` with `--skip-domain` as `dpl_9xzFAwcm4ysU994G7DxmEiDwFDcg` (https://ecommerce-mvp-prototype-dke4df1hr-azadbasis-4964s-projects.vercel.app). verify-live-release (empty mode) passed 11 checks on the staged URL and again on https://kenasathi.com after promotion.
+  - Live HTML has `lang="bn"` and the skip link.
+  - The font file returns 200 `font/woff2` from our own origin, and there is no googleapis or gstatic reference.
+  - A 375px screenshot of `/kids` shows the Bangla font and the WhatsApp form.
+- Remaining plan items all depend on the owner: `CRON_SECRET` (R9.2), real products (R0.2), the controlled COD test (R11.3), then R7.3.
+- Rollback target: `dpl_FjWzCiYVa8DBMg4SobwvMFe1ndDz`.
+
 ## 2026-11-05: R9.1 WhatsApp Updates Deployment
 
 - #50 (R9.1) adds the WhatsApp subscribe form on the Kids page:
