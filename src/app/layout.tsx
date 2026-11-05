@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Hind_Siliguri } from "next/font/google";
 import { getSiteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -16,13 +17,23 @@ export const metadata: Metadata = {
   }
 };
 
+// R11.2: Bangla font, self-hosted by next/font at build time (no request to Google from the
+// visitor's browser). Hind Siliguri is not a variable font, so the weights are listed.
+const bangla = Hind_Siliguri({
+  subsets: ["bengali", "latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-bangla"
+});
+
 export default function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    // R11.2: the store is Bangla; the English admin marks its own subtree lang="en".
+    <html className={bangla.variable} data-scroll-behavior="smooth" lang="bn">
       <body>{children}</body>
     </html>
   );

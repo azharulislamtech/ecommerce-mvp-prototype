@@ -186,7 +186,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           <details className="rounded-lg border border-slate-200 bg-white p-3 lg:hidden" data-testid="category-filter-button">
             <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm font-bold text-slate-950">
               ফিল্টার {filtered ? "(চালু)" : ""}
-              <span className="text-slate-400">খুলুন</span>
+              <span className="text-slate-500">খুলুন</span>
             </summary>
             <div className="mt-4 border-t border-slate-200 pt-4">{filterForm}</div>
           </details>

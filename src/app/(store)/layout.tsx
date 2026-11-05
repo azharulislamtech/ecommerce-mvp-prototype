@@ -16,9 +16,13 @@ export default async function StoreLayout({ children }: { children: React.ReactN
 
   return (
     <CartProvider>
+      {/* R11.2: keyboard users skip the strip and menus straight to the page content. */}
+      <a className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-white focus:px-4 focus:py-3 focus:font-semibold focus:text-slate-950 focus:shadow-lg" href="#main">
+        মূল লেখায় যান
+      </a>
       <HeaderStrip />
       <SiteHeader links={links} />
-      <main>{children}</main>
+      <main id="main" tabIndex={-1}>{children}</main>
       <SiteFooter shopLinks={links.filter((link) => link.href !== "/track-order")} />
       <StoreAnalytics />
     </CartProvider>

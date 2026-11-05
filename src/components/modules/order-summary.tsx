@@ -51,11 +51,10 @@ export function OrderSummary({
             <dd className="font-semibold text-emerald-700">-{formatMoney(discount)}</dd>
           </div>
         ) : null}
-        <div className="border-t border-slate-200 pt-3">
-          <div className="flex justify-between gap-4 text-base font-bold text-slate-950">
-            <dt>{knownDelivery === null ? "মোট (ডেলিভারি ছাড়া)" : "মোট"}</dt>
-            <dd data-testid="order-total">{isEmpty ? "—" : formatMoney(total)}</dd>
-          </div>
+        {/* R11.2: one wrapper per dt/dd pair, as a description list requires. */}
+        <div className="flex justify-between gap-4 border-t border-slate-200 pt-3 text-base font-bold text-slate-950">
+          <dt>{knownDelivery === null ? "মোট (ডেলিভারি ছাড়া)" : "মোট"}</dt>
+          <dd data-testid="order-total">{isEmpty ? "—" : formatMoney(total)}</dd>
         </div>
       </dl>
       {cta ? <div className="mt-5">{cta}</div> : null}

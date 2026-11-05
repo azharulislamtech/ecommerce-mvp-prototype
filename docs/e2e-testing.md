@@ -70,3 +70,21 @@ This logs in through Supabase Auth and verifies the admin dashboard and orders l
 - Any future checkout-order creation test must be opt-in and should run against a disposable test database or seeded test account.
 - Do not store Playwright storage state with real admin sessions in Git. `.playwright-auth/`, `test-results/`, and `playwright-report/` are ignored.
 - SSLCommerz sandbox payment tests must be opt-in, use sandbox credentials only, and run against a disposable or clearly marked test order dataset.
+
+## R11.2 phone, states and accessibility: where each check lives
+
+Each rule from the redesign plan (R11.2) and the test that proves it. All of them run in `npm run test:e2e:production`.
+
+| Rule | Checked by |
+|---|---|
+| (ক) Every store page fits a 390px phone with no sideways scroll | `accessibility.spec.ts` runs every main page at 390×844. Overflow checks are also in `header-footer`, `homepage`, `kids-page`, `storefront-categories`, `storefront-states`, `return-policy`, `privacy-policy`, `checkout-bangla`, `gift-checkbox`, `interest-and-retention` and `whatsapp` |
+| (ক) Product or buy button on the phone's first screen | `product-page.spec.ts` (price and "এখনই অর্ডার করুন (COD)" inside 844px), `homepage.spec.ts` (section card inside the first screen) |
+| (খ) Empty states in Bangla | store empty: `storefront-cutover`; search with no match: `search`; filter with no match: `storefront-categories`, `kids-page`; empty cart: `checkout-bangla`; empty Kids page and homepage: `kids-page`, `homepage` |
+| (খ) Loading states in Bangla | submit buttons show "পাঠানো হচ্ছে..." while pending (checkout, review, interest, WhatsApp); exercised in `checkout-bangla`, `product-description`, `interest-and-retention`, `whatsapp` |
+| (খ) Error and no-network states in Bangla | `checkout-bangla` (dropped connection, product gone mid-checkout), `product-description` (wrong order number on a review), `interest-and-retention` (bad phone), with typed values kept after each error |
+| (গ) `<html lang="bn">`; the admin is `lang="en"` | `accessibility.spec.ts` |
+| (গ) Bangla font | Hind Siliguri through `next/font` in `src/app/layout.tsx`, self-hosted at build time |
+| (গ) Text contrast at least 4.5:1, a label on every form field, alt text on every image, accessible names | axe (WCAG 2.1 AA) on `/`, `/products`, `/kids`, `/cart`, `/checkout`, `/track-order`, the three policies and a product page, in `accessibility.spec.ts` |
+| (গ) Tap targets at least 44px | `accessibility.spec.ts` measures buttons, fields and stand-alone links (links inside a sentence are exempt, as WCAG 2.5.8 allows) |
+| (গ) Everything works with the keyboard alone | `accessibility.spec.ts`: "মূল লেখায় যান" skip link, Tab to a product's buy button with a visible focus ring, Enter adds it to the cart |
+| (গ) Bangla `alt_text` on product images | The admin enters it per image (product guideline, common §৬). axe fails any image that has no alt text |

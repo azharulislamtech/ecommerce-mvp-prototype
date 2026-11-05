@@ -43,7 +43,7 @@ export function CartPageClient({ products }: CartPageClientProps) {
             <p className="text-sm font-semibold text-blue-700">কার্ট</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-950">আপনার পণ্যগুলো দেখে নিন</h1>
           </div>
-          <Link className="text-sm font-semibold text-blue-700 hover:text-blue-900" href="/products">
+          <Link className="focus-ring inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 hover:text-blue-900" href="/products">
             আরও কেনাকাটা করুন
           </Link>
         </div>

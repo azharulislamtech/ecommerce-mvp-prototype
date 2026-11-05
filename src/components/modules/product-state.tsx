@@ -31,7 +31,7 @@ export function ProductPrice({ product, size }: { product: Product; size: "card"
   return (
     <span className="flex flex-wrap items-end gap-2" data-testid="product-price">
       <span className={`${big} font-bold text-slate-950`}>{formatMoney(product.price)}</span>
-      {product.oldPrice ? <span className="text-sm text-slate-400 line-through">{formatMoney(product.oldPrice)}</span> : null}
+      {product.oldPrice ? <span className="text-sm text-slate-500 line-through">{formatMoney(product.oldPrice)}</span> : null}
     </span>
   );
 }

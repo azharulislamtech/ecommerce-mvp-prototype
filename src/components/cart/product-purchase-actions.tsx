@@ -20,9 +20,9 @@ export function ProductPurchaseActions({ productId, stock }: ProductPurchaseActi
         <label className="text-sm font-semibold text-slate-950" htmlFor="quantity">
           পরিমাণ
         </label>
-        <div className="mt-2 flex h-12 w-36 items-center justify-between rounded-md border border-slate-200 bg-white px-2">
+        <div className="mt-2 flex h-12 w-44 items-center justify-between rounded-md border border-slate-200 bg-white px-2">
           <button
-            className="grid h-9 w-9 place-items-center rounded-md text-lg font-bold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
+            className="grid h-11 w-11 place-items-center rounded-md text-lg font-bold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
             aria-label="পরিমাণ কমান"
             disabled={disabled || safeQuantity <= 1}
             onClick={() => setQuantity((current) => clampCartQuantity(current - 1, stock || 1))}
@@ -31,7 +31,7 @@ export function ProductPurchaseActions({ productId, stock }: ProductPurchaseActi
             -
           </button>
           <input
-            className="w-10 border-0 bg-transparent text-center text-sm font-bold outline-none"
+            className="h-11 w-12 border-0 bg-transparent text-center text-sm font-bold"
             disabled={disabled}
             id="quantity"
             min="1"
@@ -41,7 +41,7 @@ export function ProductPurchaseActions({ productId, stock }: ProductPurchaseActi
             value={safeQuantity}
           />
           <button
-            className="grid h-9 w-9 place-items-center rounded-md text-lg font-bold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
+            className="grid h-11 w-11 place-items-center rounded-md text-lg font-bold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
             aria-label="পরিমাণ বাড়ান"
             disabled={disabled || safeQuantity >= stock}
             onClick={() => setQuantity((current) => clampCartQuantity(current + 1, stock || 1))}
