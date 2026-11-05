@@ -68,7 +68,10 @@ test("coming soon, stock ended, never stocked and hidden products behave as the 
     // Coming soon page: no buy buttons, no offer and no price for Google.
     await pollPage(page, `/products/${soon.slug}`, async () =>
       (await page.getByTestId("product-purchase-panel").getByTestId("product-state-badge").textContent()) === "শীঘ্রই আসছে");
-    await expect(page.getByTestId("product-purchase-panel").getByRole("button")).toHaveCount(0);
+    // No buy buttons; the only action is "আগ্রহ জানান" (R7.1), which takes no order or money.
+    const panel = page.getByTestId("product-purchase-panel");
+    await expect(panel.getByRole("button", { name: /অর্ডার করুন|কার্টে যোগ করুন|এখনই কিনুন/ })).toHaveCount(0);
+    await expect(panel.getByRole("button")).toHaveText(["আগ্রহ জানান"]);
     await expect(page.getByTestId("product-unavailable-note")).toContainText("কোনো অর্ডার বা টাকা নেওয়া হয় না");
     const soonLd = await productJsonLd(page);
     expect(soonLd).toBeTruthy();

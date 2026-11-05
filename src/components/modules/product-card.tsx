@@ -68,7 +68,7 @@ export function ProductCard({ product, showProblem = false, showLearning = false
           />
         </div>
         ) : (
-          <ProductUnavailableNote product={product} />
+          <ProductUnavailableNote link product={product} />
         )}
       </div>
     </article>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney, type Product } from "@/lib/data";
 import { STATE_BADGES, ageLabel } from "@/lib/storefront-state";
@@ -36,12 +37,22 @@ export function ProductPrice({ product, size }: { product: Product; size: "card"
 }
 
 // What replaces the buy buttons when the product cannot be bought.
-export function ProductUnavailableNote({ product }: { product: Product }) {
+// `link` adds the "আগ্রহ জানান" button on cards; the product page shows the form itself.
+export function ProductUnavailableNote({ product, link = false }: { product: Product; link?: boolean }) {
   if (product.state === "stock_ended") {
     return <p className="text-sm font-semibold text-slate-600" data-testid="product-unavailable-note">স্টক শেষ — এখন অর্ডার নেওয়া হচ্ছে না।</p>;
   }
   if (product.state === "coming_soon") {
-    return <p className="text-sm font-semibold text-orange-800" data-testid="product-unavailable-note">শীঘ্রই আসছে — পণ্য হাতে আসার আগে কোনো অর্ডার বা টাকা নেওয়া হয় না।</p>;
+    return (
+      <div data-testid="product-unavailable-note">
+        <p className="text-sm font-semibold text-orange-800">শীঘ্রই আসছে — পণ্য হাতে আসার আগে কোনো অর্ডার বা টাকা নেওয়া হয় না।</p>
+        {link ? (
+          <Link className="focus-ring mt-2 inline-flex min-h-11 items-center rounded-md border border-orange-300 bg-orange-50 px-4 text-sm font-semibold text-orange-900 hover:bg-orange-100" href={`/products/${product.slug}#interest`}>
+            আগ্রহ জানান
+          </Link>
+        ) : null}
+      </div>
+    );
   }
   return null;
 }
