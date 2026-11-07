@@ -2,6 +2,15 @@
 
 Append meaningful changes here. Keep newest entries at the top.
 
+## 2026-11-07: CRON_SECRET Set and Daily Retention Schedule Enabled (R9.2)
+
+- The owner added `CRON_SECRET` in Vercel → project Settings → Environment Variables (Production only, sensitive). Its value was never shared in chat or with Claude.
+- Redeployed `a4f245f` with `--skip-domain` as `dpl_8xJqPjervpze99ieW6tg6m8fA4SU` (https://ecommerce-mvp-prototype-ouqt3il7u-azadbasis-4964s-projects.vercel.app), then promoted. verify-live-release (empty mode) passed 11 checks on the staged URL and again on https://kenasathi.com.
+- `/api/cron/retention` now returns 401 "Unauthorized" without a token or with a wrong bearer, where it returned 503 "CRON_SECRET is not configured" before. That proves the secret is set without revealing it.
+- `vercel crons ls` lists `/api/cron/retention` at `0 21 * * *` (03:00 Dhaka).
+- R9.2 stays 🔄 until the first `schedule` row appears in `data_retention_runs`. The first scheduled run is expected at 2026-11-07 21:00 UTC; on the Hobby plan Vercel may run it any time within that hour.
+- Rollback target: `dpl_9xzFAwcm4ysU994G7DxmEiDwFDcg`. No database change.
+
 ## 2026-11-05: GitHub Repository Renamed to kenasathi-web
 
 - On owner request, the GitHub repository `azharulislamtech/ecommerce-mvp-prototype` was renamed to `azharulislamtech/kenasathi-web` through the GitHub API.
